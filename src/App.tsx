@@ -405,10 +405,10 @@ export const App: React.FC = () => {
       {gameMode !== 'menu' && (
         <div className="gameplay-wrapper">
           {/* Relaxing Status Panel */}
-          <header className="game-header glassmorphism">
+          <header className="game-header">
             <div className="header-left">
-              <button className="back-menu-btn" onClick={handleBackToMenu}>
-                🏠 Main Menu
+              <button className="back-menu-btn" onClick={handleBackToMenu} title="Main Menu">
+                ←
               </button>
               <span className="layout-badge">
                 {layouts[activeLayout].displayName}
@@ -417,22 +417,22 @@ export const App: React.FC = () => {
 
             <div className="header-stats">
               <div className="stat-pill">
-                <span className="stat-label">🧱 Tiles Left</span>
-                <span className="stat-value">{tilesLeft} / {totalTiles}</span>
+                <span className="stat-label">🧱</span>
+                <span className="stat-value">{tilesLeft}/{totalTiles}</span>
               </div>
               <div className="stat-pill" style={{ opacity: gameMode === 'memory' ? 0.3 : 1 }}>
-                <span className="stat-label">🤝 Matches Left</span>
+                <span className="stat-label">🤝</span>
                 <span className="stat-value">{possibleMovesCount}</span>
               </div>
               <div className="stat-pill">
-                <span className="stat-label">⏱️ Zen Timer</span>
+                <span className="stat-label">⏱️</span>
                 <span className="stat-value">{formatTime(timer)}</span>
               </div>
             </div>
 
             <div className="header-right">
               <button className="icon-btn" onClick={() => { soundSynth.playClick(); setIsSettingsOpen(true); }} title="Settings">
-                ⚙️ Settings
+                ⚙️
               </button>
             </div>
           </header>
@@ -452,15 +452,15 @@ export const App: React.FC = () => {
           </main>
 
           {/* Core toolbar footer containing solver tools */}
-          <footer className="game-footer-toolbar glassmorphism">
-            <div className="toolbar-left">
+          <footer className="game-footer-toolbar">
+            <div className="toolbar-actions">
               <button
                 className="tool-action-btn"
                 onClick={handleUndo}
                 disabled={undoStack.length === 0 || gameMode === 'memory'}
                 title="Undo last matching move"
               >
-                ↩️ Undo ({undoStack.length})
+                ↩️
               </button>
               <button
                 className="tool-action-btn"
@@ -468,7 +468,7 @@ export const App: React.FC = () => {
                 disabled={possibleMovesCount === 0 || gameMode === 'memory'}
                 title="Show a matching pair hint"
               >
-                💡 Hint
+                💡
               </button>
               <button
                 className="tool-action-btn"
@@ -476,26 +476,14 @@ export const App: React.FC = () => {
                 disabled={tilesLeft === 0 || gameMode === 'memory'}
                 title="Shuffle unmatched tiles"
               >
-                🔀 Shuffle
+                🔀
               </button>
-            </div>
-
-            <div className="toolbar-center">
-              {gameMode === 'memory' && (
-                <div className="memory-alert-banner">
-                  🧠 <strong>Memory Mode Active:</strong> Flip matching tiles and train your short-term recall.
-                </div>
-              )}
-              {gameMode === 'daily' && (
-                <div className="daily-banner">
-                  📅 <strong>Seeded Daily Challenge:</strong> Solve today's puzzle for stamps!
-                </div>
-              )}
-            </div>
-
-            <div className="toolbar-right">
-              <button className="restart-game-btn" onClick={() => initGame(gameMode, activeLayout)}>
-                🔄 Restart Puzzle
+              <button
+                className="tool-action-btn"
+                onClick={() => initGame(gameMode, activeLayout)}
+                title="Restart Puzzle"
+              >
+                🔄
               </button>
             </div>
           </footer>

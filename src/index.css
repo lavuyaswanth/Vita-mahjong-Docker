@@ -1,6 +1,7 @@
 /* ==========================================================================
    Vita Mahjong Game Design System & Responsive Layouts
-   Designed with premium glassmorphism, 3D tile stacks, and senior accessibility.
+   Designed with premium dark wood, green felt tables, tactile ivory tiles,
+   and senior-friendly high-contrast components.
    ========================================================================== */
 
 :root {
@@ -9,20 +10,20 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Global variables overridden by themes */
-  --tile-bg: #fcfbf7;
+  --tile-bg: #faf6ec;
   --tile-color: #1a1a1a;
-  --tile-border-3d: #dedcd8;
-  --tile-border-dark: #b8b6b2;
-  --tile-shadow: rgba(0, 0, 0, 0.22);
-  --glass-bg: rgba(255, 255, 255, 0.14);
-  --glass-border: rgba(255, 255, 255, 0.25);
+  --tile-border-3d: #e4dcb9;
+  --tile-border-dark: #126c36; /* Jade/bamboo green backing for standard theme */
+  --tile-shadow: rgba(0, 0, 0, 0.4);
+  --glass-bg: rgba(26, 15, 9, 0.85); /* Rich dark wood glass */
+  --glass-border: rgba(184, 151, 66, 0.25); /* Gold tinted border */
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.75);
-  --accent-gold: #d4af37;
-  --accent-cyan: #18ffff;
+  --accent-gold: #c9a84c;
+  --accent-cyan: #00e5ff;
   
   font-family: var(--font-sans);
-  background-color: #0f172a;
+  background-color: #150d08;
   color: var(--text-primary);
   margin: 0;
   padding: 0;
@@ -48,42 +49,39 @@ body {
    THEME STYLES (Background Gradients and Tile Adjustments)
    ========================================================================== */
 
-/* Theme 1: Bamboo Zen Garden (Standard relaxing green) */
+/* Theme 1: Bamboo Zen Garden (Standard felt green table + wood) */
 .app-root.app-theme-zen {
-  background: radial-gradient(circle at center, #1b4d22 0%, #0d2d15 100%);
-  --tile-bg: #fcfaf2;
-  --tile-border-3d: #e2dfd5;
-  --tile-border-dark: #b0ad9e;
+  background: radial-gradient(circle at center, #2e1d11 0%, #150d07 100%);
+  --tile-bg: #faf6ec;
+  --tile-border-3d: #ebdcb9;
+  --tile-border-dark: #1b5e20; /* Bamboo green backing */
   --accent-color: #69f0ae;
 }
 
-/* Theme 2: Deep Healing Ocean (Serene teal/blue) */
+/* Theme 2: Deep Healing Ocean (Serene navy/teal felt + dark wood) */
 .app-root.app-theme-ocean {
-  background: radial-gradient(circle at center, #004d40 0%, #001a14 100%);
-  --tile-bg: #e0f2f1;
-  --tile-border-3d: #c5e1a5;
-  --tile-border-dark: #80cbc4;
+  background: radial-gradient(circle at center, #1b263b 0%, #0d131f 100%);
+  --tile-bg: #faf6ec;
+  --tile-border-3d: #ebdcb9;
+  --tile-border-dark: #0f4c81; /* Classic blue backing */
   --accent-color: #00e5ff;
 }
 
-/* Theme 3: Cozy Amber Sunset (Warm earthy mahogany) */
+/* Theme 3: Cozy Amber Sunset (Warm mahogany + red backing) */
 .app-root.app-theme-sunset {
-  background: radial-gradient(circle at center, #3e2723 0%, #1b0a07 100%);
-  --tile-bg: #fffcf4;
-  --tile-border-3d: #ffe0b2;
-  --tile-border-dark: #d7ccc8;
+  background: radial-gradient(circle at center, #3e1f13 0%, #1b0c07 100%);
+  --tile-bg: #faf6ec;
+  --tile-border-3d: #ebdcb9;
+  --tile-border-dark: #9e2a2b; /* Terracotta backing */
   --accent-color: #ffab40;
 }
 
-/* Theme 4: Mystic Healing Dark (Deep indigo & neon tags) */
+/* Theme 4: Mystic Healing Dark (Obsidian + neon indigo backing) */
 .app-root.app-theme-dark {
-  background: radial-gradient(circle at center, #0d0e15 0%, #030408 100%);
-  --tile-bg: #1e202c;
-  --tile-color: #f3f4f6;
-  --tile-border-3d: #2a2e3f;
-  --tile-border-dark: #12141c;
-  --glass-bg: rgba(15, 17, 28, 0.4);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  background: radial-gradient(circle at center, #0f0f15 0%, #050508 100%);
+  --tile-bg: #faf6ec;
+  --tile-border-3d: #ebdcb9;
+  --tile-border-dark: #3a0ca3; /* Indigo backing */
   --accent-color: #c084fc;
 }
 
@@ -96,7 +94,7 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
   border-radius: 16px;
 }
 
@@ -198,7 +196,7 @@ body {
 
 .menu-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6);
 }
 
 .menu-card-icon {
@@ -354,14 +352,19 @@ body {
 }
 
 .game-header {
-  height: 70px;
-  min-height: 70px;
-  margin: 15px 20px 0 20px;
-  padding: 0 20px;
+  height: 60px;
+  min-height: 60px;
+  margin: 0;
+  padding: 0 25px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
+  background: rgba(26, 15, 9, 0.95); /* Deep mahogany bar */
+  border-bottom: 2px solid #5a3d28; /* Wood accent strip */
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  border-radius: 0;
+  z-index: 100;
 }
 
 .header-left, .header-right {
@@ -371,71 +374,97 @@ body {
 }
 
 .back-menu-btn {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #9e2a2b 0%, #7f1d1d 100%); /* Red leather circle */
+  border: 1.5px solid #d4af37; /* Gold rim */
   color: #fff;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: 600;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+  transition: transform 0.15s ease, background 0.2s ease;
+  padding: 0;
 }
 
 .back-menu-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.08);
+  background: linear-gradient(135deg, #bd3a3c 0%, #9e2a2b 100%);
+}
+
+.back-menu-btn:active {
+  transform: scale(0.95);
 }
 
 .layout-badge {
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid #d4af37;
+  background: rgba(201, 168, 76, 0.15);
+  border: 1px solid #c9a84c;
   color: #ffd700;
   font-weight: bold;
-  padding: 6px 14px;
-  border-radius: 15px;
-  font-size: 14px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .header-stats {
   display: flex;
-  gap: 20px;
+  gap: 15px;
+  align-items: center;
 }
 
 .stat-pill {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 25px;
-  padding: 5px 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(184, 151, 66, 0.15);
+  border-radius: 8px;
+  padding: 4px 12px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  min-width: 90px;
+  gap: 6px;
+  min-width: 70px;
 }
 
 .stat-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  font-weight: bold;
+  font-size: 13px;
+  opacity: 0.9;
 }
 
 .stat-value {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
+  color: #ffd700;
+  font-family: var(--font-sans);
 }
 
 .icon-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #422615 0%, #29170c 100%); /* Wood circle */
+  border: 1.5px solid #d4af37; /* Gold rim */
   color: #fff;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: 600;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+  transition: transform 0.15s ease, border-color 0.2s ease;
+  padding: 0;
 }
 
 .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.08);
+  border-color: #ffd700;
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
 }
 
 /* ==========================================================================
@@ -446,7 +475,9 @@ body {
   flex-grow: 1;
   position: relative;
   overflow: hidden;
-  margin: 15px 20px;
+  margin: 0;
+  padding: 15px;
+  background: #1c130d; /* Surrounding table background */
 }
 
 .mahjong-board-outer {
@@ -462,18 +493,22 @@ body {
   z-index: 50;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 6px 12px;
+  background: rgba(26, 15, 9, 0.85);
+  border: 1.5px solid #5a3d28;
+  border-radius: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .toolbar-btn {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  font-size: 14px;
+  font-size: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -482,7 +517,7 @@ body {
 }
 
 .toolbar-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .toolbar-hint {
@@ -496,9 +531,27 @@ body {
   height: 100%;
   position: relative;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* Green casino felt radial gradient background */
+  background: radial-gradient(circle at center, #1b4d22 0%, #0d2612 100%);
+  border-radius: 16px;
+  /* Thick wood frame border effect */
+  border: 12px solid #3e2213;
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.7), 0 10px 25px rgba(0,0,0,0.5);
+  box-sizing: border-box;
+}
+
+/* Theme adjustments on board container */
+.app-theme-ocean .mahjong-board-container {
+  background: radial-gradient(circle at center, #102a43 0%, #081622 100%);
+  border-color: #2b1f1a;
+}
+.app-theme-sunset .mahjong-board-container {
+  background: radial-gradient(circle at center, #4c1a17 0%, #200807 100%);
+  border-color: #3e2213;
+}
+.app-theme-dark .mahjong-board-container {
+  background: radial-gradient(circle at center, #181824 0%, #0b0b12 100%);
+  border-color: #1a1a1c;
 }
 
 /* Overlay interactive Canvas for sparkles */
@@ -546,7 +599,7 @@ body {
   cursor: pointer;
   user-select: none;
   box-sizing: border-box;
-  border-radius: 6px;
+  border-radius: 5px;
   transition: transform 0.18s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.18s ease-out;
 }
 
@@ -557,7 +610,7 @@ body {
 }
 
 .mahjong-tile.free:hover .tile-face {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 12px rgba(255, 255, 255, 0.35);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 255, 255, 0.35);
   border-color: rgba(255, 255, 255, 0.85);
 }
 
@@ -568,31 +621,33 @@ body {
   }
 }
 
-/* 3D border thickness layers depending on Z depth */
+/* 3D border thickness layers (fused back color layer) */
 .tile-3d-side-left {
   position: absolute;
-  top: 4px;
-  left: -6px;
-  width: 6px;
+  top: 3px;
+  left: -5px;
+  width: 5px;
   height: 100%;
-  background: var(--tile-border-dark);
+  background: var(--tile-border-dark); /* Bamboo/jade green back */
   transform: skewY(-40deg);
   transform-origin: right top;
-  border-radius: 4px 0 0 4px;
-  box-shadow: inset -1px 0 2px rgba(0,0,0,0.2);
+  border-radius: 3px 0 0 3px;
+  box-shadow: inset -1px 0 2px rgba(0,0,0,0.3), inset 1px 0 1px rgba(255,255,255,0.15);
+  border-left: 1px solid rgba(255,255,255,0.1);
 }
 
 .tile-3d-side-bottom {
   position: absolute;
-  bottom: -6px;
-  left: -3px;
+  bottom: -5px;
+  left: -2px;
   width: 100%;
-  height: 6px;
-  background: var(--tile-border-dark);
+  height: 5px;
+  background: var(--tile-border-dark); /* Bamboo/jade green back */
   transform: skewX(-50deg);
   transform-origin: left top;
-  border-radius: 0 0 4px 4px;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+  border-radius: 0 0 3px 3px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3), inset 0 -1px 1px rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 .tile-face {
@@ -601,15 +656,16 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--tile-bg);
+  background: var(--tile-bg); /* Ivory/Cream polished look */
   border: 1px solid var(--tile-border-3d);
-  border-bottom-width: 2px;
+  border-bottom-width: 3px; /* Pronounced front-face bottom edge */
   border-right-width: 2px;
-  border-radius: 6px;
+  border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
 }
 
 /* Layer heights shadow sizing for tactile stacked feeling */
@@ -621,9 +677,9 @@ body {
 
 /* Tile States (Selection, Hinted, Blocked) */
 .mahjong-tile.selected .tile-face {
-  background: #fff9e6;
+  background: #fffdf5;
   border: 2.5px solid var(--accent-gold);
-  box-shadow: 0 0 18px rgba(212, 175, 55, 0.95), inset 0 0 6px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 0 18px rgba(201, 168, 76, 0.95), inset 0 0 6px rgba(201, 168, 76, 0.2);
 }
 .mahjong-tile.selected {
   transform: translate(calc(var(--shift-x) - 4px), calc(var(--shift-y) - 4px)) scale(1.06) !important;
@@ -686,13 +742,13 @@ body {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-/* Hover style in Modern Pop (Energetic neon teal highlight) */
+/* Hover style in Modern Pop (Neon teal highlight) */
 .mahjong-tile.style-set-modernPop.free:hover .tile-face {
   border-color: rgba(0, 245, 212, 0.7) !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 18px rgba(0, 245, 212, 0.45), inset 0 0 6px rgba(0, 245, 212, 0.25) !important;
 }
 
-/* Selected style in Modern Pop (Electrifying neon magenta glow) */
+/* Selected style in Modern Pop (Neon magenta glow) */
 .mahjong-tile.style-set-modernPop.selected .tile-face {
   background: linear-gradient(135deg, #241d33 0%, #130d1d 100%) !important;
   border-color: #ff007f !important;
@@ -730,7 +786,7 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);
   z-index: 1000;
   display: flex;
@@ -749,11 +805,15 @@ body {
   overflow: hidden;
   animation: scaleUp 0.2s ease-out;
   padding: 0 !important;
+  background: rgba(36, 21, 13, 0.95) !important; /* Rich deep brown wood theme */
+  border: 2px solid #5a3d28 !important;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+  border-radius: 20px;
 }
 
 .modal-header {
   padding: 20px 30px;
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 1px solid rgba(184, 151, 66, 0.25);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -786,7 +846,7 @@ body {
 }
 
 .settings-section {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   padding: 20px;
@@ -831,9 +891,9 @@ body {
 }
 
 .layout-card.active {
-  background: rgba(212, 175, 55, 0.15);
+  background: rgba(201, 168, 76, 0.18);
   border-color: var(--accent-gold);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 0 10px rgba(201, 168, 76, 0.3);
 }
 
 .layout-card-badge {
@@ -903,8 +963,8 @@ body {
 }
 
 .toggle-button-group button.active {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: white;
 }
 
@@ -926,13 +986,13 @@ body {
 }
 
 .theme-btn.zen { background: #1b4d22; }
-.theme-btn.ocean { background: #004d40; }
-.theme-btn.sunset { background: #3e2723; }
-.theme-btn.dark { background: #0d0e15; }
+.theme-btn.ocean { background: #1b263b; }
+.theme-btn.sunset { background: #3e1f13; }
+.theme-btn.dark { background: #0f0f15; }
 
 .theme-btn.active {
-  border-color: #fff;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 8px rgba(201, 168, 76, 0.5);
   transform: scale(1.02);
 }
 
@@ -971,40 +1031,43 @@ body {
 
 .modal-footer {
   padding: 15px 30px;
-  border-top: 1px solid var(--glass-border);
+  border-top: 1px solid rgba(184, 151, 66, 0.25);
   display: flex;
   justify-content: flex-end;
 }
 
 .confirm-btn {
-  background: #ffffff;
-  color: #000;
+  background: linear-gradient(135deg, #ffd700 0%, #b89742 100%);
+  color: #1a0f08;
   font-weight: 700;
-  padding: 12px 30px;
+  padding: 10px 28px;
   border-radius: 30px;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.2s ease;
+  border: 1px solid #ffd700;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .confirm-btn:hover {
-  background: #f0f0f0;
-  transform: scale(1.03);
+  background: linear-gradient(135deg, #fff 0%, #ffd700 100%);
+  transform: translateY(-1px);
 }
 
 .cancel-btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 12px 30px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 10px 28px;
   border-radius: 30px;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-right: 12px;
 }
 
 .cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* ==========================================================================
@@ -1012,47 +1075,72 @@ body {
    ========================================================================== */
 
 .game-footer-toolbar {
-  height: 70px;
-  min-height: 70px;
-  margin: 0 20px 15px 20px;
-  padding: 0 25px;
+  height: 80px;
+  min-height: 80px;
+  margin: 0;
+  padding: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   box-sizing: border-box;
+  background: transparent; /* No glass panel across bottom */
+  border: none;
+  box-shadow: none;
+  margin-bottom: 20px;
+  z-index: 90;
 }
 
-.toolbar-left, .toolbar-right {
+.toolbar-actions {
   display: flex;
+  gap: 20px;
+  justify-content: center;
   align-items: center;
-  gap: 12px;
+  background: rgba(26, 15, 9, 0.9); /* Dark wood floating bar */
+  padding: 10px 24px;
+  border-radius: 40px;
+  border: 2px solid #5a3d28;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
 }
 
 .tool-action-btn {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #422615 0%, #29170c 100%); /* Premium circular wood button */
+  border: 2px solid #a67c52; /* Rosewood trim */
   color: white;
-  padding: 10px 18px;
-  border-radius: 12px;
-  font-weight: bold;
-  font-size: 14px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  font-size: 22px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.1);
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.2s ease, box-shadow 0.2s ease;
+  padding: 0;
 }
 
 .tool-action-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
+  transform: translateY(-3px);
+  border-color: #ffd700;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.5), 0 0 10px rgba(212,175,55,0.3);
+}
+
+.tool-action-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.95);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 
 .tool-action-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: not-allowed;
+  border-color: #4a3525;
+  background: #1f140e;
+  box-shadow: none;
 }
 
 .restart-game-btn {
-  background: rgba(212, 175, 55, 0.12);
-  border: 1px solid #d4af37;
+  background: rgba(201, 168, 76, 0.12);
+  border: 1px solid #c9a84c;
   color: #ffd700;
   padding: 10px 18px;
   border-radius: 12px;
@@ -1063,7 +1151,7 @@ body {
 }
 
 .restart-game-btn:hover {
-  background: rgba(212, 175, 55, 0.25);
+  background: rgba(201, 168, 76, 0.25);
 }
 
 .memory-alert-banner, .daily-banner {
@@ -1079,13 +1167,16 @@ body {
    ========================================================================== */
 
 .victory-overlay {
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.75);
 }
 
 .victory-modal {
   max-width: 460px;
   text-align: center;
   padding: 40px !important;
+  background: rgba(36, 21, 13, 0.98) !important;
+  border: 2px solid #c9a84c !important;
+  box-shadow: 0 15px 50px rgba(0,0,0,0.8), 0 0 25px rgba(201, 168, 76, 0.2);
 }
 
 .victory-icon {
@@ -1145,9 +1236,9 @@ body {
 }
 
 @keyframes pulseHint {
-  0% { box-shadow: 0 0 4px rgba(24, 255, 255, 0.5); }
-  50% { box-shadow: 0 0 16px rgba(24, 255, 255, 0.95); }
-  100% { box-shadow: 0 0 4px rgba(24, 255, 255, 0.5); }
+  0% { box-shadow: 0 0 4px rgba(0, 229, 255, 0.5); }
+  50% { box-shadow: 0 0 16px rgba(0, 229, 255, 0.95); }
+  100% { box-shadow: 0 0 4px rgba(0, 229, 255, 0.5); }
 }
 
 @keyframes spinSlow {
@@ -1202,7 +1293,7 @@ body {
 
 /* Dynamic coloration on themes */
 .ocean-decorations .zen-petal {
-  background: rgba(24, 255, 255, 0.15);
+  background: rgba(0, 229, 255, 0.15);
   border-radius: 50%;
   animation-name: floatBubble;
 }
