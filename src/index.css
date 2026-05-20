@@ -1,0 +1,1227 @@
+/* ==========================================================================
+   Vita Mahjong Game Design System & Responsive Layouts
+   Designed with premium glassmorphism, 3D tile stacks, and senior accessibility.
+   ========================================================================== */
+
+:root {
+  /* Dynamic fonts (Google-style Outfitters & Inters) */
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Global variables overridden by themes */
+  --tile-bg: #fcfbf7;
+  --tile-color: #1a1a1a;
+  --tile-border-3d: #dedcd8;
+  --tile-border-dark: #b8b6b2;
+  --tile-shadow: rgba(0, 0, 0, 0.22);
+  --glass-bg: rgba(255, 255, 255, 0.14);
+  --glass-border: rgba(255, 255, 255, 0.25);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.75);
+  --accent-gold: #d4af37;
+  --accent-cyan: #18ffff;
+  
+  font-family: var(--font-sans);
+  background-color: #0f172a;
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Canvas elements handle scroll/pan */
+  width: 100vw;
+  height: 100vh;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   THEME STYLES (Background Gradients and Tile Adjustments)
+   ========================================================================== */
+
+/* Theme 1: Bamboo Zen Garden (Standard relaxing green) */
+.app-root.app-theme-zen {
+  background: radial-gradient(circle at center, #1b4d22 0%, #0d2d15 100%);
+  --tile-bg: #fcfaf2;
+  --tile-border-3d: #e2dfd5;
+  --tile-border-dark: #b0ad9e;
+  --accent-color: #69f0ae;
+}
+
+/* Theme 2: Deep Healing Ocean (Serene teal/blue) */
+.app-root.app-theme-ocean {
+  background: radial-gradient(circle at center, #004d40 0%, #001a14 100%);
+  --tile-bg: #e0f2f1;
+  --tile-border-3d: #c5e1a5;
+  --tile-border-dark: #80cbc4;
+  --accent-color: #00e5ff;
+}
+
+/* Theme 3: Cozy Amber Sunset (Warm earthy mahogany) */
+.app-root.app-theme-sunset {
+  background: radial-gradient(circle at center, #3e2723 0%, #1b0a07 100%);
+  --tile-bg: #fffcf4;
+  --tile-border-3d: #ffe0b2;
+  --tile-border-dark: #d7ccc8;
+  --accent-color: #ffab40;
+}
+
+/* Theme 4: Mystic Healing Dark (Deep indigo & neon tags) */
+.app-root.app-theme-dark {
+  background: radial-gradient(circle at center, #0d0e15 0%, #030408 100%);
+  --tile-bg: #1e202c;
+  --tile-color: #f3f4f6;
+  --tile-border-3d: #2a2e3f;
+  --tile-border-dark: #12141c;
+  --glass-bg: rgba(15, 17, 28, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --accent-color: #c084fc;
+}
+
+/* ==========================================================================
+   GLASSMORPHISM & GENERAL STYLING UTILITIES
+   ========================================================================== */
+
+.glassmorphism {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+  border-radius: 16px;
+}
+
+/* Custom High Contrast tag rules */
+.high-contrast-tag {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: #000;
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 3px;
+  border-radius: 3px;
+  border: 1px solid #fff;
+  z-index: 10;
+  font-family: var(--font-sans);
+}
+
+/* Stalemate overlay warnings */
+.stalemate-modal {
+  max-width: 440px;
+  text-align: center;
+  padding: 30px !important;
+}
+
+.stalemate-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   MAIN MENU UI STYLING
+   ========================================================================== */
+
+.main-menu-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.menu-hero-header {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.menu-title {
+  font-size: 64px;
+  font-weight: 800;
+  letter-spacing: -2px;
+  background: linear-gradient(to right, #ffffff, #d4af37, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0 0 10px 0;
+  filter: drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+.menu-subtitle {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.menu-cards-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  width: 100%;
+  margin-bottom: 35px;
+}
+
+@media (max-width: 900px) {
+  .menu-cards-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.menu-card {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+}
+
+.menu-card-icon {
+  font-size: 52px;
+  margin-bottom: 20px;
+}
+
+.menu-card h3 {
+  font-size: 24px;
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+.menu-card p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 145%;
+  flex-grow: 1;
+  margin: 0 0 20px 0;
+}
+
+.play-card-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-size: 15px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.menu-card:hover .play-card-btn {
+  background: #ffffff;
+  color: #121212;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+}
+
+.play-card-btn:active {
+  transform: scale(0.97);
+}
+
+.card-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #ffd700;
+  color: #000;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+}
+
+/* Quick Dashboard & Stamps */
+.menu-dashboard {
+  width: 100%;
+  padding: 25px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dashboard-item h4 {
+  margin: 0 0 15px 0;
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stamps-row {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  gap: 10px;
+}
+
+.stamp-cell {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  border-radius: 12px;
+  width: 12%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.stamp-cell.earned {
+  background: rgba(105, 240, 174, 0.15);
+  border: 1px solid #69f0ae;
+}
+
+.stamp-day {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.stamp-graphic {
+  font-size: 24px;
+}
+
+.stamp-cell.earned .stamp-graphic {
+  animation: pulse 2s infinite;
+}
+
+.stamp-date {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.dashboard-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  width: 100%;
+}
+
+.menu-action-btn {
+  flex: 1;
+  padding: 12px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.menu-action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================================================
+   GAMEPLAY SCREEN LAYOUT
+   ========================================================================== */
+
+.gameplay-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+}
+
+.game-header {
+  height: 70px;
+  min-height: 70px;
+  margin: 15px 20px 0 20px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.back-menu-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.back-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.layout-badge {
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid #d4af37;
+  color: #ffd700;
+  font-weight: bold;
+  padding: 6px 14px;
+  border-radius: 15px;
+  font-size: 14px;
+}
+
+.header-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.stat-pill {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 25px;
+  padding: 5px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 90px;
+}
+
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: bold;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.icon-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ==========================================================================
+   MAHJONG BOARD COMPONENT (PAN & ZOOM CANVAS)
+   ========================================================================== */
+
+.game-board-area {
+  flex-grow: 1;
+  position: relative;
+  overflow: hidden;
+  margin: 15px 20px;
+}
+
+.mahjong-board-outer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.board-toolbar {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+}
+
+.toolbar-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.toolbar-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-left: 5px;
+}
+
+.mahjong-board-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Overlay interactive Canvas for sparkles */
+.particles-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 40;
+}
+
+/* Dynamic grid spacing for exact stacking coordinates */
+.mahjong-grid {
+  display: grid;
+  /* Width corresponds to X coordinates (0 to 30), height to Y (0 to 18) */
+  grid-template-columns: repeat(30, 26px);
+  grid-template-rows: repeat(18, 28px);
+  gap: 0;
+  position: absolute;
+  /* Centering the board inside container */
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 50px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1024px) {
+  .mahjong-grid {
+    grid-template-columns: repeat(30, 20px);
+    grid-template-rows: repeat(18, 22px);
+  }
+}
+
+/* ==========================================================================
+   TACTILE 3D MAHJONG TILE RENDERING
+   ========================================================================== */
+
+.mahjong-tile {
+  position: relative;
+  width: 52px; /* spans 2 cols */
+  height: 56px; /* spans 2 rows */
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+  border-radius: 6px;
+  transition: transform 0.18s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.18s ease-out;
+}
+
+/* Playable free tile hover lift and tactile outer glow */
+.mahjong-tile.free:hover {
+  transform: translate(calc(var(--shift-x) - 3px), calc(var(--shift-y) - 3px)) scale(1.04) !important;
+  z-index: 160 !important; /* Ensure hovered tile paints over surrounding stack layers */
+}
+
+.mahjong-tile.free:hover .tile-face {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3), 0 0 12px rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
+@media (max-width: 1024px) {
+  .mahjong-tile {
+    width: 40px;
+    height: 44px;
+  }
+}
+
+/* 3D border thickness layers depending on Z depth */
+.tile-3d-side-left {
+  position: absolute;
+  top: 4px;
+  left: -6px;
+  width: 6px;
+  height: 100%;
+  background: var(--tile-border-dark);
+  transform: skewY(-40deg);
+  transform-origin: right top;
+  border-radius: 4px 0 0 4px;
+  box-shadow: inset -1px 0 2px rgba(0,0,0,0.2);
+}
+
+.tile-3d-side-bottom {
+  position: absolute;
+  bottom: -6px;
+  left: -3px;
+  width: 100%;
+  height: 6px;
+  background: var(--tile-border-dark);
+  transform: skewX(-50deg);
+  transform-origin: left top;
+  border-radius: 0 0 4px 4px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.tile-face {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--tile-bg);
+  border: 1px solid var(--tile-border-3d);
+  border-bottom-width: 2px;
+  border-right-width: 2px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+/* Layer heights shadow sizing for tactile stacked feeling */
+.layer-0 { box-shadow: -2px 2px 4px var(--tile-shadow); }
+.layer-1 { box-shadow: -4px 4px 8px var(--tile-shadow); }
+.layer-2 { box-shadow: -6px 6px 12px var(--tile-shadow); }
+.layer-3 { box-shadow: -8px 8px 16px var(--tile-shadow); }
+.layer-4 { box-shadow: -10px 10px 20px var(--tile-shadow); }
+
+/* Tile States (Selection, Hinted, Blocked) */
+.mahjong-tile.selected .tile-face {
+  background: #fff9e6;
+  border: 2.5px solid var(--accent-gold);
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.95), inset 0 0 6px rgba(212, 175, 55, 0.2);
+}
+.mahjong-tile.selected {
+  transform: translate(calc(var(--shift-x) - 4px), calc(var(--shift-y) - 4px)) scale(1.06) !important;
+}
+
+.mahjong-tile.hinted .tile-face {
+  animation: pulseHint 1.2s infinite;
+  border: 2px solid var(--accent-cyan);
+}
+
+/* Dim blocked tiles to highlight playable ones */
+.mahjong-tile.blocked {
+  filter: brightness(0.68) contrast(0.95);
+  cursor: not-allowed;
+}
+
+/* Face-down mode for Memory training */
+.mahjong-tile.face-down .tile-face {
+  background: linear-gradient(135deg, #1b3d22 0%, #0d2110 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.mahjong-tile.face-down .tile-face::before {
+  content: "🌸";
+  font-size: 20px;
+  display: block;
+}
+
+.tile-svg {
+  width: 82%;
+  height: 82%;
+}
+
+.tile-placeholder {
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* ==========================================================================
+   STYLE SET: MODERN NEON POP DESIGN
+   ========================================================================== */
+
+/* Dark tech-core glassmorphic tile faces for high-contrast neon graphics */
+.mahjong-tile.style-set-modernPop .tile-face {
+  background: linear-gradient(135deg, #181922 0%, #0c0d12 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 3px solid rgba(255, 255, 255, 0.08);
+  border-right: 2px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.mahjong-tile.style-set-modernPop .tile-3d-side-left {
+  background: linear-gradient(to right, #090a0d 0%, #15161c 100%);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset -1px 0 3px rgba(0, 0, 0, 0.5);
+}
+
+.mahjong-tile.style-set-modernPop .tile-3d-side-bottom {
+  background: linear-gradient(to bottom, #090a0d 0%, #15161c 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Hover style in Modern Pop (Energetic neon teal highlight) */
+.mahjong-tile.style-set-modernPop.free:hover .tile-face {
+  border-color: rgba(0, 245, 212, 0.7) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 18px rgba(0, 245, 212, 0.45), inset 0 0 6px rgba(0, 245, 212, 0.25) !important;
+}
+
+/* Selected style in Modern Pop (Electrifying neon magenta glow) */
+.mahjong-tile.style-set-modernPop.selected .tile-face {
+  background: linear-gradient(135deg, #241d33 0%, #130d1d 100%) !important;
+  border-color: #ff007f !important;
+  border-width: 2.5px !important;
+  box-shadow: 0 0 24px rgba(255, 0, 127, 0.85), inset 0 0 8px rgba(255, 0, 127, 0.35) !important;
+}
+
+/* Hinted style in Modern Pop (Pulsating cyber cyan glow) */
+.mahjong-tile.style-set-modernPop.hinted .tile-face {
+  animation: pulseNeonHint 1.2s infinite !important;
+}
+
+@keyframes pulseNeonHint {
+  0% {
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+    border-color: rgba(0, 229, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(0, 229, 255, 0.95), inset 0 0 8px rgba(0, 229, 255, 0.35);
+    border-color: rgba(0, 229, 255, 1);
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+    border-color: rgba(0, 229, 255, 0.5);
+  }
+}
+
+/* ==========================================================================
+   MODAL DIALOG LAYOUTS
+   ========================================================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.modal-container {
+  width: 100%;
+  max-width: 820px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: scaleUp 0.2s ease-out;
+  padding: 0 !important;
+}
+
+.modal-header {
+  padding: 20px 30px;
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h2 {
+  font-size: 22px;
+  margin: 0;
+  color: #fff;
+  font-weight: 700;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 22px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.modal-close-btn:hover {
+  color: white;
+}
+
+.modal-content {
+  padding: 25px 30px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.settings-section {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.settings-section h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent-gold);
+}
+
+.layout-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .layout-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.layout-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.layout-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.layout-card.active {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+.layout-card-badge {
+  font-size: 10px;
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+
+.layout-card h4 {
+  font-size: 13px;
+  margin: 0 0 4px 0;
+}
+
+.layout-card p {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 120%;
+}
+
+.settings-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .settings-row-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.toggle-button-group {
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px;
+  border-radius: 10px;
+  gap: 4px;
+}
+
+.toggle-button-group button {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toggle-button-group button.active {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: white;
+}
+
+.theme-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.theme-btn {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.theme-btn.zen { background: #1b4d22; }
+.theme-btn.ocean { background: #004d40; }
+.theme-btn.sunset { background: #3e2723; }
+.theme-btn.dark { background: #0d0e15; }
+
+.theme-btn.active {
+  border-color: #fff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  transform: scale(1.02);
+}
+
+.checkbox-group {
+  margin-top: 15px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+}
+
+.checkbox-text {
+  font-size: 13px;
+  line-height: 140%;
+}
+
+.slider-group input {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.modal-footer {
+  padding: 15px 30px;
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.confirm-btn {
+  background: #ffffff;
+  color: #000;
+  font-weight: 700;
+  padding: 12px 30px;
+  border-radius: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirm-btn:hover {
+  background: #f0f0f0;
+  transform: scale(1.03);
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 12px 30px;
+  border-radius: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================================================
+   GAME FOOTER TOOLBAR
+   ========================================================================== */
+
+.game-footer-toolbar {
+  height: 70px;
+  min-height: 70px;
+  margin: 0 20px 15px 20px;
+  padding: 0 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.toolbar-left, .toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tool-action-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tool-action-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.tool-action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.restart-game-btn {
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid #d4af37;
+  color: #ffd700;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.restart-game-btn:hover {
+  background: rgba(212, 175, 55, 0.25);
+}
+
+.memory-alert-banner, .daily-banner {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   VICTORY DIALOG SCREENS & ANIMS
+   ========================================================================== */
+
+.victory-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.victory-modal {
+  max-width: 460px;
+  text-align: center;
+  padding: 40px !important;
+}
+
+.victory-icon {
+  font-size: 64px;
+  display: block;
+  margin-bottom: 15px;
+  animation: spinSlow 8s linear infinite;
+}
+
+.victory-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin: 25px 0;
+}
+
+.v-stat {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.v-stat-lbl {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.v-stat-val {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.stamp-earned {
+  grid-column: span 2;
+  border-color: #69f0ae;
+  background: rgba(105, 240, 174, 0.1);
+}
+
+.victory-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   KEYFRAME & MICRO-ANIMATION DEFINITIONS
+   ========================================================================== */
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulseHint {
+  0% { box-shadow: 0 0 4px rgba(24, 255, 255, 0.5); }
+  50% { box-shadow: 0 0 16px rgba(24, 255, 255, 0.95); }
+  100% { box-shadow: 0 0 4px rgba(24, 255, 255, 0.5); }
+}
+
+@keyframes spinSlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1.0); opacity: 1; }
+}
+
+/* Float styling for wind/petal particles */
+.floating-zen-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.zen-petal {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  background: rgba(255, 182, 193, 0.4);
+  border-radius: 15px 0 15px 15px;
+  animation: floatPetal 15s linear infinite;
+}
+
+/* Spawn coords and speeds for floating cherry blossoms */
+.petal-1 { left: 10%; top: -20px; animation-delay: 0s; }
+.petal-2 { left: 40%; top: -20px; animation-duration: 18s; animation-delay: 3s; }
+.petal-3 { left: 70%; top: -20px; animation-duration: 22s; animation-delay: 1s; }
+.petal-4 { left: 90%; top: -20px; animation-duration: 16s; animation-delay: 5s; }
+
+/* Dynamic coloration on themes */
+.ocean-decorations .zen-petal {
+  background: rgba(24, 255, 255, 0.15);
+  border-radius: 50%;
+  animation-name: floatBubble;
+}
+
+.bamboo-decorations .zen-petal {
+  background: rgba(105, 240, 174, 0.15);
+  border-radius: 100% 0 100% 0;
+}
+
+@keyframes floatPetal {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% { transform: translateY(105vh) translateX(120px) rotate(360deg); opacity: 0; }
+}
+
+@keyframes floatBubble {
+  0% { transform: translateY(105vh) scale(0.6); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-20px) translateX(-60px) scale(1.4); opacity: 0; }
+}

@@ -1,0 +1,8 @@
+/* App specific overrides if any. General styles are handled inside index.css */
+.app-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}

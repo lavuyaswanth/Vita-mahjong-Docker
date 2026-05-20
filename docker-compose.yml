@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  vita-mahjong:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vita-mahjong-game
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    volumes:
+      - /app/node_modules
+    environment:
+      - NODE_ENV=production
