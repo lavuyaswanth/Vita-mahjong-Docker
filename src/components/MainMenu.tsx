@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import { soundSynth } from '../mahjong/soundSynth';
 import logoImg from '../assets/logo.png';
+import {
+  SettingsIcon,
+  HelpIcon,
+  BrainIcon,
+  PlayIcon,
+  CalendarIcon,
+  EarnedStampIcon,
+  EmptyStampIcon,
+  CloseIcon
+} from './SvgIcons';
 
 interface MainMenuProps {
   onStartGame: (mode: 'solitaire' | 'memory' | 'daily') => void;
@@ -49,15 +59,17 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           className="menu-circle-btn" 
           onClick={() => { soundSynth.playClick(); onOpenSettings(); }} 
           title="Board Styles & Shapes"
+          aria-label="Settings"
         >
-          ⚙️
+          <SettingsIcon size={20} />
         </button>
         <button 
           className="menu-circle-btn" 
           onClick={() => { soundSynth.playClick(); setShowHowToPlay(true); }} 
           title="How to Play"
+          aria-label="How to play help"
         >
-          📖
+          <HelpIcon size={20} />
         </button>
       </div>
 
@@ -74,7 +86,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         {/* Left Side: Tasks (Memory Mode) */}
         <div className="menu-card glassmorphism memory-card" onClick={() => handlePlayClick('memory')}>
           <span className="card-badge">Brain Health</span>
-          <div className="menu-card-icon">🧠</div>
+          <div className="menu-card-icon">
+            <BrainIcon size={52} />
+          </div>
           <h3>Memory Match</h3>
           <p>Tiles face down. Remember layout pairs to boost cognitive recall.</p>
           <button className="play-card-btn">Memory Mode</button>
@@ -94,7 +108,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             aria-label="Start Classic Solitaire Mode"
           >
             <span className="play-btn-glow"></span>
-            <span className="play-btn-icon">🐢</span>
+            <div className="play-btn-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <PlayIcon size={38} />
+            </div>
             <div className="play-btn-text-group">
               <span className="play-btn-primary">PLAY SOLITAIRE</span>
               <span className="play-btn-secondary">Classic Match Mode</span>
@@ -105,7 +121,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         {/* Right Side: Daily challenge stamp quest */}
         <div className="menu-card glassmorphism daily-card" onClick={() => handlePlayClick('daily')}>
           <span className="card-badge gold-badge">Daily Seed</span>
-          <div className="menu-card-icon">📅</div>
+          <div className="menu-card-icon">
+            <CalendarIcon size={52} />
+          </div>
           <h3>Daily Zen Quest</h3>
           <p>Unique challenge puzzle. Earn visual stamps for calendar progress.</p>
           <button className="play-card-btn">Daily Play</button>
@@ -117,7 +135,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       <div className="menu-dashboard-wrapper">
         <div className="menu-dashboard glassmorphism">
           <div className="dashboard-item">
-            <h4>🌸 Weekly Zen Challenge Stamps</h4>
+            <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <EarnedStampIcon size={18} inline /> Weekly Zen Challenge Stamps
+            </h4>
             <div className="stamps-row">
               {Array.from({ length: 7 }).map((_, idx) => {
                 const day = new Date();
@@ -130,7 +150,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   <div key={idx} className={`stamp-cell ${isCompleted ? 'earned' : ''}`}>
                     <span className="stamp-day">{weekday}</span>
                     <div className="stamp-seal-outer">
-                      <span className="stamp-graphic">{isCompleted ? '💮' : '⚪'}</span>
+                      <div className="stamp-graphic" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {isCompleted ? <EarnedStampIcon size={28} /> : <EmptyStampIcon size={28} />}
+                      </div>
                     </div>
                     <span className="stamp-date">{day.getDate()}</span>
                   </div>
@@ -146,8 +168,12 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         <div className="modal-overlay" onClick={() => setShowHowToPlay(false)}>
           <div className="modal-container glassmorphism how-to-play-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>📖 How to Play Mahjong Solitaire</h2>
-              <button className="modal-close-btn" onClick={() => setShowHowToPlay(false)}>✕</button>
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <HelpIcon size={24} inline /> How to Play Mahjong Solitaire
+              </h2>
+              <button className="modal-close-btn" onClick={() => setShowHowToPlay(false)} aria-label="Close modal">
+                <CloseIcon size={18} />
+              </button>
             </div>
             <div className="modal-content">
               <div className="rules-grid">

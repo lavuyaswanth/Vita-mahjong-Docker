@@ -2,6 +2,21 @@ import React from 'react';
 import { layouts } from '../mahjong/layouts';
 import type { LayoutName } from '../mahjong/layouts';
 import { soundSynth } from '../mahjong/soundSynth';
+import {
+  SettingsIcon,
+  LayoutIcon,
+  ClassicTileStyleIcon,
+  LargePrintStyleIcon,
+  NatureStyleIcon,
+  ModernPopStyleIcon,
+  ZenGardenIcon,
+  OceanIcon,
+  AmberWoodIcon,
+  HealingDarkIcon,
+  AccessibilityIcon,
+  AudioIcon,
+  CloseIcon
+} from './SvgIcons';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -71,14 +86,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       <div className="modal-container glassmorphism" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="modal-header">
-          <h2>⚙️ Game Settings & Layouts</h2>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close settings">✕</button>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <SettingsIcon size={24} inline /> Game Settings & Layouts
+          </h2>
+          <button className="modal-close-btn" onClick={onClose} aria-label="Close settings" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CloseIcon size={18} />
+          </button>
         </div>
 
         <div className="modal-content">
           {/* Section 1: Level Layout Selector */}
           <div className="settings-section">
-            <h3>🎨 Choose Layout Board</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <LayoutIcon size={20} inline /> Choose Layout Board
+            </h3>
             <div className="layout-cards-grid">
               {Object.values(layouts).map(l => (
                 <div
@@ -100,7 +121,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="settings-row-grid">
             {/* Section 2: Visual Adjustments */}
             <div className="settings-section">
-              <h3>🖌️ Visual Style</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                Visual Style
+              </h3>
               
               <div className="form-group">
                 <label>Tile Representation:</label>
@@ -108,26 +131,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <button
                     className={styleSet === 'classic' ? 'active' : ''}
                     onClick={() => { setStyleSet('classic'); soundSynth.playClick(); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                   >
-                    🀄 Classic Chinese
+                    <ClassicTileStyleIcon size={18} /> Classic Chinese
                   </button>
                   <button
                     className={styleSet === 'largePrint' ? 'active' : ''}
                     onClick={() => { setStyleSet('largePrint'); soundSynth.playClick(); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                   >
-                    🅰️ Large Western Print
+                    <LargePrintStyleIcon size={18} /> Large Western Print
                   </button>
                   <button
                     className={styleSet === 'nature' ? 'active' : ''}
                     onClick={() => { setStyleSet('nature'); soundSynth.playClick(); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                   >
-                    🌲 Relaxing Nature
+                    <NatureStyleIcon size={18} /> Relaxing Nature
                   </button>
                   <button
                     className={styleSet === 'modernPop' ? 'active' : ''}
                     onClick={() => { setStyleSet('modernPop'); soundSynth.playClick(); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                   >
-                    💎 Modern Neon Pop
+                    <ModernPopStyleIcon size={18} /> Modern Neon Pop
                   </button>
                 </div>
               </div>
@@ -139,43 +166,48 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     className={`theme-btn zen ${bgTheme === 'zen' ? 'active' : ''}`}
                     onClick={() => { setBgTheme('zen'); soundSynth.playClick(); }}
                     title="Bamboo Zen Garden"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                   >
-                    🎋 Zen Garden
+                    <ZenGardenIcon size={18} /> Zen Garden
                   </button>
                   <button
                     className={`theme-btn ocean ${bgTheme === 'ocean' ? 'active' : ''}`}
                     onClick={() => { setBgTheme('ocean'); soundSynth.playClick(); }}
                     title="Deep Healing Ocean"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                   >
-                    🌊 Deep Ocean
+                    <OceanIcon size={18} /> Deep Ocean
                   </button>
                   <button
                     className={`theme-btn sunset ${bgTheme === 'sunset' ? 'active' : ''}`}
                     onClick={() => { setBgTheme('sunset'); soundSynth.playClick(); }}
                     title="Sunset Cozy Cabin"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                   >
-                    🪵 Sunset Amber
+                    <AmberWoodIcon size={18} /> Sunset Amber
                   </button>
                   <button
                     className={`theme-btn dark ${bgTheme === 'dark' ? 'active' : ''}`}
                     onClick={() => { setBgTheme('dark'); soundSynth.playClick(); }}
                     title="Midnight Healing Space"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                   >
-                    🌌 Healing Dark
+                    <HealingDarkIcon size={18} /> Healing Dark
                   </button>
                 </div>
               </div>
 
               {/* Accessibility toggles */}
               <div className="form-group checkbox-group">
-                <label className="checkbox-label">
+                <label className="checkbox-label" style={{ display: 'flex', alignItems: 'center' }}>
                   <input
                     type="checkbox"
                     checked={highContrast}
                     onChange={(e) => { setHighContrast(e.target.checked); soundSynth.playSelect(); }}
                   />
-                  <span className="checkbox-text">
-                    <strong>👁️ Senior High-Contrast Labels:</strong> Adds large text badges on top of complex tiles for effortless reading.
+                  <span className="checkbox-text" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <AccessibilityIcon size={18} inline />
+                    <span><strong>Senior High-Contrast Labels:</strong> Adds large text badges on top of complex tiles for effortless reading.</span>
                   </span>
                 </label>
               </div>
@@ -183,7 +215,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             {/* Section 3: Audio Synthesizer Controls */}
             <div className="settings-section">
-              <h3>🎵 Zen Synth Audio</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AudioIcon size={20} inline /> Zen Synth Audio
+              </h3>
 
               <div className="form-group slider-group">
                 <div className="slider-header">

@@ -15,6 +15,19 @@ import MahjongBoard from './components/MahjongBoard';
 import MainMenu from './components/MainMenu';
 import SettingsModal from './components/SettingsModal';
 import './App.css';
+import {
+  SettingsIcon,
+  BackIcon,
+  TileIcon,
+  MatchIcon,
+  TimerIcon,
+  UndoIcon,
+  HintIcon,
+  ShuffleIcon,
+  RestartIcon,
+  EarnedStampIcon
+} from './components/SvgIcons';
+
 
 interface UndoAction {
   tile1: TileState;
@@ -407,8 +420,8 @@ export const App: React.FC = () => {
           {/* Relaxing Status Panel */}
           <header className="game-header">
             <div className="header-left">
-              <button className="back-menu-btn" onClick={handleBackToMenu} title="Main Menu">
-                ←
+              <button className="back-menu-btn" onClick={handleBackToMenu} title="Main Menu" aria-label="Back to main menu">
+                <BackIcon size={16} />
               </button>
               <span className="layout-badge">
                 {layouts[activeLayout].displayName}
@@ -416,23 +429,23 @@ export const App: React.FC = () => {
             </div>
 
             <div className="header-stats">
-              <div className="stat-pill">
-                <span className="stat-label">🧱</span>
+              <div className="stat-pill" title="Remaining Tiles">
+                <span className="stat-label" style={{ display: 'flex', alignItems: 'center' }}><TileIcon size={16} /></span>
                 <span className="stat-value">{tilesLeft}/{totalTiles}</span>
               </div>
-              <div className="stat-pill" style={{ opacity: gameMode === 'memory' ? 0.3 : 1 }}>
-                <span className="stat-label">🤝</span>
+              <div className="stat-pill" style={{ opacity: gameMode === 'memory' ? 0.3 : 1 }} title="Available Matches">
+                <span className="stat-label" style={{ display: 'flex', alignItems: 'center' }}><MatchIcon size={16} /></span>
                 <span className="stat-value">{possibleMovesCount}</span>
               </div>
-              <div className="stat-pill">
-                <span className="stat-label">⏱️</span>
+              <div className="stat-pill" title="Time Elapsed">
+                <span className="stat-label" style={{ display: 'flex', alignItems: 'center' }}><TimerIcon size={15} /></span>
                 <span className="stat-value">{formatTime(timer)}</span>
               </div>
             </div>
 
             <div className="header-right">
-              <button className="icon-btn" onClick={() => { soundSynth.playClick(); setIsSettingsOpen(true); }} title="Settings">
-                ⚙️
+              <button className="icon-btn" onClick={() => { soundSynth.playClick(); setIsSettingsOpen(true); }} title="Settings" aria-label="Settings">
+                <SettingsIcon size={18} />
               </button>
             </div>
           </header>
@@ -459,31 +472,35 @@ export const App: React.FC = () => {
                 onClick={handleUndo}
                 disabled={undoStack.length === 0 || gameMode === 'memory'}
                 title="Undo last matching move"
+                aria-label="Undo"
               >
-                ↩️
+                <UndoIcon size={22} />
               </button>
               <button
                 className="tool-action-btn"
                 onClick={handleHint}
                 disabled={possibleMovesCount === 0 || gameMode === 'memory'}
                 title="Show a matching pair hint"
+                aria-label="Hint"
               >
-                💡
+                <HintIcon size={22} />
               </button>
               <button
                 className="tool-action-btn"
                 onClick={handleShuffle}
                 disabled={tilesLeft === 0 || gameMode === 'memory'}
                 title="Shuffle unmatched tiles"
+                aria-label="Shuffle"
               >
-                🔀
+                <ShuffleIcon size={22} />
               </button>
               <button
                 className="tool-action-btn"
                 onClick={() => initGame(gameMode, activeLayout)}
                 title="Restart Puzzle"
+                aria-label="Restart"
               >
-                🔄
+                <RestartIcon size={22} />
               </button>
             </div>
           </footer>
@@ -519,14 +536,16 @@ export const App: React.FC = () => {
       {showNoMovesModal && (
         <div className="modal-overlay">
           <div className="modal-container glassmorphism stalemate-modal">
-            <h3>🔀 No Matches Left</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <ShuffleIcon size={22} inline /> No Matches Left
+            </h3>
             <p>Don't worry! This is normal. You can shuffle the remaining tiles or undo a couple of moves to try a different strategy path.</p>
             <div className="stalemate-buttons">
-              <button className="confirm-btn glassmorphism" onClick={handleShuffle}>
-                🔀 Shuffle Remaining
+              <button className="confirm-btn glassmorphism" onClick={handleShuffle} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ShuffleIcon size={16} inline /> Shuffle Remaining
               </button>
-              <button className="cancel-btn glassmorphism" onClick={handleUndo} disabled={undoStack.length === 0}>
-                ↩️ Undo Last Move
+              <button className="cancel-btn glassmorphism" onClick={handleUndo} disabled={undoStack.length === 0} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <UndoIcon size={16} inline /> Undo Last Move
               </button>
             </div>
           </div>
@@ -537,7 +556,9 @@ export const App: React.FC = () => {
       {showWinScreen && (
         <div className="modal-overlay victory-overlay animate-fade-in">
           <div className="modal-container glassmorphism victory-modal text-center animate-scale-up">
-            <span className="victory-icon">🌸</span>
+            <div className="victory-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto' }}>
+              <EarnedStampIcon size={64} />
+            </div>
             <h2>Puzzle Solved!</h2>
             <p>Congratulations, you have cleared all tiles! Your mind is relaxed and active.</p>
             
@@ -553,17 +574,19 @@ export const App: React.FC = () => {
               {gameMode === 'daily' && (
                 <div className="v-stat stamp-earned">
                   <span className="v-stat-lbl">Daily Stamp</span>
-                  <span className="v-stat-val">🌸 Earned!</span>
+                  <span className="v-stat-val" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                    <EarnedStampIcon size={16} inline /> Earned!
+                  </span>
                 </div>
               )}
             </div>
 
             <div className="victory-buttons">
-              <button className="confirm-btn glassmorphism" onClick={() => initGame(gameMode, activeLayout)}>
-                🔄 Play Again
+              <button className="confirm-btn glassmorphism" onClick={() => initGame(gameMode, activeLayout)} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                <RestartIcon size={16} inline /> Play Again
               </button>
-              <button className="cancel-btn glassmorphism" onClick={handleBackToMenu}>
-                🏠 Main Menu
+              <button className="cancel-btn glassmorphism" onClick={handleBackToMenu} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                <BackIcon size={16} inline /> Main Menu
               </button>
             </div>
           </div>

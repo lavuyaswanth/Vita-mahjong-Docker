@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import type { TileState } from '../mahjong/gameEngine';
 import Tile from './Tile';
+import { ZoomInIcon, ZoomOutIcon, ResetZoomIcon } from './SvgIcons';
 
 interface MahjongBoardProps {
   tiles: TileState[];
@@ -235,9 +236,15 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     <div className="mahjong-board-outer">
       {/* Zoom and Pan Floating Toolbar */}
       <div className="board-toolbar glassmorphism">
-        <button onClick={zoomIn} aria-label="Zoom in" className="toolbar-btn">➕</button>
-        <button onClick={zoomOut} aria-label="Zoom out" className="toolbar-btn">➖</button>
-        <button onClick={resetZoom} aria-label="Reset zoom and center" className="toolbar-btn">🎯</button>
+        <button onClick={zoomIn} aria-label="Zoom in" className="toolbar-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <ZoomInIcon size={18} />
+        </button>
+        <button onClick={zoomOut} aria-label="Zoom out" className="toolbar-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <ZoomOutIcon size={18} />
+        </button>
+        <button onClick={resetZoom} aria-label="Reset zoom and center" className="toolbar-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <ResetZoomIcon size={18} />
+        </button>
         <span className="toolbar-hint">Drag board to pan</span>
       </div>
 
