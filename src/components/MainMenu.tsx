@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { soundSynth } from '../mahjong/soundSynth';
+import logoImg from '../assets/logo.png';
 
 interface MainMenuProps {
   onStartGame: (mode: 'solitaire' | 'memory' | 'daily') => void;
@@ -28,71 +29,115 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
   return (
     <div className="main-menu-container">
-      {/* Title */}
+      {/* Falling Cherry Blossoms Particle Layer */}
+      <div className="cherry-blossoms-container">
+        <div className="petal"></div>
+        <div className="petal"></div>
+        <div className="petal"></div>
+        <div className="petal"></div>
+        <div className="petal"></div>
+        <div className="petal"></div>
+        <div className="petal"></div>
+        <div className="petal"></div>
+        <div className="petal"></div>
+        <div className="petal"></div>
+      </div>
+
+      {/* Top Quick Settings Bar */}
+      <div className="menu-top-actions">
+        <button 
+          className="menu-circle-btn" 
+          onClick={() => { soundSynth.playClick(); onOpenSettings(); }} 
+          title="Board Styles & Shapes"
+        >
+          ⚙️
+        </button>
+        <button 
+          className="menu-circle-btn" 
+          onClick={() => { soundSynth.playClick(); setShowHowToPlay(true); }} 
+          title="How to Play"
+        >
+          📖
+        </button>
+      </div>
+
+      {/* Brand Hero Header */}
       <div className="menu-hero-header">
-        <h1 className="menu-title">🀄 VITA MAHJONG</h1>
+        <div className="logo-glow-behind"></div>
+        <img src={logoImg} className="menu-logo-img" alt="Vita Mahjong Logo" />
         <p className="menu-subtitle">A Soothing, Senior-Friendly Solitaire Match & Brain-Training game</p>
       </div>
 
-      {/* Main Mode Select Box */}
-      <div className="menu-cards-row">
-        {/* Card 1: Relaxing Solitaire */}
-        <div className="menu-card glassmorphism highlighted-card" onClick={() => handlePlayClick('solitaire')}>
-          <div className="menu-card-icon">🐢</div>
-          <h3>Relaxing Solitaire</h3>
-          <p>Traditional tile matching. Take your time, clear the board, use unlimited shuffles and hints. No stress, pure peace.</p>
-          <button className="play-card-btn">Classic Mode</button>
-        </div>
-
-        {/* Card 2: Active Mind Memory Mode */}
+      {/* Central Interactive Gameplay Zone */}
+      <div className="menu-game-zone">
+        
+        {/* Left Side: Tasks (Memory Mode) */}
         <div className="menu-card glassmorphism memory-card" onClick={() => handlePlayClick('memory')}>
+          <span className="card-badge">Brain Health</span>
           <div className="menu-card-icon">🧠</div>
-          <span className="card-badge">Improvement</span>
-          <h3>Memory Mahjong</h3>
-          <p>A cognitive booster! Tiles are flipped face-down. Click to reveal, and match pairs by remembering locations on the stack.</p>
+          <h3>Memory Match</h3>
+          <p>Tiles face down. Remember layout pairs to boost cognitive recall.</p>
           <button className="play-card-btn">Memory Mode</button>
         </div>
 
-        {/* Card 3: Daily Challenge */}
+        {/* Center Hero: Classic Play Medallion */}
+        <div className="menu-medallion-container">
+          <div className="medallion-glow"></div>
+          {/* Concentric rotating plates */}
+          <div className="medallion-plate-outer"></div>
+          <div className="medallion-plate-inner"></div>
+          
+          {/* Main glossy Pill play action */}
+          <button 
+            className="medallion-play-btn" 
+            onClick={() => handlePlayClick('solitaire')}
+            aria-label="Start Classic Solitaire Mode"
+          >
+            <span className="play-btn-glow"></span>
+            <span className="play-btn-icon">🐢</span>
+            <div className="play-btn-text-group">
+              <span className="play-btn-primary">PLAY SOLITAIRE</span>
+              <span className="play-btn-secondary">Classic Match Mode</span>
+            </div>
+          </button>
+        </div>
+
+        {/* Right Side: Daily challenge stamp quest */}
         <div className="menu-card glassmorphism daily-card" onClick={() => handlePlayClick('daily')}>
+          <span className="card-badge gold-badge">Daily Seed</span>
           <div className="menu-card-icon">📅</div>
           <h3>Daily Zen Quest</h3>
-          <p>Play the unique seeded puzzle of the day. Earn visual completion stamps and build a relaxation calendar habit.</p>
+          <p>Unique challenge puzzle. Earn visual stamps for calendar progress.</p>
           <button className="play-card-btn">Daily Play</button>
         </div>
+
       </div>
 
-      {/* Quick Dashboard */}
-      <div className="menu-dashboard glassmorphism">
-        <div className="dashboard-item">
-          <h4>📅 Daily Challenge Stamps</h4>
-          <div className="stamps-row">
-            {Array.from({ length: 7 }).map((_, idx) => {
-              const day = new Date();
-              day.setDate(day.getDate() - (6 - idx));
-              const dateString = day.toISOString().split('T')[0];
-              const isCompleted = completedDailies.includes(dateString);
-              const weekday = day.toLocaleDateString('en-US', { weekday: 'short' });
+      {/* Calendar Stamps Dashboard */}
+      <div className="menu-dashboard-wrapper">
+        <div className="menu-dashboard glassmorphism">
+          <div className="dashboard-item">
+            <h4>🌸 Weekly Zen Challenge Stamps</h4>
+            <div className="stamps-row">
+              {Array.from({ length: 7 }).map((_, idx) => {
+                const day = new Date();
+                day.setDate(day.getDate() - (6 - idx));
+                const dateString = day.toISOString().split('T')[0];
+                const isCompleted = completedDailies.includes(dateString);
+                const weekday = day.toLocaleDateString('en-US', { weekday: 'short' });
 
-              return (
-                <div key={idx} className={`stamp-cell ${isCompleted ? 'earned' : ''}`}>
-                  <span className="stamp-day">{weekday}</span>
-                  <span className="stamp-graphic">{isCompleted ? '🌸' : '⚪'}</span>
-                  <span className="stamp-date">{day.getDate()}</span>
-                </div>
-              );
-            })}
+                return (
+                  <div key={idx} className={`stamp-cell ${isCompleted ? 'earned' : ''}`}>
+                    <span className="stamp-day">{weekday}</span>
+                    <div className="stamp-seal-outer">
+                      <span className="stamp-graphic">{isCompleted ? '💮' : '⚪'}</span>
+                    </div>
+                    <span className="stamp-date">{day.getDate()}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-
-        {/* Toolbar Footer inside Dashboard */}
-        <div className="dashboard-buttons">
-          <button className="menu-action-btn glassmorphism" onClick={() => { soundSynth.playClick(); onOpenSettings(); }}>
-            ⚙️ Settings & Board Shapes
-          </button>
-          <button className="menu-action-btn glassmorphism" onClick={() => { soundSynth.playClick(); setShowHowToPlay(true); }}>
-            📖 How To Play
-          </button>
         </div>
       </div>
 
@@ -106,21 +151,33 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             </div>
             <div className="modal-content">
               <div className="rules-grid">
-                <div>
-                  <h4>1. Match Identical Tiles</h4>
-                  <p>Click two identical tiles to clear them from the board. Clearance reveals tiles below and unlocks new possibilities.</p>
+                <div className="rule-item">
+                  <span className="rule-num">1</span>
+                  <div>
+                    <h4>Match Identical Tiles</h4>
+                    <p>Click two identical tiles to clear them from the board. Clearance reveals tiles below and unlocks new possibilities.</p>
+                  </div>
                 </div>
-                <div>
-                  <h4>2. Use "Free" Tiles Only</h4>
-                  <p>A tile is only selectable if it is <strong>free</strong>. This means it has <strong>no tiles stacked on top of it</strong> AND it has <strong>no neighbor tile on either its immediate left OR right</strong>.</p>
+                <div className="rule-item">
+                  <span className="rule-num">2</span>
+                  <div>
+                    <h4>Use "Free" Tiles Only</h4>
+                    <p>A tile is only selectable if it is <strong>free</strong>. This means it has <strong>no tiles stacked on top of it</strong> AND it has <strong>no neighbor tile on either its immediate left OR right</strong>.</p>
+                  </div>
                 </div>
-                <div>
-                  <h4>3. Special Matching Types</h4>
-                  <p>All **Seasons** tiles (Spring, Summer, Autumn, Winter) match with one another. All **Flowers** tiles (Plum, Orchid, Bamboo, Chrysanthemum) match with one another.</p>
+                <div className="rule-item">
+                  <span className="rule-num">3</span>
+                  <div>
+                    <h4>Special Matching Types</h4>
+                    <p>All **Seasons** tiles (Spring, Summer, Autumn, Winter) match with one another. All **Flowers** tiles (Plum, Orchid, Bamboo, Chrysanthemum) match with one another.</p>
+                  </div>
                 </div>
-                <div>
-                  <h4>4. Unique Memory Mode</h4>
-                  <p>In memory training, matching tiles are initially face-down. Reveal a tile by clicking it. Match them by keeping track of where their duplicates are hidden!</p>
+                <div className="rule-item">
+                  <span className="rule-num">4</span>
+                  <div>
+                    <h4>Unique Memory Mode</h4>
+                    <p>In memory training, matching tiles are initially face-down. Reveal a tile by clicking it. Match them by keeping track of where their duplicates are hidden!</p>
+                  </div>
                 </div>
               </div>
             </div>
