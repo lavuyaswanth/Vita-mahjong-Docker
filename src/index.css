@@ -12,8 +12,8 @@
   /* Global variables overridden by themes */
   --tile-bg: #faf6ec;
   --tile-color: #1a1a1a;
-  --tile-border-3d: #e4dcb9;
-  --tile-border-dark: #126c36; /* Jade/bamboo green backing for standard theme */
+  --tile-border-3d: #388e3c;
+  --tile-border-dark: #2e7d32; /* Jade/bamboo green backing for standard theme */
   --tile-shadow: rgba(0, 0, 0, 0.4);
   --glass-bg: rgba(26, 15, 9, 0.85); /* Rich dark wood glass */
   --glass-border: rgba(184, 151, 66, 0.25); /* Gold tinted border */
@@ -53,8 +53,8 @@ body {
 .app-root.app-theme-zen {
   background: radial-gradient(circle at center, #2e1d11 0%, #150d07 100%);
   --tile-bg: #faf6ec;
-  --tile-border-3d: #ebdcb9;
-  --tile-border-dark: #1b5e20; /* Bamboo green backing */
+  --tile-border-3d: #388e3c;
+  --tile-border-dark: #2e7d32; /* Bamboo green backing */
   --accent-color: #69f0ae;
 }
 
@@ -839,8 +839,9 @@ body {
   height: 100%;
   position: relative;
   overflow: hidden;
-  /* Green casino felt radial gradient background */
-  background: radial-gradient(circle at center, #1b4d22 0%, #0d2612 100%);
+  /* Green casino felt radial gradient background + micro-weave fiber noise filter */
+  background: radial-gradient(circle at center, #1b4d22 0%, #0d2612 100%),
+              url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
   border-radius: 16px;
   /* Thick wood frame border effect */
   border: 12px solid #3e2213;
@@ -848,17 +849,20 @@ body {
   box-sizing: border-box;
 }
 
-/* Theme adjustments on board container */
+/* Theme adjustments on board container with matching felt noise overlay */
 .app-theme-ocean .mahjong-board-container {
-  background: radial-gradient(circle at center, #102a43 0%, #081622 100%);
+  background: radial-gradient(circle at center, #102a43 0%, #081622 100%),
+              url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
   border-color: #2b1f1a;
 }
 .app-theme-sunset .mahjong-board-container {
-  background: radial-gradient(circle at center, #4c1a17 0%, #200807 100%);
+  background: radial-gradient(circle at center, #4c1a17 0%, #200807 100%),
+              url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.045'/%3E%3C/svg%3E");
   border-color: #3e2213;
 }
 .app-theme-dark .mahjong-board-container {
-  background: radial-gradient(circle at center, #181824 0%, #0b0b12 100%);
+  background: radial-gradient(circle at center, #181824 0%, #0b0b12 100%),
+              url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
   border-color: #1a1a1c;
 }
 
@@ -909,6 +913,8 @@ body {
   box-sizing: border-box;
   border-radius: 5px;
   transition: transform 0.18s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.18s ease-out;
+  /* Premium drop shadow filter that conforms to the realistic skewed 3D boundaries */
+  filter: drop-shadow(-3px 4px 4px rgba(0, 0, 0, 0.3));
 }
 
 /* Playable free tile hover lift and tactile outer glow */
@@ -979,12 +985,32 @@ body {
   overflow: hidden;
 }
 
+/* Polished Specular Gloss Sheen Overlay */
+.tile-face::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(135deg, transparent 42%, rgba(255, 255, 255, 0.12) 50%, transparent 58%);
+  pointer-events: none;
+  transform: rotate(25deg);
+}
+
 /* Layer heights shadow sizing for tactile stacked feeling */
 .layer-0 { box-shadow: -2px 2px 4px var(--tile-shadow); }
 .layer-1 { box-shadow: -4px 4px 8px var(--tile-shadow); }
 .layer-2 { box-shadow: -6px 6px 12px var(--tile-shadow); }
 .layer-3 { box-shadow: -8px 8px 16px var(--tile-shadow); }
 .layer-4 { box-shadow: -10px 10px 20px var(--tile-shadow); }
+
+/* Elevation-based illumination shading for stacking depth clues */
+.layer-0 .tile-face { filter: brightness(0.83) contrast(0.96); }
+.layer-1 .tile-face { filter: brightness(0.89) contrast(0.98); }
+.layer-2 .tile-face { filter: brightness(0.94); }
+.layer-3 .tile-face { filter: brightness(1.0); }
+.layer-4 .tile-face { filter: brightness(1.06) contrast(1.02); }
 
 /* Tile States (Selection, Hinted, Blocked) */
 .mahjong-tile.selected .tile-face {
@@ -1628,4 +1654,566 @@ body {
   10% { opacity: 0.6; }
   90% { opacity: 0.6; }
   100% { transform: translateY(-20px) translateX(-60px) scale(1.4); opacity: 0; }
+}
+
+/* ==========================================================================
+   PHASE 1 — COMBO STREAK SYSTEM (#1)
+   ========================================================================== */
+
+.combo-popup {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 32px;
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  pointer-events: none;
+  animation: comboFloat 1.2s ease-out forwards;
+  font-family: var(--font-sans);
+  letter-spacing: 1px;
+}
+
+@keyframes comboFloat {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px) scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-80px) scale(0.9);
+  }
+}
+
+.stat-pill-combo {
+  background: linear-gradient(135deg, rgba(255, 107, 0, 0.25) 0%, rgba(255, 50, 0, 0.2) 100%);
+  border: 1px solid rgba(255, 152, 0, 0.5);
+  border-radius: 20px;
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: comboPulse 0.6s ease-in-out infinite alternate;
+}
+
+.combo-fire {
+  font-size: 16px;
+  animation: fireFlicker 0.3s ease-in-out infinite alternate;
+}
+
+@keyframes comboPulse {
+  0% { box-shadow: 0 0 6px rgba(255, 107, 0, 0.3); }
+  100% { box-shadow: 0 0 16px rgba(255, 107, 0, 0.6); }
+}
+
+@keyframes fireFlicker {
+  0% { transform: scale(1) rotate(-5deg); }
+  100% { transform: scale(1.15) rotate(5deg); }
+}
+
+/* ==========================================================================
+   PHASE 1 — PROGRESS BAR (#17)
+   ========================================================================== */
+
+.progress-bar-container {
+  position: relative;
+  width: 100%;
+  height: 18px;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid rgba(184, 151, 66, 0.15);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1b5e20 0%, #4caf50 40%, #8bc34a 70%, #ffd700 100%);
+  border-radius: 0 4px 4px 0;
+  transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+  position: relative;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3));
+  animation: progressShine 2s ease-in-out infinite;
+}
+
+@keyframes progressShine {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+.progress-bar-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   PHASE 1 — COUNTDOWN TIMER (#4)
+   ========================================================================== */
+
+.stat-pill-countdown {
+  background: rgba(0, 100, 0, 0.2);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 20px;
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.stat-pill-countdown.countdown-urgent {
+  background: rgba(200, 0, 0, 0.25);
+  border-color: rgba(255, 82, 82, 0.6);
+  animation: urgentPulse 0.8s ease-in-out infinite alternate;
+}
+
+.stat-pill-countdown.countdown-urgent .stat-pill-val {
+  color: #ff5252;
+}
+
+@keyframes urgentPulse {
+  0% {
+    box-shadow: 0 0 4px rgba(255, 82, 82, 0.3);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 18px rgba(255, 82, 82, 0.7);
+    transform: scale(1.04);
+  }
+}
+
+/* ==========================================================================
+   PHASE 1 — STAR RATING (#2)
+   ========================================================================== */
+
+.victory-stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 0 15px 0;
+}
+
+.star-icon {
+  font-size: 32px;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.star-earned {
+  animation: starPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));
+}
+
+.star-earned:nth-child(2) { animation-delay: 0.15s; }
+.star-earned:nth-child(3) { animation-delay: 0.3s; }
+
+.star-empty {
+  font-size: 32px;
+  color: rgba(255, 255, 255, 0.2);
+  filter: grayscale(1);
+}
+
+@keyframes starPop {
+  0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+  60% { transform: scale(1.3) rotate(10deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* ==========================================================================
+   PHASE 1 — PROGRESSIVE LEVEL UNLOCK (#5)
+   ========================================================================== */
+
+.layout-card.layout-locked {
+  filter: brightness(0.45) grayscale(0.5);
+  cursor: not-allowed;
+  position: relative;
+  pointer-events: auto;
+}
+
+.layout-card.layout-locked:hover {
+  transform: none;
+  border-color: rgba(201, 168, 76, 0.15);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+}
+
+.lock-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 42px;
+  z-index: 5;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+  animation: lockBounce 2s ease-in-out infinite;
+}
+
+@keyframes lockBounce {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -55%) scale(1.08); }
+}
+
+.layout-best-stars {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+/* ==========================================================================
+   PHASE 1 — TIMED RUSH MENU CARD
+   ========================================================================== */
+
+.menu-timed-section {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 400px;
+  z-index: 5;
+  margin: 0 auto;
+}
+
+.timed-card {
+  width: 100%;
+  min-height: 180px;
+  background: linear-gradient(135deg, rgba(80, 20, 10, 0.95) 0%, rgba(40, 10, 5, 0.98) 100%) !important;
+  border-color: rgba(255, 82, 82, 0.35) !important;
+}
+
+.timed-card:hover {
+  border-color: #ff5252 !important;
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 82, 82, 0.2) !important;
+}
+
+.timed-card .play-card-btn {
+  background: linear-gradient(to bottom, #c62828 0%, #8e0000 100%);
+  border-color: rgba(255, 82, 82, 0.5);
+  color: #ffcdd2;
+}
+
+.timed-card:hover .play-card-btn {
+  background: linear-gradient(to bottom, #ff5252 0%, #d32f2f 100%);
+  color: #fff;
+  border-color: #ff8a80;
+  box-shadow: 0 4px 10px rgba(255, 82, 82, 0.3);
+}
+
+/* ==========================================================================
+   HEADER SUB-STATS PILL ROW (shared across all pills)
+   ========================================================================== */
+
+.header-sub-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 15px;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(184, 151, 66, 0.1);
+}
+
+.stat-pill-score,
+.stat-pill-matches {
+  background: rgba(8, 30, 16, 0.5);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: 20px;
+  padding: 3px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-pill-label {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-pill-val {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffd700;
+  font-family: var(--font-sans);
+}
+
+/* ==========================================================================
+   LEVEL TITLE IN HEADER
+   ========================================================================== */
+
+.level-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  letter-spacing: 1px;
+}
+
+/* Theme adjustments on selected tiles */
+.app-theme-ocean .mahjong-tile.selected .tile-face {
+  border-color: #00f2fe !important;
+  box-shadow: 0 0 18px rgba(0, 242, 254, 0.95), inset 0 0 6px rgba(0, 242, 254, 0.2) !important;
+}
+.app-theme-sunset .mahjong-tile.selected .tile-face {
+  border-color: #ff6d00 !important;
+  box-shadow: 0 0 18px rgba(255, 109, 0, 0.95), inset 0 0 6px rgba(255, 109, 0, 0.2) !important;
+}
+.app-theme-dark .mahjong-tile.selected .tile-face {
+  border-color: #9d4edd !important;
+  box-shadow: 0 0 18px rgba(157, 78, 221, 0.95), inset 0 0 6px rgba(157, 78, 221, 0.2) !important;
+}
+
+/* Tactile blocked tile wobble visual shake feedback */
+@keyframes tile-wobble {
+  0%, 100% { transform: translate(var(--shift-x), var(--shift-y)) rotate(0deg); }
+  15% { transform: translate(calc(var(--shift-x) - 4px), var(--shift-y)) rotate(-2deg); }
+  30% { transform: translate(calc(var(--shift-x) + 4px), var(--shift-y)) rotate(2deg); }
+  45% { transform: translate(calc(var(--shift-x) - 3px), var(--shift-y)) rotate(-1.5deg); }
+  60% { transform: translate(calc(var(--shift-x) + 3px), var(--shift-y)) rotate(1.5deg); }
+  75% { transform: translate(calc(var(--shift-x) - 1px), var(--shift-y)) rotate(-0.5deg); }
+  90% { transform: translate(calc(var(--shift-x) + 1px), var(--shift-y)) rotate(0.5deg); }
+}
+
+.mahjong-tile.wobble {
+  animation: tile-wobble 0.4s ease-in-out !important;
+  z-index: 200 !important; /* Paint over others when shaking */
+}
+
+/* ==========================================================================
+   ACHIEVEMENTS SYSTEM & FLOATING TOASTS
+   ========================================================================== */
+
+/* Achievement Unlocked Toast Notification */
+.achievement-toast {
+  position: fixed;
+  bottom: 100px;
+  right: 24px;
+  background: rgba(26, 15, 9, 0.95);
+  border: 2px solid #c9a84c;
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(201, 168, 76, 0.3);
+  z-index: 99999;
+  max-width: 360px;
+  animation: toastSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             toastFadeOut 0.5s ease-in 4.5s forwards;
+  pointer-events: none;
+}
+
+@keyframes toastSlideIn {
+  from { transform: translateX(120%) translateY(0); opacity: 0; }
+  to { transform: translateX(0) translateY(0); opacity: 1; }
+}
+
+@keyframes toastFadeOut {
+  from { transform: translateX(0) scale(1); opacity: 1; }
+  to { transform: translateX(50px) scale(0.9); opacity: 0; }
+}
+
+.toast-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
+  animation: spinGlow 3s linear infinite;
+}
+
+.toast-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.toast-header {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffd700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.toast-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.toast-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 120%;
+}
+
+/* Achievements Trophy Room modal custom overrides */
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 10px;
+}
+
+@media (max-width: 600px) {
+  .achievements-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.achievement-badge-card {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.achievement-badge-card.unlocked {
+  border-color: rgba(201, 168, 76, 0.5);
+  background: linear-gradient(135deg, rgba(36, 21, 13, 0.5) 0%, rgba(20, 10, 5, 0.6) 100%);
+  box-shadow: inset 0 0 15px rgba(201, 168, 76, 0.15);
+}
+
+.achievement-badge-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.achievement-badge-card.unlocked:hover {
+  border-color: var(--accent-gold);
+  box-shadow: 0 6px 20px rgba(201, 168, 76, 0.2), inset 0 0 15px rgba(201, 168, 76, 0.15);
+}
+
+.badge-graphic-container {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.unlocked .badge-graphic-container {
+  background: linear-gradient(135deg, #422615 0%, #29170c 100%);
+  border-color: #c9a84c;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.badge-svg {
+  width: 36px;
+  height: 36px;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.achievement-badge-card:hover .badge-svg {
+  transform: scale(1.18) rotate(5deg);
+}
+
+.badge-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.badge-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 2px;
+  transition: color 0.2s ease;
+}
+
+.unlocked .badge-name {
+  color: #ffd700;
+}
+
+.badge-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 120%;
+  transition: color 0.2s ease;
+}
+
+.unlocked .badge-desc {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.badge-status {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.badge-status.locked {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.badge-status.unlocked-label {
+  background: rgba(105, 240, 174, 0.15);
+  color: #69f0ae;
+  border: 1px solid rgba(105, 240, 174, 0.3);
+}
+
+.menu-circle-btn {
+  position: relative;
+}
+
+/* Red dot badge for newly unlocked achievements on main menu button */
+.badge-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  background: #ff5252;
+  border-radius: 50%;
+  border: 1.5px solid #1a0f08;
+  box-shadow: 0 0 6px #ff5252;
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes spinGlow {
+  0% { filter: drop-shadow(0 0 2px rgba(201, 168, 76, 0.3)); }
+  50% { filter: drop-shadow(0 0 10px rgba(201, 168, 76, 0.7)); }
+  100% { filter: drop-shadow(0 0 2px rgba(201, 168, 76, 0.3)); }
 }

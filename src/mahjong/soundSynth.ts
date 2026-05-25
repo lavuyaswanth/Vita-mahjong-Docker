@@ -309,6 +309,272 @@ class SoundSynthesizer {
       this.chimeInterval = null;
     }
   }
+
+  // Combo streak chime — escalates in excitement with multiplier
+  public playComboChime(multiplier: number) {
+    this.init();
+    if (!this.ctx || !this.sfxGain || !this.enabled) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+
+    const t = this.ctx.currentTime;
+
+    if (multiplier <= 2) {
+      // Higher-pitched match chime (+100Hz offset)
+      const freqs = [623.25, 759.25, 883.99];
+      freqs.forEach((freq, index) => {
+        const delay = index * 0.04;
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + delay);
+
+        gain.gain.setValueAtTime(0.0, t + delay);
+        gain.gain.linearRampToValueAtTime(0.2, t + delay + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 1.0);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain!);
+
+        osc.start(t + delay);
+        osc.stop(t + delay + 1.1);
+      });
+    } else if (multiplier === 3) {
+      // Rapid two-note ascending chime: C5 → E5
+      const notes = [523.25, 659.25];
+      notes.forEach((freq, index) => {
+        const delay = index * 0.06;
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + delay);
+
+        gain.gain.setValueAtTime(0.0, t + delay);
+        gain.gain.linearRampToValueAtTime(0.25, t + delay + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.8);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain!);
+
+        osc.start(t + delay);
+        osc.stop(t + delay + 0.9);
+      });
+    } else if (multiplier === 4) {
+      // Rapid three-note ascending chime: C5 → E5 → G5
+      const notes = [523.25, 659.25, 783.99];
+      notes.forEach((freq, index) => {
+        const delay = index * 0.05;
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + delay);
+
+        gain.gain.setValueAtTime(0.0, t + delay);
+        gain.gain.linearRampToValueAtTime(0.28, t + delay + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.9);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain!);
+
+        osc.start(t + delay);
+        osc.stop(t + delay + 1.0);
+      });
+    } else {
+      // multiplier 5+: Four-note fanfare C5 → E5 → G5 → C6 with shimmer/vibrato
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((freq, index) => {
+        const delay = index * 0.07;
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + delay);
+
+        gain.gain.setValueAtTime(0.0, t + delay);
+        gain.gain.linearRampToValueAtTime(0.3, t + delay + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 1.5);
+
+        // Add shimmer vibrato for excitement
+        const vibrato = this.ctx!.createOscillator();
+        const vibratoGain = this.ctx!.createGain();
+        vibrato.frequency.value = 8;
+        vibratoGain.gain.value = 5;
+
+        vibrato.connect(vibratoGain);
+        vibratoGain.connect(osc.frequency);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain!);
+
+        vibrato.start(t + delay);
+        osc.start(t + delay);
+
+        vibrato.stop(t + delay + 1.6);
+        osc.stop(t + delay + 1.6);
+      });
+    }
+  }
+
+  // Sparkling celebratory arpeggio for achievement unlock
+  public playAchievementUnlock() {
+    this.init();
+    if (!this.ctx || !this.sfxGain || !this.enabled) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+
+    const t = this.ctx.currentTime;
+    // Ascending arpeggio: E5 → G#5 → B5 → E6
+    const notes = [659.25, 830.61, 987.77, 1318.51];
+
+    notes.forEach((freq, index) => {
+      const delay = index * 0.06;
+      const osc = this.ctx!.createOscillator();
+      const shimmerOsc = this.ctx!.createOscillator();
+      const gain = this.ctx!.createGain();
+      const shimmerGain = this.ctx!.createGain();
+
+      // Primary tone
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t + delay);
+
+      // Shimmer: secondary oscillator at +2Hz for beating effect
+      shimmerOsc.type = 'sine';
+      shimmerOsc.frequency.setValueAtTime(freq + 2, t + delay);
+
+      // Primary envelope — longer sustain (~2s total)
+      gain.gain.setValueAtTime(0.0, t + delay);
+      gain.gain.linearRampToValueAtTime(0.3, t + delay + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 2.0);
+
+      // Shimmer envelope — softer
+      shimmerGain.gain.setValueAtTime(0.0, t + delay);
+      shimmerGain.gain.linearRampToValueAtTime(0.12, t + delay + 0.02);
+      shimmerGain.gain.exponentialRampToValueAtTime(0.001, t + delay + 2.0);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain!);
+
+      shimmerOsc.connect(shimmerGain);
+      shimmerGain.connect(this.sfxGain!);
+
+      osc.start(t + delay);
+      shimmerOsc.start(t + delay);
+
+      osc.stop(t + delay + 2.1);
+      shimmerOsc.stop(t + delay + 2.1);
+    });
+  }
+
+  // Quick tense ticking sound for timed mode
+  public playCountdownTick() {
+    this.init();
+    if (!this.ctx || !this.sfxGain || !this.enabled) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800, t);
+
+    gain.gain.setValueAtTime(0.25, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+
+    osc.start(t);
+    osc.stop(t + 0.04);
+  }
+
+  // Urgent double-tick for when time is running low (< 30s)
+  public playCountdownUrgent() {
+    this.init();
+    if (!this.ctx || !this.sfxGain || !this.enabled) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+
+    const t = this.ctx.currentTime;
+
+    // First tick at 1000Hz
+    const osc1 = this.ctx.createOscillator();
+    const gain1 = this.ctx.createGain();
+
+    osc1.type = 'square';
+    osc1.frequency.setValueAtTime(1000, t);
+
+    gain1.gain.setValueAtTime(0.35, t);
+    gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+
+    osc1.connect(gain1);
+    gain1.connect(this.sfxGain);
+
+    osc1.start(t);
+    osc1.stop(t + 0.04);
+
+    // Second tick at 1200Hz, 50ms later
+    const osc2 = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(1200, t + 0.05);
+
+    gain2.gain.setValueAtTime(0.001, t);
+    gain2.gain.setValueAtTime(0.35, t + 0.05);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+
+    osc2.connect(gain2);
+    gain2.connect(this.sfxGain);
+
+    osc2.start(t + 0.05);
+    osc2.stop(t + 0.09);
+  }
+
+  // Game-over buzzer for timed mode expiry
+  public playTimeUp() {
+    this.init();
+    if (!this.ctx || !this.sfxGain || !this.enabled) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+
+    const t = this.ctx.currentTime;
+
+    // Primary descending tone: 400Hz → 200Hz over 0.5s
+    const osc1 = this.ctx.createOscillator();
+    const gain1 = this.ctx.createGain();
+
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(400, t);
+    osc1.frequency.exponentialRampToValueAtTime(200, t + 0.5);
+
+    gain1.gain.setValueAtTime(0.4, t);
+    gain1.gain.setValueAtTime(0.4, t + 0.4);
+    gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+
+    osc1.connect(gain1);
+    gain1.connect(this.sfxGain);
+
+    osc1.start(t);
+    osc1.stop(t + 0.65);
+
+    // Second voice for thickness: 300Hz → 150Hz
+    const osc2 = this.ctx.createOscillator();
+    const gain2 = this.ctx.createGain();
+
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(300, t);
+    osc2.frequency.exponentialRampToValueAtTime(150, t + 0.5);
+
+    gain2.gain.setValueAtTime(0.4, t);
+    gain2.gain.setValueAtTime(0.4, t + 0.4);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+
+    osc2.connect(gain2);
+    gain2.connect(this.sfxGain);
+
+    osc2.start(t);
+    osc2.stop(t + 0.65);
+  }
 }
 
 export const soundSynth = new SoundSynthesizer();

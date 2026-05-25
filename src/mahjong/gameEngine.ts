@@ -12,6 +12,8 @@ export interface TileState extends TileCoords {
   selected: boolean;  // selection state
   revealed: boolean; // used in Memory Mahjong Mode
   matched: boolean;   // true if cleared
+  removing?: boolean;  // transitional state for exit animation
+  wobbling?: boolean;  // transitional state for blocked click wobble animation
 }
 
 // Simple seedable random number generator (LCC) for deterministic Daily Challenges
@@ -124,27 +126,197 @@ export function checkIfTileIsFree(tile: TileCoords, activeTiles: TileCoords[]): 
   return !hasLeftBlocker || !hasRightBlocker;
 }
 
-// Generate the initial board state for a given layout and seed
-export function buildBoard(layoutName: LayoutName, seed?: number): TileState[] {
+// Build a guaranteed-solvable board using the reverse-placement algorithm.
+// 1. Start with all layout positions filled (conceptually).
+// 2. Repeatedly find two "free" tiles, remove them as a pair, and record the order.
+// 3. Reverse the removal order → valid placement order (each placed pair was free).
+// 4. Assign shuffled tile face values to each pair.
+export function buildSolvableBoard(layoutName: LayoutName, seed?: number): TileState[] {
+  const config = layouts[layoutName];
+  const coords = config.coords;
+  const totalSlots = coords.length;
+  const effectiveSeed = seed || Math.floor(Math.random() * 1000000);
+
+  const MAX_ATTEMPTS = 20;
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    // Use a different RNG stream per attempt so retries explore new orderings
+    const rng = new SeededRandom(effectiveSeed + attempt * 7919);
+
+    // --- Phase 1: Simulate removal of free pairs ---
+    // Track which positions are still "active" in the simulated board
+    const active = new Array<boolean>(totalSlots).fill(true);
+    // Record removal order as pairs of indices into coords[]
+    const removalOrder: [number, number][] = [];
+
+    let remaining = totalSlots;
+
+    while (remaining > 0) {
+      // Build the list of currently active coordinates for free-check
+      // checkIfTileIsFree expects TileCoords (with id), so attach placeholder ids
+      const activeCoordsWithIndex: { coord: TileCoords; idx: number }[] = [];
+      for (let i = 0; i < totalSlots; i++) {
+        if (active[i]) {
+          activeCoordsWithIndex.push({
+            coord: { ...coords[i], id: `sim-${i}` },
+            idx: i
+          });
+        }
+      }
+
+      const activeCoordsList = activeCoordsWithIndex.map(a => a.coord);
+
+      // Find all free tiles among active ones
+      const freeTileIndices: number[] = [];
+      for (const entry of activeCoordsWithIndex) {
+        if (checkIfTileIsFree(entry.coord, activeCoordsList)) {
+          freeTileIndices.push(entry.idx);
+        }
+      }
+
+      if (freeTileIndices.length < 2) {
+        // Stuck — can't form a pair; break and retry
+        break;
+      }
+
+      // Shuffle free tiles to randomize which pair we pick
+      rng.shuffle(freeTileIndices);
+
+      // Pick the first two free tiles as a removal pair
+      const idxA = freeTileIndices[0];
+      const idxB = freeTileIndices[1];
+
+      active[idxA] = false;
+      active[idxB] = false;
+      removalOrder.push([idxA, idxB]);
+      remaining -= 2;
+    }
+
+    if (remaining > 0) {
+      // This attempt failed to clear all tiles — retry
+      continue;
+    }
+
+    // --- Phase 2: Build a balanced deck for this layout ---
+    const deckRng = new SeededRandom(effectiveSeed + attempt * 7919 + 1);
+    let deck = generateStandardDeck();
+    deckRng.shuffle(deck);
+
+    // For layouts with fewer than 144 tiles, select a balanced subset of pairs
+    if (totalSlots < 144) {
+      const subset: typeof deck = [];
+
+      // Group the deck by match identity
+      const groups: Record<string, typeof deck> = {};
+      deck.forEach(t => {
+        const key = (t.type === 'season' || t.type === 'flower') ? t.type : `${t.type}_${t.value}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(t);
+      });
+
+      const groupKeys = Object.keys(groups);
+      let pairCount = Math.floor(totalSlots / 2);
+
+      while (pairCount > 0 && groupKeys.length > 0) {
+        const randomKey = deckRng.choose(groupKeys);
+        const group = groups[randomKey];
+
+        if (group && group.length >= 2) {
+          subset.push(group.pop()!);
+          subset.push(group.pop()!);
+          pairCount--;
+        } else {
+          const idx = groupKeys.indexOf(randomKey);
+          if (idx > -1) groupKeys.splice(idx, 1);
+        }
+      }
+
+      // Odd-slot fallback (shouldn't happen)
+      if (subset.length < totalSlots) {
+        const oddKeys = Object.keys(groups).filter(k => groups[k].length > 0);
+        if (oddKeys.length > 0) {
+          subset.push(groups[oddKeys[0]].pop()!);
+        }
+      }
+
+      deck = subset;
+      deckRng.shuffle(deck);
+    }
+
+    // --- Phase 3: Assign tile faces using reversed removal order ---
+    // Reverse the removal order → placement order (pairs placed first are deepest)
+    const placementOrder = [...removalOrder].reverse();
+
+    // Consume deck in pairs, assigning matching faces to each pair of positions
+    const tileAssignments = new Array<{ type: string; value: number }>(totalSlots);
+    let deckIndex = 0;
+
+    for (const [posA, posB] of placementOrder) {
+      const tileA = deck[deckIndex++] || { type: 'bamboo', value: 1 };
+      const tileB = deck[deckIndex++] || { type: 'bamboo', value: 1 };
+
+      // Both tiles in the pair must match, so give them the same face identity.
+      // For seasons/flowers they already match by type, so we keep their distinct values.
+      const isWildType = tileA.type === 'season' || tileA.type === 'flower';
+
+      if (isWildType && tileA.type === tileB.type) {
+        // Seasons/flowers: same type is enough to match — keep unique values
+        tileAssignments[posA] = tileA;
+        tileAssignments[posB] = tileB;
+      } else {
+        // Assign the same face to both positions in the pair
+        tileAssignments[posA] = { type: tileA.type, value: tileA.value };
+        tileAssignments[posB] = { type: tileA.type, value: tileA.value };
+      }
+    }
+
+    // --- Phase 4: Build the final TileState array ---
+    const tiles: TileState[] = coords.map((coord, index) => {
+      const tileDef = tileAssignments[index] || { type: 'bamboo', value: 1 };
+
+      let iconIndex = tileDef.value;
+      if (tileDef.type === 'season' || tileDef.type === 'flower') {
+        iconIndex = tileDef.value;
+      }
+
+      return {
+        x: coord.x,
+        y: coord.y,
+        z: coord.z,
+        id: `tile_${coord.x}_${coord.y}_${coord.z}`,
+        type: tileDef.type,
+        value: tileDef.value,
+        iconIndex,
+        isFree: false,
+        selected: false,
+        revealed: false,
+        matched: false
+      };
+    });
+
+    recalculateFreeState(tiles);
+    return tiles;
+  }
+
+  // Fallback: all attempts failed — use legacy random placement (should be extremely rare)
+  return buildBoardLegacy(layoutName, effectiveSeed);
+}
+
+// Legacy random board builder (original algorithm, kept as fallback)
+function buildBoardLegacy(layoutName: LayoutName, seed: number): TileState[] {
   const config = layouts[layoutName];
   const totalSlots = config.coords.length;
 
-  // 1. Create a seedable random generator
-  const rng = new SeededRandom(seed || Math.floor(Math.random() * 1000000));
+  const rng = new SeededRandom(seed);
 
-  // 2. Generate a standard pool of tiles, then shuffle it
   let deck = generateStandardDeck();
   rng.shuffle(deck);
 
-  // If the layout needs fewer tiles than 144, we need to choose a balanced subset
-  // that ensures matching pairs.
   if (totalSlots < 144) {
     const subset: typeof deck = [];
 
-    // Group the deck by identity to make pairs easily
     const groups: Record<string, typeof deck> = {};
     deck.forEach(t => {
-      // Group seasons and flowers as generic types since they match with any season/flower
       const key = (t.type === 'season' || t.type === 'flower') ? t.type : `${t.type}_${t.value}`;
       if (!groups[key]) groups[key] = [];
       groups[key].push(t);
@@ -153,7 +325,6 @@ export function buildBoard(layoutName: LayoutName, seed?: number): TileState[] {
     const groupKeys = Object.keys(groups);
     let pairCount = Math.floor(totalSlots / 2);
 
-    // Pick pairs dynamically
     while (pairCount > 0 && groupKeys.length > 0) {
       const randomKey = rng.choose(groupKeys);
       const group = groups[randomKey];
@@ -163,13 +334,11 @@ export function buildBoard(layoutName: LayoutName, seed?: number): TileState[] {
         subset.push(group.pop()!);
         pairCount--;
       } else {
-        // Remove key if no more pairs can be drawn
         const idx = groupKeys.indexOf(randomKey);
         if (idx > -1) groupKeys.splice(idx, 1);
       }
     }
 
-    // Handle odd number of slots (shouldn't happen in symmetrical setups, but fallback safely)
     if (subset.length < totalSlots) {
       const oddKeys = Object.keys(groups).filter(k => groups[k].length > 0);
       if (oddKeys.length > 0) {
@@ -178,18 +347,15 @@ export function buildBoard(layoutName: LayoutName, seed?: number): TileState[] {
     }
 
     deck = subset;
-    // Shuffle subset to avoid placement bias
     rng.shuffle(deck);
   }
 
-  // 3. Assemble the tiles into their final coordinates
   const tiles: TileState[] = config.coords.map((coord, index) => {
     const tileDef = deck[index] || { type: 'bamboo', value: 1 };
-    
-    // Assign a beautiful icon mapping based on type and value
+
     let iconIndex = tileDef.value;
     if (tileDef.type === 'season' || tileDef.type === 'flower') {
-      iconIndex = tileDef.value; // 0 to 3
+      iconIndex = tileDef.value;
     }
 
     return {
@@ -200,17 +366,20 @@ export function buildBoard(layoutName: LayoutName, seed?: number): TileState[] {
       type: tileDef.type,
       value: tileDef.value,
       iconIndex,
-      isFree: false, // will calculate
+      isFree: false,
       selected: false,
       revealed: false,
       matched: false
     };
   });
 
-  // Calculate first round of blockages
   recalculateFreeState(tiles);
-
   return tiles;
+}
+
+// Generate the initial board state for a given layout and seed
+export function buildBoard(layoutName: LayoutName, seed?: number): TileState[] {
+  return buildSolvableBoard(layoutName, seed);
 }
 
 // Recalculates the 'isFree' state for all non-matched tiles on the board

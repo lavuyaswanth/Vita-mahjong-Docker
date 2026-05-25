@@ -18,20 +18,19 @@ const ClassicIcon: React.FC<{ type: string; value: number }> = ({ type, value })
           {/* Bamboo stems */}
           {value === 1 ? (
             // A beautiful peacock or single bird/large leaf for Bamboo 1
-            <g transform="translate(10, 5)">
-              <circle cx="20" cy="20" r="10" fill="none" stroke="#2e7d32" strokeWidth="3" />
-              <path d="M 20 10 Q 15 25 20 45 Q 25 25 20 10" fill="#2e7d32" />
-              <path d="M 20 20 Q 35 15 35 25 Q 20 30 20 20" fill="#1565c0" />
-              <path d="M 20 20 Q 5 15 5 25 Q 20 30 20 20" fill="#1565c0" />
+            <g transform="translate(8, 2) scale(1.15)">
+              <circle cx="20" cy="20" r="10" fill="none" stroke="#1b5e20" strokeWidth="3" />
+              <path d="M 20 10 Q 15 25 20 45 Q 25 25 20 10" fill="#1b5e20" />
+              <path d="M 20 20 Q 35 15 35 25 Q 20 30 20 20" fill="#0d47a1" />
+              <path d="M 20 20 Q 5 15 5 25 Q 20 30 20 20" fill="#0d47a1" />
               <circle cx="20" cy="15" r="3" fill="#c62828" />
             </g>
           ) : (
-            // Grid of bamboo sticks
-            <g stroke="#2e7d32" strokeWidth="4" strokeLinecap="round" fill="none">
+            // Grid of cylindrical rounded bamboo tubes
+            <g>
               {Array.from({ length: Math.min(value, 9) }).map((_, i) => {
                 const col = i % 3;
                 const row = Math.floor(i / 3);
-                // Center offset helper
                 const count = value;
                 let x = 15 + col * 15;
                 let y = 15 + row * 20;
@@ -50,8 +49,13 @@ const ClassicIcon: React.FC<{ type: string; value: number }> = ({ type, value })
                 }
                 return (
                   <g key={i}>
-                    <line x1={x} y1={y - 6} x2={x} y2={y + 6} />
-                    <circle cx={x} cy={y} r="2.5" fill="#2e7d32" />
+                    {/* Shadow outline */}
+                    <rect x={x - 3.5} y={y - 8.5} width="7" height="17" rx="2" fill="#0d2e15" stroke="none" />
+                    {/* Vibrant green core */}
+                    <rect x={x - 2.5} y={y - 7.5} width="5" height="15" rx="1.5" fill="#2e7d32" stroke="none" />
+                    {/* White highlight cap in middle node */}
+                    <line x1={x - 2.5} y1={y} x2={x + 2.5} y2={y} stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
+                    <circle cx={x} cy={y} r="1.2" fill="#ffffff" stroke="none" />
                   </g>
                 );
               })}
@@ -66,15 +70,15 @@ const ClassicIcon: React.FC<{ type: string; value: number }> = ({ type, value })
           {value === 1 ? (
             // Giant detailed center circle (Chong)
             <g>
-              <circle cx="30" cy="35" r="18" fill="none" stroke="#1565c0" strokeWidth="4" />
-              <circle cx="30" cy="35" r="10" fill="#c62828" />
-              <path d="M 30 17 L 30 53 M 12 35 L 48 35" stroke="#2e7d32" strokeWidth="2" strokeDasharray="2,2" />
+              <circle cx="30" cy="35" r="18" fill="none" stroke="#0d47a1" strokeWidth="5.5" />
+              <circle cx="30" cy="35" r="11" fill="#c62828" />
+              <path d="M 30 17 L 30 53 M 12 35 L 48 35" stroke="#1b5e20" strokeWidth="2.5" strokeDasharray="2,2" />
             </g>
           ) : (
             // Cluster of circles
-            <g fill="none" strokeWidth="3">
+            <g fill="none" strokeWidth="2">
               {Array.from({ length: value }).map((_, i) => {
-                const colors = ['#1565c0', '#c62828', '#2e7d32'];
+                const colors = ['#0d47a1', '#d32f2f', '#2e7d32'];
                 const color = colors[i % colors.length];
                 let cx: number;
                 let cy: number;
@@ -84,35 +88,36 @@ const ClassicIcon: React.FC<{ type: string; value: number }> = ({ type, value })
                 if (value === 2) {
                   cx = 30;
                   cy = 20 + i * 30;
-                  r = 9;
+                  r = 9.5;
                 } else if (value === 3) {
                   cx = 18 + i * 12;
                   cy = 18 + i * 17;
-                  r = 8;
+                  r = 8.5;
                 } else if (value === 4) {
                   cx = 20 + (i % 2) * 20;
                   cy = 20 + Math.floor(i / 2) * 30;
-                  r = 8;
+                  r = 8.5;
                 } else if (value === 5) {
                   if (i === 4) { cx = 30; cy = 35; }
                   else {
                     cx = 18 + (i % 2) * 24;
                     cy = 18 + Math.floor(i / 2) * 34;
                   }
-                  r = 7;
+                  r = 7.5;
                 } else {
                   // Grid layouts for 6, 7, 8, 9
                   const col = i % 3;
                   const row = Math.floor(i / 3);
                   cx = 16 + col * 14;
                   cy = 16 + row * 19;
-                  r = 6;
+                  r = 6.5;
                 }
 
                 return (
                   <g key={i}>
-                    <circle cx={cx} cy={cy} r={r} stroke={color} />
-                    <circle cx={cx} cy={cy} r={r - 3} fill={color} />
+                    <circle cx={cx} cy={cy} r={r} stroke={color} strokeWidth="2.5" fill="none" />
+                    <circle cx={cx} cy={cy} r={r - 2.5} fill={color} />
+                    <circle cx={cx} cy={cy} r="1.2" fill="#ffffff" />
                   </g>
                 );
               })}
@@ -123,9 +128,9 @@ const ClassicIcon: React.FC<{ type: string; value: number }> = ({ type, value })
 
     case 'character':
       return (
-        <svg viewBox="0 0 60 70" className="tile-svg" style={{ fontFamily: 'serif' }}>
-          {/* Traditional blue/red characters */}
-          <text x="30" y="28" textAnchor="middle" fill="#c62828" fontSize="22" fontWeight="bold">
+        <svg viewBox="0 0 60 70" className="tile-svg">
+          {/* High-contrast bold dark blue stacked characters */}
+          <text x="30" y="32" textAnchor="middle" fill="#0d47a1" fontSize="28" fontWeight="900" style={{ fontFamily: '"Noto Sans SC", "Microsoft YaHei", sans-serif' }}>
             {value === 1 && "一"}
             {value === 2 && "二"}
             {value === 3 && "三"}
@@ -136,7 +141,7 @@ const ClassicIcon: React.FC<{ type: string; value: number }> = ({ type, value })
             {value === 8 && "八"}
             {value === 9 && "九"}
           </text>
-          <text x="30" y="58" textAnchor="middle" fill="#1565c0" fontSize="24" fontWeight="black">
+          <text x="30" y="60" textAnchor="middle" fill="#0d47a1" fontSize="26" fontWeight="900" style={{ fontFamily: '"Noto Sans SC", "Microsoft YaHei", sans-serif' }}>
             萬
           </text>
         </svg>
@@ -144,8 +149,8 @@ const ClassicIcon: React.FC<{ type: string; value: number }> = ({ type, value })
 
     case 'wind':
       return (
-        <svg viewBox="0 0 60 70" className="tile-svg" style={{ fontFamily: 'serif' }}>
-          <text x="30" y="46" textAnchor="middle" fill="#0d47a1" fontSize="38" fontWeight="bold">
+        <svg viewBox="0 0 60 70" className="tile-svg">
+          <text x="30" y="52" textAnchor="middle" fill={value === 3 ? "#212121" : "#0d47a1"} fontSize="50" fontWeight="900" style={{ fontFamily: '"Noto Sans SC", "Microsoft YaHei", serif' }}>
             {value === 0 && "東"}
             {value === 1 && "南"}
             {value === 2 && "西"}
@@ -156,18 +161,21 @@ const ClassicIcon: React.FC<{ type: string; value: number }> = ({ type, value })
 
     case 'dragon':
       return (
-        <svg viewBox="0 0 60 70" className="tile-svg" style={{ fontFamily: 'serif' }}>
+        <svg viewBox="0 0 60 70" className="tile-svg">
           {value === 0 && (
-            // Red Dragon (Chung)
-            <text x="30" y="48" textAnchor="middle" fill="#c62828" fontSize="42" fontWeight="bold">中</text>
+            // Red Dragon (Chung) - Rich red
+            <text x="30" y="54" textAnchor="middle" fill="#d32f2f" fontSize="52" fontWeight="900" style={{ fontFamily: '"Noto Sans SC", "Microsoft YaHei", serif' }}>中</text>
           )}
           {value === 1 && (
-            // Green Dragon (Fa)
-            <text x="30" y="48" textAnchor="middle" fill="#2e7d32" fontSize="42" fontWeight="bold">發</text>
+            // Green Dragon (Fa) - Vibrant green
+            <text x="30" y="52" textAnchor="middle" fill="#2e7d32" fontSize="50" fontWeight="900" style={{ fontFamily: '"Noto Sans SC", "Microsoft YaHei", serif' }}>發</text>
           )}
           {value === 2 && (
-            // White Dragon (Blank border box)
-            <rect x="14" y="16" width="32" height="38" rx="3" fill="none" stroke="#1565c0" strokeWidth="4" />
+            // White Dragon (Jade-green border with red inner border)
+            <g>
+              <rect x="10" y="11" width="40" height="48" rx="6" fill="none" stroke="#2e7d32" strokeWidth="4.5" />
+              <rect x="15" y="16" width="30" height="38" rx="3" fill="none" stroke="#d32f2f" strokeWidth="1.8" />
+            </g>
           )}
         </svg>
       );
@@ -624,7 +632,7 @@ export const Tile: React.FC<TileProps> = ({
   isHinted,
   onClick
 }) => {
-  const { x, y, z, selected, matched, revealed, isFree, type, value } = tile;
+  const { x, y, z, selected, matched, revealed, isFree, type, value, wobbling } = tile;
 
   if (matched) {
     return <div className="tile-placeholder" style={{ gridColumnStart: x + 1, gridRowStart: y + 1 }} />;
@@ -642,8 +650,9 @@ export const Tile: React.FC<TileProps> = ({
     isHinted ? 'hinted' : '',
     !isFree ? 'blocked' : 'free',
     revealed ? 'revealed' : 'face-down',
+    wobbling ? 'wobble' : '',
     `style-set-${styleSet}`
-  ].join(' ');
+  ].filter(Boolean).join(' ');
 
   // Tactile inline styles to create a realistic 3D block
   const tileStyle = {
@@ -692,7 +701,7 @@ export const Tile: React.FC<TileProps> = ({
       tabIndex={isFree ? 0 : -1}
     >
       {/* 3D Tile block effects (Sides and bottom highlights) */}
-      <div className="tile-3d-side-left"></div>
+      <div className="tile-3d-side-right"></div>
       <div className="tile-3d-side-bottom"></div>
 
       {/* Main Face of the Tile */}
@@ -705,9 +714,6 @@ export const Tile: React.FC<TileProps> = ({
 
         {/* High contrast overlay badge */}
         {renderContrastLabel()}
-        
-        {/* Blocked overlay (subtle tinting) */}
-        {!isFree && <div className="blocked-tint" />}
       </div>
     </div>
   );

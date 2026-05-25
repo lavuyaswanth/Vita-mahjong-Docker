@@ -22,6 +22,8 @@ interface Particle {
   alpha: number;
   life: number;
   maxLife: number;
+  rotation?: number;
+  rotationSpeed?: number;
 }
 
 export const MahjongBoard: React.FC<MahjongBoardProps> = ({
@@ -72,19 +74,89 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.08; // Gravity drift
+
+        // Custom theme-aware physics!
+        if (bgTheme === 'ocean') {
+          p.vy -= 0.03; // Anti-gravity bubbles float up
+          p.vx += Math.sin(p.life * 0.1) * 0.1; // Gentle horizontal drift
+        } else if (bgTheme === 'sunset') {
+          p.vy -= 0.015; // Soft rising heat embers
+          p.vx += (Math.random() - 0.5) * 0.25; // Crackling flicker drift
+          p.vy += 0.02; // Slow gravity counterbalance
+        } else if (bgTheme === 'zen') {
+          p.vy += 0.03; // Light cherry blossoms drift down slowly
+          p.vx += Math.cos(p.life * 0.05) * 0.05; // Wind wave sway
+        } else {
+          p.vy += 0.08; // Normal gravity for cyber neon sparks
+        }
+
+        if (p.rotation !== undefined && p.rotationSpeed !== undefined) {
+          p.rotation += p.rotationSpeed;
+        }
+
         p.life--;
         p.alpha = p.life / p.maxLife;
 
         // Draw particle spark
         ctx.save();
         ctx.globalAlpha = p.alpha;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = p.color;
-        ctx.fill();
+
+        if (bgTheme === 'zen') {
+          // --- 🌸 ZEN GARDEN: Spinning Cherry Blossom Petals ---
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation || 0);
+          ctx.beginPath();
+          // Draw standard cherry blossom petal ellipse
+          ctx.ellipse(0, 0, p.size * 1.3, p.size * 0.7, 0, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.shadowBlur = 6;
+          ctx.shadowColor = p.color;
+          ctx.fill();
+        } else if (bgTheme === 'ocean') {
+          // --- 🌊 DEEP OCEAN: Floating Hollow Water Bubbles ---
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.strokeStyle = p.color;
+          ctx.lineWidth = 1.5;
+          ctx.shadowBlur = 6;
+          ctx.shadowColor = p.color;
+          ctx.stroke();
+
+          // Bubble highlight glint
+          ctx.beginPath();
+          ctx.arc(p.x - p.size * 0.3, p.y - p.size * 0.3, p.size * 0.15, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+          ctx.fill();
+        } else if (bgTheme === 'sunset') {
+          // --- 🪵 SUNSET AMBER: Floating Fire Embers (Stars/Diamonds) ---
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y - p.size);
+          ctx.quadraticCurveTo(p.x, p.y, p.x + p.size, p.y);
+          ctx.quadraticCurveTo(p.x, p.y, p.x, p.y + p.size);
+          ctx.quadraticCurveTo(p.x, p.y, p.x - p.size, p.y);
+          ctx.closePath();
+          ctx.fillStyle = p.color;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = p.color;
+          ctx.fill();
+        } else {
+          // --- 🌌 HEALING DARK: Cyberpunk 4-Point Neon Stars ---
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y - p.size * 1.4);
+          ctx.lineTo(p.x + p.size * 0.35, p.y - p.size * 0.35);
+          ctx.lineTo(p.x + p.size * 1.4, p.y);
+          ctx.lineTo(p.x + p.size * 0.35, p.y + p.size * 0.35);
+          ctx.lineTo(p.x, p.y + p.size * 1.4);
+          ctx.lineTo(p.x - p.size * 0.35, p.y + p.size * 0.35);
+          ctx.lineTo(p.x - p.size * 1.4, p.y);
+          ctx.lineTo(p.x - p.size * 0.35, p.y - p.size * 0.35);
+          ctx.closePath();
+          ctx.fillStyle = p.color;
+          ctx.shadowBlur = 12;
+          ctx.shadowColor = p.color;
+          ctx.fill();
+        }
+
         ctx.restore();
 
         if (p.life <= 0) {
@@ -103,7 +175,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, []);
+  }, [bgTheme]);
 
   // Listen for global tiles match custom events to trigger bursts
   useEffect(() => {
@@ -125,27 +197,33 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
       const px2 = (x2 + 1) * cellW + cellW;
       const py2 = (y2 + 1) * cellH + cellH;
 
-      // Color palette based on current theme
-      let colors = ['#ffd700', '#ff8c00', '#ffffff', '#e0f7fa']; // gold spark
-      if (bgTheme === 'ocean') colors = ['#00e5ff', '#ffffff', '#18ffff', '#e0f7fa'];
-      else if (bgTheme === 'bamboo') colors = ['#69f0ae', '#ffffff', '#b9f6ca', '#e8f5e9'];
-      else if (bgTheme === 'sunset') colors = ['#ff6d00', '#ffd700', '#ffab40', '#ff3d00'];
+      // Color palettes tailored precisely for premium design sets
+      let colors = ['#ffb7c5', '#ff9fb2', '#ffffff', '#ffd1dc']; // Zen pink sakura
+      if (bgTheme === 'ocean') {
+        colors = ['#e0f7fa', '#80deea', '#26c6da', '#00e5ff', '#ffffff']; // Ocean teals/blues
+      } else if (bgTheme === 'sunset') {
+        colors = ['#ff6d00', '#ffd700', '#ffab40', '#ff3d00', '#ff8f00']; // Sunset golds/reds
+      } else if (bgTheme === 'dark') {
+        colors = ['#ff007f', '#d500f9', '#7c4dff', '#00e5ff', '#ffffff']; // Cyber purple/magenta
+      }
 
       // Spawn 16 particles per tile location
       const spawnBurst = (cx: number, cy: number) => {
         for (let i = 0; i < 16; i++) {
           const angle = Math.random() * Math.PI * 2;
-          const speed = 1 + Math.random() * 4;
+          const speed = 1 + Math.random() * 4.5;
           particlesRef.current.push({
             x: cx,
             y: cy,
             vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed - 2, // blast upwards slightly
+            vy: Math.sin(angle) * speed - 1.5, // blast upwards slightly
             color: colors[Math.floor(Math.random() * colors.length)],
-            size: 2 + Math.random() * 4,
+            size: 2.5 + Math.random() * 4.5,
             alpha: 1.0,
             life: 30 + Math.floor(Math.random() * 20),
-            maxLife: 50
+            maxLife: 50,
+            rotation: Math.random() * Math.PI * 2,
+            rotationSpeed: (Math.random() - 0.5) * 0.15
           });
         }
       };

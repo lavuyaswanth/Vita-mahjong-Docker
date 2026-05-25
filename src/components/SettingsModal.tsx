@@ -34,6 +34,7 @@ interface SettingsModalProps {
   isAmbientEnabled: boolean;
   setIsAmbientEnabled: (val: boolean) => void;
   activeLayout: LayoutName;
+  unlockedLevels: number[];
   onSelectLayout: (layout: LayoutName) => void;
 }
 
@@ -53,6 +54,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isAmbientEnabled,
   setIsAmbientEnabled,
   activeLayout,
+  unlockedLevels,
   onSelectLayout
 }) => {
   if (!isOpen) return null;
@@ -101,20 +103,44 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <LayoutIcon size={20} inline /> Choose Layout Board
             </h3>
             <div className="layout-cards-grid">
-              {Object.values(layouts).map(l => (
-                <div
-                  key={l.name}
-                  className={`layout-card ${activeLayout === l.name ? 'active' : ''}`}
-                  onClick={() => {
-                    onSelectLayout(l.name);
-                    soundSynth.playClick();
-                  }}
-                >
-                  <div className="layout-card-badge">{l.coords.length} Tiles</div>
-                  <h4>{l.displayName}</h4>
-                  <p>{l.description}</p>
-                </div>
-              ))}
+              {Object.values(layouts).map((l, idx) => {
+                const levelNum = idx + 1;
+                const isLocked = !unlockedLevels.includes(levelNum);
+                const bestStarsData = (() => {
+                  try {
+                    const stored = localStorage.getItem('vita_best_stars');
+                    const parsed = stored ? JSON.parse(stored) : {};
+                    return parsed[l.name] || 0;
+                  } catch { return 0; }
+                })();
+                return (
+                  <div
+                    key={l.name}
+                    className={`layout-card ${activeLayout === l.name ? 'active' : ''} ${isLocked ? 'layout-locked' : ''}`}
+                    onClick={() => {
+                      if (isLocked) {
+                        soundSynth.playClick();
+                        return;
+                      }
+                      onSelectLayout(l.name);
+                      soundSynth.playClick();
+                    }}
+                    title={isLocked ? `Complete Level ${levelNum - 1} to unlock` : l.description}
+                  >
+                    <div className="layout-card-badge">{l.coords.length} Tiles</div>
+                    {isLocked && <div className="lock-overlay">🔒</div>}
+                    <h4>{l.displayName}</h4>
+                    {bestStarsData > 0 && (
+                      <div className="layout-best-stars">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <span key={i} style={{ opacity: i < bestStarsData ? 1 : 0.25 }}>⭐</span>
+                        ))}
+                      </div>
+                    )}
+                    <p>{isLocked ? `Complete Level ${levelNum - 1} to unlock` : l.description}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
