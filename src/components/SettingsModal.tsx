@@ -228,7 +228,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                   />
                   <span className="checkbox-text" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <AccessibilityIcon size={18} inline />
-                    <span><strong>Senior High-Contrast Labels:</strong> Adds a clear name tag (e.g. "Panda") to every tile for effortless reading.</span>
+                    <span><strong>Senior High-Contrast Labels:</strong> Adds a clear name tag (e.g. "Dracula") to every tile for effortless reading.</span>
                   </span>
                 </label>
               </div>

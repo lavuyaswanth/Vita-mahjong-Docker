@@ -2,7 +2,7 @@
    Strategy: cache-first with background refresh (stale-while-revalidate).
    After the first online load, the app shell + hashed assets are cached,
    so the game launches and plays fully offline. */
-const CACHE = 'vita-mahjong-v2';
+const CACHE = 'vita-mahjong-midnight-v1';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

@@ -1,13 +1,13 @@
 {
-  "name": "Vita Mahjong",
-  "short_name": "Vita Mahjong",
-  "description": "A soothing, senior-friendly Mahjong Solitaire match game.",
+  "name": "Vita Mahjong: Midnight",
+  "short_name": "Midnight",
+  "description": "A spooky monster-matching Mahjong Solitaire for ages 14 and up.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a2916",
-  "theme_color": "#0a2916",
+  "background_color": "#0f0f15",
+  "theme_color": "#0f0f15",
   "icons": [
     {
       "src": "/favicon.svg",

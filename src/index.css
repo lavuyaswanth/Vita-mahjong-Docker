@@ -222,7 +222,7 @@ body {
   width: 100vw;
   box-sizing: border-box;
   padding: 35px 20px;
-  background: linear-gradient(180deg, rgba(26, 15, 9, 0.45) 0%, rgba(13, 7, 4, 0.7) 100%), url('./assets/menu_bg.png') center center / cover no-repeat;
+  background: linear-gradient(180deg, rgba(18, 9, 36, 0.80) 0%, rgba(7, 3, 16, 0.93) 100%), url('./assets/menu_bg.png') center center / cover no-repeat;
   position: relative;
   overflow-y: auto;
   animation: fadeInMenu 1s ease-out;
@@ -242,11 +242,12 @@ body {
 
 .petal {
   position: absolute;
-  background: radial-gradient(circle at 30% 30%, #ffb7c5 0%, #ffa0b4 100%);
+  /* Midnight edition: drifting violet spirit wisps instead of sakura */
+  background: radial-gradient(circle at 30% 30%, #b89ae8 0%, #7b5fc0 100%);
   border-radius: 150% 0 150% 150%;
   width: 12px;
   height: 8px;
-  opacity: 0.8;
+  opacity: 0.6;
   transform: rotate(-45deg);
   animation: fall 12s linear infinite;
 }
@@ -341,7 +342,10 @@ body {
   width: 100%;
   max-width: 320px;
   height: auto;
-  filter: drop-shadow(0px 8px 16px rgba(0, 0, 0, 0.5));
+  /* Moonlit grade so the classic logo sits in the midnight palette */
+  filter: saturate(0.55) brightness(0.82) contrast(1.08) hue-rotate(-12deg)
+    drop-shadow(0 0 18px rgba(123, 79, 208, 0.55))
+    drop-shadow(0px 8px 16px rgba(0, 0, 0, 0.6));
   animation: floatLogo 6s ease-in-out infinite;
 }
 

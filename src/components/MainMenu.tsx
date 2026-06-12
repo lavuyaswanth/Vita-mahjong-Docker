@@ -112,7 +112,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       <div className="menu-hero-header">
         <div className="logo-glow-behind"></div>
         <img src={logoImg} className="menu-logo-img" alt="Vita Mahjong Logo" />
-        <p className="menu-subtitle">A Soothing, Senior-Friendly Mahjong Solitaire Match Game</p>
+        <p className="menu-subtitle">Match the Monsters of the Night — Ages 14+</p>
         {unlockedLevels.length > 1 && (
           <p className="menu-unlock-badge">🏆 {unlockedLevels.length}/5 Boards Unlocked</p>
         )}
@@ -178,7 +178,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   <span className="rule-num">3</span>
                   <div>
                     <h4>Special Matching Types</h4>
-                    <p>All <strong>Seasons</strong> tiles (Spring, Summer, Autumn, Winter) match with one another. All <strong>Flowers</strong> tiles (Plum, Orchid, Bamboo, Chrysanthemum) match with one another.</p>
+                    <p>All <strong>Moon Phase</strong> tiles (New, Crescent, Half, Harvest) match with one another. All <strong>Poison Plant</strong> tiles (Black Rose, Nightshade, Flytrap, Toadstool) match with one another.</p>
                   </div>
                 </div>
                 <div className="rule-item">

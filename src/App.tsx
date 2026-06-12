@@ -42,7 +42,7 @@ const computeStarRating = (time: number, hintsUsed: number, shufflesUsed: number
 };
 
 // Bump this whenever the build changes so it's easy to confirm the deploy updated
-export const APP_VERSION = 'v0.0.3';
+export const APP_VERSION = 'v0.1.0-midnight';
 
 const getCurrentTime = () => Date.now();
 
@@ -197,7 +197,7 @@ export const App: React.FC = () => {
   const [totalTileCount, setTotalTileCount] = useState(0);
 
   // Settings preferences (synced to LocalStorage)
-  const [bgTheme, setBgTheme] = useState<string>(() => localStorage.getItem('vita_theme') || 'zen');
+  const [bgTheme, setBgTheme] = useState<string>(() => localStorage.getItem('vita_theme') || 'dark');
   const [highContrast, setHighContrast] = useState<boolean>(() => {
     return localStorage.getItem('vita_high_contrast') === 'true';
   });

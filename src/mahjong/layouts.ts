@@ -130,32 +130,32 @@ function generateTurtle() {
 export const layouts: Record<LayoutName, LayoutConfig> = {
   Garden: {
     name: 'Garden',
-    displayName: '🌿 Zen Garden',
-    description: 'A relaxing stacked pile to begin your journey — three soft layers, big easy-to-see tiles.',
+    displayName: '🦇 Haunted Grove',
+    description: 'A misty grove to begin your descent — three gentle layers, big easy-to-read tiles.',
     coords: generateGarden()
   },
   Pagoda: {
     name: 'Pagoda',
-    displayName: '🏯 Jade Pagoda',
-    description: 'A four-layer tower stacked toward the centre — a gentle step up in depth.',
+    displayName: '🏰 Vampire Tower',
+    description: 'A four-layer tower looming toward the centre — a step deeper into the dark.',
     coords: generatePagoda()
   },
   Pyramids: {
     name: 'Pyramids',
-    displayName: '🔺 Twin Pyramids',
-    description: 'A broad, steep step-pyramid — plenty of free flanks but a deep core.',
+    displayName: '⚰️ Crypt Pyramid',
+    description: 'A broad, steep burial pyramid — plenty of free flanks but a deep cursed core.',
     coords: generatePyramids()
   },
   Butterfly: {
     name: 'Butterfly',
-    displayName: '🦋 Flying Papillon',
-    description: 'A wide spreading base crowned by a clustered body. Balanced and beautiful.',
+    displayName: '🕷️ Spider Nest',
+    description: 'A wide sprawling web crowned by a clustered nest. Balanced and sinister.',
     coords: generateButterfly()
   },
   Turtle: {
     name: 'Turtle',
-    displayName: '🐢 Golden Turtle',
-    description: 'The legendary deep dome — the biggest, deepest pile and the ultimate test of patience.',
+    displayName: '💀 Necropolis Dome',
+    description: 'The legendary deep tomb-dome — the biggest, deepest pile and the ultimate test of nerve.',
     coords: generateTurtle()
   }
 };
