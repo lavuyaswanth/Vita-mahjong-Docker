@@ -112,7 +112,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       <div className="menu-hero-header">
         <div className="logo-glow-behind"></div>
         <img src={logoImg} className="menu-logo-img" alt="Vita Mahjong Logo" />
-        <p className="menu-subtitle">A Soothing, Senior-Friendly Mahjong Solitaire Match Game</p>
+        <p className="menu-subtitle">A Cute &amp; Cozy Tile-Matching Adventure — Ages 3+</p>
         {unlockedLevels.length > 1 && (
           <p className="menu-unlock-badge">🏆 {unlockedLevels.length}/5 Boards Unlocked</p>
         )}
