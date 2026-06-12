@@ -5,26 +5,25 @@ import { soundSynth } from '../mahjong/soundSynth';
 import {
   SettingsIcon,
   LayoutIcon,
-  ClassicTileStyleIcon,
-  LargePrintStyleIcon,
-  NatureStyleIcon,
-  ModernPopStyleIcon,
-  ZenGardenIcon,
-  OceanIcon,
-  AmberWoodIcon,
-  HealingDarkIcon,
   AccessibilityIcon,
   AudioIcon,
   CloseIcon
 } from './SvgIcons';
+
+// Selectable background themes — each is fully styled in index.css and drives
+// its own particle physics on the board (petals / bubbles / embers / stars).
+const THEMES = [
+  { id: 'zen', label: 'Zen Forest', emoji: '🌿' },
+  { id: 'ocean', label: 'Deep Ocean', emoji: '🌊' },
+  { id: 'sunset', label: 'Amber Sunset', emoji: '🌅' },
+  { id: 'dark', label: 'Mystic Dark', emoji: '🌌' }
+];
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   bgTheme: string;
   setBgTheme: (theme: string) => void;
-  styleSet: 'classic' | 'largePrint' | 'nature' | 'modernPop';
-  setStyleSet: (style: 'classic' | 'largePrint' | 'nature' | 'modernPop') => void;
   highContrast: boolean;
   setHighContrast: (val: boolean) => void;
   sfxVolume: number;
@@ -36,27 +35,32 @@ interface SettingsModalProps {
   activeLayout: LayoutName;
   unlockedLevels: number[];
   onSelectLayout: (layout: LayoutName) => void;
+  currentLevel: number;
+  maxUnlockedLevel: number;
+  onSelectLevel: (lvl: number) => void;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({
-  isOpen,
-  onClose,
-  bgTheme,
-  setBgTheme,
-  styleSet,
-  setStyleSet,
-  highContrast,
-  setHighContrast,
-  sfxVolume,
-  setSfxVolume,
-  ambientVolume,
-  setAmbientVolume,
-  isAmbientEnabled,
-  setIsAmbientEnabled,
-  activeLayout,
-  unlockedLevels,
-  onSelectLayout
-}) => {
+export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
+  const {
+    isOpen,
+    onClose,
+    bgTheme,
+    setBgTheme,
+    highContrast,
+    setHighContrast,
+    sfxVolume,
+    setSfxVolume,
+    ambientVolume,
+    setAmbientVolume,
+    isAmbientEnabled,
+    setIsAmbientEnabled,
+    activeLayout,
+    unlockedLevels,
+    onSelectLayout,
+    currentLevel,
+    maxUnlockedLevel,
+    onSelectLevel
+  } = props;
   if (!isOpen) return null;
 
   const handleSfxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,83 +148,74 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
+          {/* Campaign Level Progression Selector */}
+          <div className="settings-section" style={{ borderTop: '1px solid rgba(201, 168, 76, 0.25)', paddingTop: '20px', marginTop: '10px' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              🎯 Level Progression Campaign
+            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap', background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+              <label htmlFor="level-select-dropdown" style={{ fontSize: '14.5px', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                Select Active Level:
+              </label>
+              <select
+                id="level-select-dropdown"
+                value={currentLevel}
+                onChange={(e) => {
+                  const lvl = parseInt(e.target.value);
+                  onSelectLevel(lvl);
+                  soundSynth.playClick();
+                }}
+                style={{
+                  padding: '8px 16px',
+                  background: '#2c1709',
+                  color: 'white',
+                  border: '1.5px solid var(--accent-gold)',
+                  borderRadius: '10px',
+                  fontSize: '15px',
+                  fontWeight: 'bold',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.4)'
+                }}
+              >
+                {Array.from({ length: maxUnlockedLevel }).map((_, i) => {
+                  const lvlNum = i + 1;
+                  const layoutsList = ['Garden', 'Pagoda', 'Pyramids', 'Butterfly', 'Turtle'];
+                  const layoutName = layoutsList[(lvlNum - 1) % layoutsList.length];
+                  return (
+                    <option key={lvlNum} value={lvlNum}>
+                      Level {lvlNum} ({layoutName})
+                    </option>
+                  );
+                })}
+              </select>
+              <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>
+                Highest Unlocked: <strong>Level {maxUnlockedLevel} / 240</strong>
+              </span>
+            </div>
+          </div>
+
           <div className="settings-row-grid">
             {/* Section 2: Visual Adjustments */}
             <div className="settings-section">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Visual Style
               </h3>
-              
-              <div className="form-group">
-                <label>Tile Representation:</label>
-                <div className="toggle-button-group">
-                  <button
-                    className={styleSet === 'classic' ? 'active' : ''}
-                    onClick={() => { setStyleSet('classic'); soundSynth.playClick(); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-                  >
-                    <ClassicTileStyleIcon size={18} /> Classic Chinese
-                  </button>
-                  <button
-                    className={styleSet === 'largePrint' ? 'active' : ''}
-                    onClick={() => { setStyleSet('largePrint'); soundSynth.playClick(); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-                  >
-                    <LargePrintStyleIcon size={18} /> Large Western Print
-                  </button>
-                  <button
-                    className={styleSet === 'nature' ? 'active' : ''}
-                    onClick={() => { setStyleSet('nature'); soundSynth.playClick(); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-                  >
-                    <NatureStyleIcon size={18} /> Relaxing Nature
-                  </button>
-                  <button
-                    className={styleSet === 'modernPop' ? 'active' : ''}
-                    onClick={() => { setStyleSet('modernPop'); soundSynth.playClick(); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-                  >
-                    <ModernPopStyleIcon size={18} /> Modern Neon Pop
-                  </button>
-                </div>
-              </div>
 
-              <div className="form-group">
-                <label>Background Theme:</label>
-                <div className="theme-selector-grid">
+              {/* Background theme picker */}
+              <div className="theme-swatch-grid" role="radiogroup" aria-label="Background theme">
+                {THEMES.map(t => (
                   <button
-                    className={`theme-btn zen ${bgTheme === 'zen' ? 'active' : ''}`}
-                    onClick={() => { setBgTheme('zen'); soundSynth.playClick(); }}
-                    title="Bamboo Zen Garden"
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
+                    key={t.id}
+                    className={`theme-swatch theme-swatch-${t.id} ${bgTheme === t.id ? 'active' : ''}`}
+                    role="radio"
+                    aria-checked={bgTheme === t.id}
+                    onClick={() => { setBgTheme(t.id); soundSynth.playSelect(); }}
                   >
-                    <ZenGardenIcon size={18} /> Zen Garden
+                    <span className="theme-swatch-emoji">{t.emoji}</span>
+                    <span className="theme-swatch-label">{t.label}</span>
                   </button>
-                  <button
-                    className={`theme-btn ocean ${bgTheme === 'ocean' ? 'active' : ''}`}
-                    onClick={() => { setBgTheme('ocean'); soundSynth.playClick(); }}
-                    title="Deep Healing Ocean"
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-                  >
-                    <OceanIcon size={18} /> Deep Ocean
-                  </button>
-                  <button
-                    className={`theme-btn sunset ${bgTheme === 'sunset' ? 'active' : ''}`}
-                    onClick={() => { setBgTheme('sunset'); soundSynth.playClick(); }}
-                    title="Sunset Cozy Cabin"
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-                  >
-                    <AmberWoodIcon size={18} /> Sunset Amber
-                  </button>
-                  <button
-                    className={`theme-btn dark ${bgTheme === 'dark' ? 'active' : ''}`}
-                    onClick={() => { setBgTheme('dark'); soundSynth.playClick(); }}
-                    title="Midnight Healing Space"
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
-                  >
-                    <HealingDarkIcon size={18} /> Healing Dark
-                  </button>
-                </div>
+                ))}
               </div>
 
               {/* Accessibility toggles */}
@@ -233,7 +228,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   />
                   <span className="checkbox-text" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <AccessibilityIcon size={18} inline />
-                    <span><strong>Senior High-Contrast Labels:</strong> Adds large text badges on top of complex tiles for effortless reading.</span>
+                    <span><strong>Senior High-Contrast Labels:</strong> Adds a clear name tag (e.g. "Panda") to every tile for effortless reading.</span>
                   </span>
                 </label>
               </div>

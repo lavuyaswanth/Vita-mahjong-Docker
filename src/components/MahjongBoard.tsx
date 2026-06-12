@@ -5,7 +5,6 @@ import { ZoomInIcon, ZoomOutIcon, ResetZoomIcon } from './SvgIcons';
 
 interface MahjongBoardProps {
   tiles: TileState[];
-  styleSet: 'classic' | 'largePrint' | 'nature' | 'modernPop';
   highContrast: boolean;
   hintedPair: [string, string] | null;
   onTileClick: (tile: TileState) => void;
@@ -13,6 +12,7 @@ interface MahjongBoardProps {
 }
 
 interface Particle {
+  active: boolean;
   x: number;
   y: number;
   vx: number;
@@ -22,13 +22,12 @@ interface Particle {
   alpha: number;
   life: number;
   maxLife: number;
-  rotation?: number;
-  rotationSpeed?: number;
+  rotation: number;
+  rotationSpeed: number;
 }
 
 export const MahjongBoard: React.FC<MahjongBoardProps> = ({
   tiles,
-  styleSet,
   highContrast,
   hintedPair,
   onTileClick,
@@ -40,13 +39,38 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const particlesRef = useRef<Particle[]>([]);
+  const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
+  
+  // Pre-allocated Particle Pool to prevent dynamic GC stutter
+  const PARTICLE_POOL_SIZE = 500;
+  const particlesPoolRef = useRef<Particle[]>([]);
   const animationFrameRef = useRef<number | null>(null);
+
+  // Initialize the particle pool once on mount
+  useEffect(() => {
+    const pool: Particle[] = [];
+    for (let i = 0; i < PARTICLE_POOL_SIZE; i++) {
+      pool.push({
+        active: false,
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        color: '',
+        size: 0,
+        alpha: 0,
+        life: 0,
+        maxLife: 0,
+        rotation: 0,
+        rotationSpeed: 0
+      });
+    }
+    particlesPoolRef.current = pool;
+  }, []);
 
   // Spawns spark particles at the grid center of matching tiles
   useEffect(() => {
-    // Look for freshly matched tiles (we check if any matched tile is in the tiles list
-    // and trigger effect based on match state changes)
+    // Look for freshly matched tiles
   }, [tiles]);
 
   // Particle Canvas loop
@@ -68,10 +92,12 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
 
     const updateAndDraw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const particles = particlesRef.current;
+      const pool = particlesPoolRef.current;
 
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
+      for (let i = 0; i < pool.length; i++) {
+        const p = pool[i];
+        if (!p.active) continue;
+
         p.x += p.vx;
         p.y += p.vy;
 
@@ -90,9 +116,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
           p.vy += 0.08; // Normal gravity for cyber neon sparks
         }
 
-        if (p.rotation !== undefined && p.rotationSpeed !== undefined) {
-          p.rotation += p.rotationSpeed;
-        }
+        p.rotation += p.rotationSpeed;
 
         p.life--;
         p.alpha = p.life / p.maxLife;
@@ -104,7 +128,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
         if (bgTheme === 'zen') {
           // --- 🌸 ZEN GARDEN: Spinning Cherry Blossom Petals ---
           ctx.translate(p.x, p.y);
-          ctx.rotate(p.rotation || 0);
+          ctx.rotate(p.rotation);
           ctx.beginPath();
           // Draw standard cherry blossom petal ellipse
           ctx.ellipse(0, 0, p.size * 1.3, p.size * 0.7, 0, 0, Math.PI * 2);
@@ -160,7 +184,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
         ctx.restore();
 
         if (p.life <= 0) {
-          particles.splice(i, 1);
+          p.active = false; // Recycle in pool
         }
       }
 
@@ -179,23 +203,23 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
 
   // Listen for global tiles match custom events to trigger bursts
   useEffect(() => {
-    const handleMatchEvent = (e: CustomEvent<{ x1: number; y1: number; x2: number; y2: number }>) => {
-      const { x1, y1, x2, y2 } = e.detail;
+    const handleMatchEvent = (e: CustomEvent<{ id1: string; id2: string }>) => {
+      const { id1, id2 } = e.detail;
       const canvas = canvasRef.current;
-      if (!canvas || !containerRef.current) return;
+      const container = containerRef.current;
+      if (!canvas || !container) return;
 
-      const rect = containerRef.current.getBoundingClientRect();
-      
-      // Map grid coordinates to screen pixel coordinates
-      const gridWidth = 32; // match css template columns
-      const gridHeight = 18; // match css template rows
-      const cellW = rect.width / gridWidth;
-      const cellH = rect.height / gridHeight;
-
-      const px1 = (x1 + 1) * cellW + cellW;
-      const py1 = (y1 + 1) * cellH + cellH;
-      const px2 = (x2 + 1) * cellW + cellW;
-      const py2 = (y2 + 1) * cellH + cellH;
+      // Burst at the tiles' actual rendered positions (matched tiles stay in
+      // the DOM), so sparks line up regardless of zoom, pan, or orientation.
+      const rect = container.getBoundingClientRect();
+      const tileCenter = (id: string): { x: number; y: number } => {
+        const el = container.querySelector(`[data-tile-id="${CSS.escape(id)}"]`);
+        if (!el) return { x: rect.width / 2, y: rect.height / 2 };
+        const r = el.getBoundingClientRect();
+        return { x: r.left + r.width / 2 - rect.left, y: r.top + r.height / 2 - rect.top };
+      };
+      const { x: px1, y: py1 } = tileCenter(id1);
+      const { x: px2, y: py2 } = tileCenter(id2);
 
       // Color palettes tailored precisely for premium design sets
       let colors = ['#ffb7c5', '#ff9fb2', '#ffffff', '#ffd1dc']; // Zen pink sakura
@@ -207,24 +231,34 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
         colors = ['#ff007f', '#d500f9', '#7c4dff', '#00e5ff', '#ffffff']; // Cyber purple/magenta
       }
 
-      // Spawn 16 particles per tile location
+      // Recycle and activate particles from the pool instead of push
       const spawnBurst = (cx: number, cy: number) => {
-        for (let i = 0; i < 16; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          const speed = 1 + Math.random() * 4.5;
-          particlesRef.current.push({
-            x: cx,
-            y: cy,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed - 1.5, // blast upwards slightly
-            color: colors[Math.floor(Math.random() * colors.length)],
-            size: 2.5 + Math.random() * 4.5,
-            alpha: 1.0,
-            life: 30 + Math.floor(Math.random() * 20),
-            maxLife: 50,
-            rotation: Math.random() * Math.PI * 2,
-            rotationSpeed: (Math.random() - 0.5) * 0.15
-          });
+        const pool = particlesPoolRef.current;
+        let spawned = 0;
+
+        for (let i = 0; i < pool.length; i++) {
+          if (!pool[i].active) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 1 + Math.random() * 4.5;
+            
+            pool[i].active = true;
+            pool[i].x = cx;
+            pool[i].y = cy;
+            pool[i].vx = Math.cos(angle) * speed;
+            pool[i].vy = Math.sin(angle) * speed - 1.5; // blast upwards slightly
+            pool[i].color = colors[Math.floor(Math.random() * colors.length)];
+            pool[i].size = 2.5 + Math.random() * 4.5;
+            pool[i].alpha = 1.0;
+            pool[i].life = 30 + Math.floor(Math.random() * 20);
+            pool[i].maxLife = 50;
+            pool[i].rotation = Math.random() * Math.PI * 2;
+            pool[i].rotationSpeed = (Math.random() - 0.5) * 0.15;
+
+            spawned++;
+            if (spawned >= 16) {
+              break;
+            }
+          }
         }
       };
 
@@ -238,21 +272,63 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     };
   }, [bgTheme]);
 
-  // Compute fit-to-screen zoom factor
-  const computeFitZoom = () => {
-    if (!containerRef.current) return 1.0;
+  // Compute fit-to-screen transform by fitting the ACTUAL tile bounding box
+  // (not the full 30x18 grid) so tiles render as large as possible and stay centered.
+  const computeFitTransform = (): { zoom: number; panX: number; panY: number } => {
+    if (!containerRef.current || tiles.length === 0) {
+      return { zoom: 1.0, panX: 0, panY: 0 };
+    }
     const containerWidth = containerRef.current.clientWidth;
     const containerHeight = containerRef.current.clientHeight;
 
+    // Grid cell sizes must match the CSS grid-template (and its 1024px breakpoint):
+    // landscape 28x30 (22x24 small), portrait transposed 30x28 (24x22 small).
     const isSmallScreen = window.innerWidth <= 1024;
-    const gridW = isSmallScreen ? (30 * 20 + 100) : (30 * 26 + 100);
-    const gridH = isSmallScreen ? (18 * 22 + 100) : (18 * 28 + 100);
+    let cellW = isSmallScreen ? 22 : 28;
+    let cellH = isSmallScreen ? 24 : 30;
+    if (isPortrait) {
+      cellW = isSmallScreen ? 24 : 30;
+      cellH = isSmallScreen ? 22 : 28;
+    }
 
-    const scaleX = containerWidth / gridW;
-    const scaleY = containerHeight / gridH;
-    const fitted = Math.min(scaleX, scaleY) * 0.94; // 94% safe margin
+    // Bounding box of all tiles in grid units (each tile spans 2 units)
+    const active = tiles.filter(t => !t.matched);
+    const ref = active.length > 0 ? active : tiles;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const t of ref) {
+      const rx = isPortrait ? t.y : t.x;
+      const ry = isPortrait ? t.x : t.y;
+      if (rx < minX) minX = rx;
+      if (rx + 2 > maxX) maxX = rx + 2;
+      if (ry < minY) minY = ry;
+      if (ry + 2 > maxY) maxY = ry + 2;
+    }
 
-    return Math.min(Math.max(fitted, 0.35), 1.8);
+    // Bounding box in pixels + padding for 3D walls, stacking shift and shadows
+    const padPx = 48;
+    const bboxW = (maxX - minX) * cellW + padPx * 2;
+    const bboxH = (maxY - minY) * cellH + padPx * 2;
+
+    const scaleX = containerWidth / bboxW;
+    const scaleY = containerHeight / bboxH;
+    const zoom = Math.min(Math.max(Math.min(scaleX, scaleY) * 0.97, 0.35), 2.4);
+
+    // Re-center: the grid centers its own geometric center (15 cols, 9 rows).
+    // Offset the pan so the tile bounding-box center lands at the container center.
+    const bboxCenterX = ((minX + maxX) / 2) * cellW;
+    const bboxCenterY = ((minY + maxY) / 2) * cellH;
+    const gridCenterX = (isPortrait ? 9 : 15) * cellW;
+    const gridCenterY = (isPortrait ? 15 : 9) * cellH;
+    const panX = -(bboxCenterX - gridCenterX) * zoom;
+    const panY = -(bboxCenterY - gridCenterY) * zoom;
+
+    return { zoom, panX, panY };
+  };
+
+  const applyFit = () => {
+    const { zoom: z, panX, panY } = computeFitTransform();
+    setZoom(z);
+    setPan({ x: panX, y: panY });
   };
 
   // Auto-fit board on mount or layout change/restart
@@ -261,53 +337,116 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     const isNewGame = unmatchedCount === tiles.length;
 
     let timer: number | undefined;
+    const nextPortrait = window.innerHeight > window.innerWidth;
+    const portraitTimer = setTimeout(() => {
+      setIsPortrait(nextPortrait);
+    }, 0);
+
     if (isNewGame) {
-      timer = window.setTimeout(() => {
-        const fitted = computeFitZoom();
-        setZoom(fitted);
-        setPan({ x: 0, y: 0 });
-      }, 60);
+      timer = window.setTimeout(() => applyFit(), 60);
     }
 
     const handleResize = () => {
-      const fitted = computeFitZoom();
-      setZoom(fitted);
-      setPan({ x: 0, y: 0 });
+      setIsPortrait(window.innerHeight > window.innerWidth);
+      applyFit();
     };
 
     window.addEventListener('resize', handleResize);
     return () => {
+      clearTimeout(portraitTimer);
       if (timer) clearTimeout(timer);
       window.removeEventListener('resize', handleResize);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tiles]);
 
   // Zoom controls
-  const zoomIn = () => setZoom(prev => Math.min(prev + 0.15, 2.0));
-  const zoomOut = () => setZoom(prev => Math.max(prev - 0.15, 0.35));
-  const resetZoom = () => {
-    const fitted = computeFitZoom();
-    setZoom(fitted);
-    setPan({ x: 0, y: 0 });
-  };
+  const MIN_ZOOM = 0.35;
+  const MAX_ZOOM = 2.4;
+  const clampZoom = (z: number) => Math.min(Math.max(z, MIN_ZOOM), MAX_ZOOM);
+  const zoomIn = () => setZoom(prev => clampZoom(prev + 0.15));
+  const zoomOut = () => setZoom(prev => clampZoom(prev - 0.15));
+  const resetZoom = () => applyFit();
+
+  // Tracks whether the current gesture moved far enough to count as a pan;
+  // if so, the click that fires on release is swallowed so it can't pick a tile.
+  const dragMovedRef = useRef(false);
 
   // Dragging to Pan board (accessibility for smaller displays)
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return; // Left click only
     setIsDragging(true);
+    dragMovedRef.current = false;
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
-    setPan({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    });
+    const nx = e.clientX - dragStart.x;
+    const ny = e.clientY - dragStart.y;
+    if (Math.abs(nx - pan.x) + Math.abs(ny - pan.y) > 4) dragMovedRef.current = true;
+    setPan({ x: nx, y: ny });
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
+  };
+
+  // Swallow the click that follows a pan gesture
+  const handleClickCapture = (e: React.MouseEvent) => {
+    if (dragMovedRef.current) {
+      e.stopPropagation();
+      e.preventDefault();
+      dragMovedRef.current = false;
+    }
+  };
+
+  // Touch: one finger pans, two fingers pinch-zoom. The container uses
+  // touch-action: none so the browser never scrolls/zooms the page instead.
+  const touchRef = useRef<{ mode: 'pan' | 'pinch' | null; startX: number; startY: number; panX: number; panY: number; pinchDist: number; zoomStart: number }>({
+    mode: null, startX: 0, startY: 0, panX: 0, panY: 0, pinchDist: 0, zoomStart: 1
+  });
+
+  const touchDist = (t: React.TouchList) =>
+    Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const s = touchRef.current;
+    if (e.touches.length === 2) {
+      s.mode = 'pinch';
+      s.pinchDist = touchDist(e.touches);
+      s.zoomStart = zoom;
+    } else if (e.touches.length === 1) {
+      s.mode = 'pan';
+      s.startX = e.touches[0].clientX;
+      s.startY = e.touches[0].clientY;
+      s.panX = pan.x;
+      s.panY = pan.y;
+      dragMovedRef.current = false;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const s = touchRef.current;
+    if (s.mode === 'pinch' && e.touches.length === 2 && s.pinchDist > 0) {
+      setZoom(clampZoom(s.zoomStart * (touchDist(e.touches) / s.pinchDist)));
+    } else if (s.mode === 'pan' && e.touches.length === 1) {
+      const dx = e.touches[0].clientX - s.startX;
+      const dy = e.touches[0].clientY - s.startY;
+      if (Math.abs(dx) + Math.abs(dy) > 8) {
+        dragMovedRef.current = true;
+        setPan({ x: s.panX + dx, y: s.panY + dy });
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchRef.current.mode = null;
+  };
+
+  // Desktop convenience: mouse wheel zooms the board
+  const handleWheel = (e: React.WheelEvent) => {
+    setZoom(prev => clampZoom(prev - e.deltaY * 0.0015));
   };
 
   return (
@@ -333,8 +472,14 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onClickCapture={handleClickCapture}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onWheel={handleWheel}
         style={{
           cursor: isDragging ? 'grabbing' : 'grab',
+          touchAction: 'none',
         }}
       >
         {/* Canvas overlay for particle burst effects */}
@@ -350,7 +495,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
 
         {/* 3D stacked Board Grid */}
         <div
-          className="mahjong-grid"
+          className={`mahjong-grid ${isPortrait ? 'portrait-grid' : ''}`}
           style={{
             transform: `translate(calc(-50% + ${pan.x}px), calc(-50% + ${pan.y}px)) scale(${zoom})`,
             transformOrigin: 'center center',
@@ -363,7 +508,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
               <Tile
                 key={tile.id}
                 tile={tile}
-                styleSet={styleSet}
+                transpose={isPortrait}
                 highContrast={highContrast}
                 isHinted={isHinted}
                 onClick={onTileClick}

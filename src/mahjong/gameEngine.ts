@@ -7,27 +7,26 @@ import type { LayoutName, TileCoords } from './layouts';
 export interface TileState extends TileCoords {
   type: string;       // e.g. 'bamboo', 'circle', 'character', 'wind', 'dragon', 'season', 'flower'
   value: number;      // e.g. 1 to 9 for suits, or 0,1,2,3 for winds
-  iconIndex: number;  // maps to custom SVGs or emojis
   isFree: boolean;    // pre-calculated
-  selected: boolean;  // selection state
-  revealed: boolean; // used in Memory Mahjong Mode
   matched: boolean;   // true if cleared
-  removing?: boolean;  // transitional state for exit animation
-  wobbling?: boolean;  // transitional state for blocked click wobble animation
+  wobbling?: boolean; // transitional state for blocked click wobble animation
 }
 
-// Simple seedable random number generator (LCC) for deterministic Daily Challenges
+// Seedable random number generator (mulberry32) for deterministic Daily Challenges
 export class SeededRandom {
-  private seed: number;
+  private state: number;
 
   constructor(seed: number) {
-    this.seed = Math.abs(seed) || 1;
+    this.state = (Math.abs(Math.floor(seed)) >>> 0) || 1;
   }
 
   // Returns 0.0 to 1.0
   public next(): number {
-    const x = Math.sin(this.seed++) * 10000;
-    return x - Math.floor(x);
+    this.state = (this.state + 0x6d2b79f5) >>> 0;
+    let t = this.state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   }
 
   // Choose from array
@@ -99,31 +98,31 @@ export function tilesMatch(a: TileState, b: TileState): boolean {
   return a.value === b.value;
 }
 
-// Check if a specific tile is "free" (unblocked) on a board
+// Check if a specific tile is "free" (unblocked) on a board.
+//
+// Classic Mahjong free rule: a tile is playable when BOTH
+//   1. nothing is stacked on top of it (no higher layer overlaps its face), AND
+//   2. at least one long side (left OR right) is open.
+//
+// A side counts as "blocked" only if a same-layer neighbour overlaps that side
+// by MORE THAN 50% — i.e. their faces are aligned on the perpendicular axis
+// (centres within one half-tile). A neighbour that only straddles by half a tile
+// (the 50% offset stacking) does NOT block. The "left/right" axis here is the
+// board's logical Y, which is the horizontal (left↔right) axis as the player
+// sees it in portrait (the renderer transposes X↔Y for portrait).
 export function checkIfTileIsFree(tile: TileCoords, activeTiles: TileCoords[]): boolean {
-  // 1. Check if there are any tiles on top of it (higher Z layer that overlaps)
-  const topOverlap = activeTiles.some(other => {
-    if (other.z !== tile.z + 1) return false;
-    return overlaps(tile, other);
-  });
-
+  // 1. Covered from above?
+  const topOverlap = activeTiles.some(other => other.z > tile.z && overlaps(tile, other));
   if (topOverlap) return false;
 
-  // 2. Check side blockages (same layer, overlapping Y-axis)
-  // Left blocker: tile at same height with x = tile.x - 2 and Y overlapping
-  const hasLeftBlocker = activeTiles.some(other => {
-    if (other.z !== tile.z) return false;
-    return other.x === tile.x - 2 && Math.abs(other.y - tile.y) < 2;
-  });
+  // 2. Blocked on a side? A neighbour two units away on the same layer blocks
+  //    only when it overlaps the perpendicular axis by >50% (|Δx| < 1).
+  const sideOverlaps = (o: TileCoords) => o.z === tile.z && Math.abs(o.x - tile.x) < 1;
+  const leftBlocked = activeTiles.some(o => sideOverlaps(o) && o.y === tile.y - 2);
+  const rightBlocked = activeTiles.some(o => sideOverlaps(o) && o.y === tile.y + 2);
 
-  // Right blocker: tile at same height with x = tile.x + 2 and Y overlapping
-  const hasRightBlocker = activeTiles.some(other => {
-    if (other.z !== tile.z) return false;
-    return other.x === tile.x + 2 && Math.abs(other.y - tile.y) < 2;
-  });
-
-  // Free if there is no blocker on the Left OR no blocker on the Right
-  return !hasLeftBlocker || !hasRightBlocker;
+  // Free if at least one side is open.
+  return !leftBlocked || !rightBlocked;
 }
 
 // Build a guaranteed-solvable board using the reverse-placement algorithm.
@@ -274,11 +273,6 @@ export function buildSolvableBoard(layoutName: LayoutName, seed?: number): TileS
     const tiles: TileState[] = coords.map((coord, index) => {
       const tileDef = tileAssignments[index] || { type: 'bamboo', value: 1 };
 
-      let iconIndex = tileDef.value;
-      if (tileDef.type === 'season' || tileDef.type === 'flower') {
-        iconIndex = tileDef.value;
-      }
-
       return {
         x: coord.x,
         y: coord.y,
@@ -286,16 +280,12 @@ export function buildSolvableBoard(layoutName: LayoutName, seed?: number): TileS
         id: `tile_${coord.x}_${coord.y}_${coord.z}`,
         type: tileDef.type,
         value: tileDef.value,
-        iconIndex,
         isFree: false,
-        selected: false,
-        revealed: false,
         matched: false
       };
     });
 
-    recalculateFreeState(tiles);
-    return tiles;
+    return recalculateFreeState(tiles);
   }
 
   // Fallback: all attempts failed — use legacy random placement (should be extremely rare)
@@ -353,11 +343,6 @@ function buildBoardLegacy(layoutName: LayoutName, seed: number): TileState[] {
   const tiles: TileState[] = config.coords.map((coord, index) => {
     const tileDef = deck[index] || { type: 'bamboo', value: 1 };
 
-    let iconIndex = tileDef.value;
-    if (tileDef.type === 'season' || tileDef.type === 'flower') {
-      iconIndex = tileDef.value;
-    }
-
     return {
       x: coord.x,
       y: coord.y,
@@ -365,16 +350,12 @@ function buildBoardLegacy(layoutName: LayoutName, seed: number): TileState[] {
       id: `tile_${coord.x}_${coord.y}_${coord.z}`,
       type: tileDef.type,
       value: tileDef.value,
-      iconIndex,
       isFree: false,
-      selected: false,
-      revealed: false,
       matched: false
     };
   });
 
-  recalculateFreeState(tiles);
-  return tiles;
+  return recalculateFreeState(tiles);
 }
 
 // Generate the initial board state for a given layout and seed
@@ -382,15 +363,15 @@ export function buildBoard(layoutName: LayoutName, seed?: number): TileState[] {
   return buildSolvableBoard(layoutName, seed);
 }
 
-// Recalculates the 'isFree' state for all non-matched tiles on the board
-export function recalculateFreeState(tiles: TileState[]) {
+// Recalculates the 'isFree' state for all non-matched tiles on the board.
+// Pure: returns a new array, cloning only the tiles whose state changed, so
+// unchanged tiles keep their identity (lets React.memo skip re-rendering them).
+export function recalculateFreeState(tiles: TileState[]): TileState[] {
   const activeTiles = tiles.filter(t => !t.matched);
-  tiles.forEach(tile => {
-    if (tile.matched) {
-      tile.isFree = false;
-    } else {
-      tile.isFree = checkIfTileIsFree(tile, activeTiles);
-    }
+  return tiles.map(tile => {
+    const isFree = tile.matched ? false : checkIfTileIsFree(tile, activeTiles);
+    if (isFree === tile.isFree) return tile;
+    return { ...tile, isFree };
   });
 }
 
@@ -410,54 +391,36 @@ export function findAvailableMoves(tiles: TileState[]): [TileState, TileState][]
   return moves;
 }
 
-// Solvable Shuffle: swaps tiles that are NOT matched, checking for valid moves
+// Solvable Shuffle: swaps tiles that are NOT matched, checking for valid moves.
+// Pure: works on clones so the caller's previous board state is never mutated.
 export function shuffleActiveTiles(tiles: TileState[]): TileState[] {
-  const unmatched = tiles.filter(t => !t.matched);
-  const matched = tiles.filter(t => t.matched);
-  
+  const working = tiles.map(t => t.matched ? t : { ...t });
+  const unmatched = working.filter(t => !t.matched);
+
   if (unmatched.length === 0) return tiles;
 
   // Extract values and shuffle them
   const values = unmatched.map(t => ({
     type: t.type,
-    value: t.value,
-    iconIndex: t.iconIndex
+    value: t.value
   }));
 
   const rng = new SeededRandom(Math.random() * 999999);
-  let attempts = 0;
-  let success = false;
+  let result = working;
 
   // Shuffle until we find a combination with at least one possible move (or limit to 30 attempts)
-  while (attempts < 30 && !success) {
+  for (let attempts = 0; attempts < 30; attempts++) {
     rng.shuffle(values);
 
-    // Apply values to the unmatched positions
+    // Apply values to the unmatched positions (mutating our local clones only)
     unmatched.forEach((t, idx) => {
       t.type = values[idx].type;
       t.value = values[idx].value;
-      t.iconIndex = values[idx].iconIndex;
-      t.selected = false;
     });
 
-    recalculateFreeState(tiles);
-    const moves = findAvailableMoves(tiles);
-
-    if (moves.length > 0) {
-      success = true;
-    }
-    attempts++;
+    result = recalculateFreeState(working);
+    if (findAvailableMoves(result).length > 0) break;
   }
 
-  // Combine back
-  return [...matched, ...unmatched];
-}
-
-// Generate the unique puzzle seed for any calendar date
-export function getDailyChallengeSeed(date: Date): number {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  // Form a unique integer: YYYYMMDD
-  return year * 10000 + month * 100 + day;
+  return result;
 }

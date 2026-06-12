@@ -1,19 +1,16 @@
 import React, { useState } from 'react';
 import { soundSynth } from '../mahjong/soundSynth';
+import { achievementsList } from '../mahjong/achievements';
 import logoImg from '../assets/logo.png';
 import {
   SettingsIcon,
   HelpIcon,
-  BrainIcon,
   PlayIcon,
-  CalendarIcon,
-  EarnedStampIcon,
-  EmptyStampIcon,
   CloseIcon
 } from './SvgIcons';
 
 interface MainMenuProps {
-  onStartGame: (mode: 'solitaire' | 'memory' | 'daily' | 'timed') => void;
+  onStartGame: () => void;
   onOpenSettings: () => void;
   unlockedLevels: number[];
 }
@@ -23,15 +20,6 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onOpenSettings,
   unlockedLevels
 }) => {
-  const [completedDailies] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem('vita_mahjong_dailies');
-      return stored ? JSON.parse(stored) : [];
-    } catch (e) {
-      console.warn("Could not load daily progress:", e);
-      return [];
-    }
-  });
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [unlockedAchievements] = useState<string[]>(() => {
@@ -68,9 +56,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     }
   };
 
-  const handlePlayClick = (mode: 'solitaire' | 'memory' | 'daily' | 'timed') => {
-    soundSynth.playVictory();
-    onStartGame(mode);
+  const handlePlayClick = () => {
+    soundSynth.playClick();
+    onStartGame();
   };
 
   return (
@@ -91,17 +79,17 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
       {/* Top Quick Settings Bar */}
       <div className="menu-top-actions">
-        <button 
-          className="menu-circle-btn" 
-          onClick={() => { soundSynth.playClick(); onOpenSettings(); }} 
+        <button
+          className="menu-circle-btn"
+          onClick={() => { soundSynth.playClick(); onOpenSettings(); }}
           title="Board Styles & Shapes"
           aria-label="Settings"
         >
           <SettingsIcon size={20} />
         </button>
-        <button 
-          className="menu-circle-btn achievements-btn" 
-          onClick={handleOpenAchievements} 
+        <button
+          className="menu-circle-btn achievements-btn"
+          onClick={handleOpenAchievements}
           title="Trophy Room & Achievements"
           aria-label="View achievements"
         >
@@ -110,9 +98,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           </svg>
           {hasNewAchievements && <span className="badge-dot"></span>}
         </button>
-        <button 
-          className="menu-circle-btn" 
-          onClick={() => { soundSynth.playClick(); setShowHowToPlay(true); }} 
+        <button
+          className="menu-circle-btn"
+          onClick={() => { soundSynth.playClick(); setShowHowToPlay(true); }}
           title="How to Play"
           aria-label="How to play help"
         >
@@ -124,104 +112,38 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       <div className="menu-hero-header">
         <div className="logo-glow-behind"></div>
         <img src={logoImg} className="menu-logo-img" alt="Vita Mahjong Logo" />
-        <p className="menu-subtitle">A Soothing, Senior-Friendly Solitaire Match & Brain-Training game</p>
+        <p className="menu-subtitle">A Soothing, Senior-Friendly Mahjong Solitaire Match Game</p>
         {unlockedLevels.length > 1 && (
-          <p className="menu-unlock-badge">🏆 {unlockedLevels.length}/5 Levels Unlocked</p>
+          <p className="menu-unlock-badge">🏆 {unlockedLevels.length}/5 Boards Unlocked</p>
         )}
       </div>
 
-      {/* Central Interactive Gameplay Zone */}
-      <div className="menu-game-zone">
-        
-        {/* Left Side: Tasks (Memory Mode) */}
-        <div className="menu-card glassmorphism memory-card" onClick={() => handlePlayClick('memory')}>
-          <span className="card-badge">Brain Health</span>
-          <div className="menu-card-icon">
-            <BrainIcon size={52} />
-          </div>
-          <h3>Memory Match</h3>
-          <p>Tiles face down. Remember layout pairs to boost cognitive recall.</p>
-          <button className="play-card-btn">Memory Mode</button>
-        </div>
-
-        {/* Center Hero: Classic Play Medallion */}
+      {/* Central Hero: Classic Play Medallion */}
+      <div className="menu-play-zone">
         <div className="menu-medallion-container">
           <div className="medallion-glow"></div>
           {/* Concentric rotating plates */}
           <div className="medallion-plate-outer"></div>
           <div className="medallion-plate-inner"></div>
-          
-          {/* Main glossy Pill play action */}
-          <button 
-            className="medallion-play-btn" 
-            onClick={() => handlePlayClick('solitaire')}
-            aria-label="Start Classic Solitaire Mode"
+
+          {/* Main glossy Pill play action — starts the Mahjong Solitaire game with the tray */}
+          <button
+            className="medallion-play-btn"
+            onClick={handlePlayClick}
+            aria-label="Start Mahjong Solitaire"
           >
             <span className="play-btn-glow"></span>
             <div className="play-btn-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <PlayIcon size={38} />
             </div>
             <div className="play-btn-text-group">
-              <span className="play-btn-primary">PLAY SOLITAIRE</span>
-              <span className="play-btn-secondary">Classic Match Mode</span>
+              <span className="play-btn-primary">PLAY</span>
+              <span className="play-btn-secondary">Mahjong Solitaire</span>
             </div>
           </button>
         </div>
 
-        {/* Right Side: Daily challenge stamp quest */}
-        <div className="menu-card glassmorphism daily-card" onClick={() => handlePlayClick('daily')}>
-          <span className="card-badge gold-badge">Daily Seed</span>
-          <div className="menu-card-icon">
-            <CalendarIcon size={52} />
-          </div>
-          <h3>Daily Zen Quest</h3>
-          <p>Unique challenge puzzle. Earn visual stamps for calendar progress.</p>
-          <button className="play-card-btn">Daily Play</button>
-        </div>
-
-      </div>
-
-      {/* Timed Rush Mode Card (#4) */}
-      <div className="menu-timed-section">
-        <div className="menu-card glassmorphism timed-card" onClick={() => handlePlayClick('timed')}>
-          <span className="card-badge" style={{ background: 'linear-gradient(135deg, #b71c1c 0%, #7f0000 100%)', borderColor: '#ff5252', color: '#ff8a80' }}>⏱️ Rush</span>
-          <div className="menu-card-icon" style={{ fontSize: '44px' }}>⏰</div>
-          <h3>Timed Rush</h3>
-          <p>Race the clock! Clear the board before time runs out. Each match earns +5 bonus seconds.</p>
-          <button className="play-card-btn">Start Rush</button>
-        </div>
-      </div>
-
-      {/* Calendar Stamps Dashboard */}
-      <div className="menu-dashboard-wrapper">
-        <div className="menu-dashboard glassmorphism">
-          <div className="dashboard-item">
-            <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <EarnedStampIcon size={18} inline /> Weekly Zen Challenge Stamps
-            </h4>
-            <div className="stamps-row">
-              {Array.from({ length: 7 }).map((_, idx) => {
-                const day = new Date();
-                day.setDate(day.getDate() - (6 - idx));
-                const dateString = day.toISOString().split('T')[0];
-                const isCompleted = completedDailies.includes(dateString);
-                const weekday = day.toLocaleDateString('en-US', { weekday: 'short' });
-
-                return (
-                  <div key={idx} className={`stamp-cell ${isCompleted ? 'earned' : ''}`}>
-                    <span className="stamp-day">{weekday}</span>
-                    <div className="stamp-seal-outer">
-                      <div className="stamp-graphic" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {isCompleted ? <EarnedStampIcon size={28} /> : <EmptyStampIcon size={28} />}
-                      </div>
-                    </div>
-                    <span className="stamp-date">{day.getDate()}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        <p className="menu-board-hint">Tap the gear to choose your puzzle level shape</p>
       </div>
 
       {/* How To Play Modal */}
@@ -241,29 +163,29 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 <div className="rule-item">
                   <span className="rule-num">1</span>
                   <div>
-                    <h4>Match Identical Tiles</h4>
-                    <p>Click two identical tiles to clear them from the board. Clearance reveals tiles below and unlocks new possibilities.</p>
+                    <h4>Collect Tiles Into Your Tray</h4>
+                    <p>Tap a free tile to slide it up into your <strong>4-slot tray</strong>. When two identical tiles meet in the tray they clear automatically and score. Clear the whole board to win — but if all 4 slots fill with no match, the round pauses.</p>
                   </div>
                 </div>
                 <div className="rule-item">
                   <span className="rule-num">2</span>
                   <div>
                     <h4>Use "Free" Tiles Only</h4>
-                    <p>A tile is only selectable if it is <strong>free</strong>. This means it has <strong>no tiles stacked on top of it</strong> AND it has <strong>no neighbor tile on either its immediate left OR right</strong>.</p>
+                    <p>A tile is only selectable if it is <strong>free</strong>: it has <strong>no tile stacked on top of it</strong> and at least one of its sides (<strong>left or right</strong>) is open. Blocked tiles are dimmed until you uncover them.</p>
                   </div>
                 </div>
                 <div className="rule-item">
                   <span className="rule-num">3</span>
                   <div>
                     <h4>Special Matching Types</h4>
-                    <p>All **Seasons** tiles (Spring, Summer, Autumn, Winter) match with one another. All **Flowers** tiles (Plum, Orchid, Bamboo, Chrysanthemum) match with one another.</p>
+                    <p>All <strong>Seasons</strong> tiles (Spring, Summer, Autumn, Winter) match with one another. All <strong>Flowers</strong> tiles (Plum, Orchid, Bamboo, Chrysanthemum) match with one another.</p>
                   </div>
                 </div>
                 <div className="rule-item">
                   <span className="rule-num">4</span>
                   <div>
-                    <h4>Unique Memory Mode</h4>
-                    <p>In memory training, matching tiles are initially face-down. Reveal a tile by clicking it. Match them by keeping track of where their duplicates are hidden!</p>
+                    <h4>Booster Helpers</h4>
+                    <p>Stuck? <strong>Shuffle</strong> reshuffles the remaining tiles, <strong>Hint</strong> reveals a safe move, <strong>Undo</strong> returns your last collected tile to the board, and <strong>Magnet</strong> pulls several tiles back at once. Each booster has a stock shown on its badge — win levels to earn more!</p>
                   </div>
                 </div>
               </div>
@@ -293,7 +215,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: 'var(--text-secondary)', textAlign: 'center' }}>
                 Track your wellness journey and brain milestones. Solving puzzles unlocks Zen badges.
               </p>
-              
+
               <div className="achievements-grid">
                 {achievementsList.map(item => {
                   const isUnlocked = unlockedAchievements.includes(item.id);
@@ -358,31 +280,9 @@ const BadgeSvg: React.FC<{ id: string; unlocked: boolean }> = ({ id, unlocked })
           <path fill="currentColor" d="M12 2L9 6h6l-3-4zm-5 6l1.5 2h7L17 8H7zm-3 5l2 3h12l2-3H4zm-1 6h18v2H3v-2zM8 10h8v3H8v-3zm2-4h4v2h-4V6z"/>
         </svg>
       );
-    case 'daily_devotee':
-      return (
-        <svg viewBox="0 0 24 24" className="badge-svg" style={{ color: unlocked ? '#e53935' : '#555' }}>
-          <path fill="currentColor" d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-3-9h6v2H9v-2zm0-4h6v2H9V7zm0 8h6v2H9v-2z"/>
-        </svg>
-      );
-    case 'time_survivor':
-      return (
-        <svg viewBox="0 0 24 24" className="badge-svg" style={{ color: unlocked ? '#29b6f6' : '#555' }}>
-          <path fill="currentColor" d="M6 2v6c0 2.2 1.8 4 4 4v0c-2.2 0-4 1.8-4 4v6h12v-6c0-2.2-1.8-4-4-4v0c2.2 0 4-1.8 4-4V2H6zm10 14v4H8v-4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2zM8 4h8v4c0 1.1-.9 2-2 2h-4c-1.1 0-2-.9-2-2V4z"/>
-        </svg>
-      );
     default:
       return null;
   }
 };
-
-const achievementsList = [
-  { id: 'zen_beginner', name: 'Zen Sprout', desc: 'Complete your first puzzle to begin your journey.' },
-  { id: 'combo_master', name: 'Combo Catalyst', desc: 'Attain a x5 combo streak by matching tiles within 3 seconds.' },
-  { id: 'speedy_thinker', name: 'Speedy Mind', desc: 'Solve any layout in under 3 minutes.' },
-  { id: 'mindful_path', name: 'Mindful Path', desc: 'Clear a full layout without using a Hint or Shuffle.' },
-  { id: 'trophy_collector', name: 'Zen Master', desc: 'Prove your dedication by solving all 5 layouts.' },
-  { id: 'daily_devotee', name: 'Daily Zen Devotion', desc: 'Acquire 3 daily quest stamps on the calendar.' },
-  { id: 'time_survivor', name: 'Rush Champion', desc: 'Race and conquer a full Timed Rush game.' }
-];
 
 export default MainMenu;

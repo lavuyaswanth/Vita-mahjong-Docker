@@ -181,6 +181,22 @@ export const UndoIcon: React.FC<IconProps> = ({ size = 24, className, inline }) 
   </svg>
 );
 
+export const MagnetIcon: React.FC<IconProps> = ({ size = 24, className, inline }) => (
+  <svg viewBox="0 0 24 24" className={className} style={inlineStyle(size, inline)}>
+    <GoldGradient />
+    {/* Horseshoe magnet that pulls tiles back out of the tray */}
+    <path
+      fill="none"
+      stroke="url(#goldGrad)"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M6 4v7a6 6 0 0 0 12 0V4 M6 4H3.2v7 M18 4h2.8v7"
+    />
+    <path stroke="url(#goldGrad)" strokeWidth="2.5" strokeLinecap="round" d="M3.2 13.5H6 M18 13.5h2.8" />
+  </svg>
+);
+
 export const HintIcon: React.FC<IconProps> = ({ size = 24, className, inline }) => (
   <svg viewBox="0 0 32 32" className={className} style={inlineStyle(size, inline)}>
     <GoldGradient />
