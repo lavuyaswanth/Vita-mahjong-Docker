@@ -10,6 +10,7 @@ import type { TileState } from './mahjong/gameEngine';
 import { layouts } from './mahjong/layouts';
 import type { LayoutName } from './mahjong/layouts';
 import { soundSynth } from './mahjong/soundSynth';
+import { haptics } from './mahjong/haptics';
 import { achievementsList } from './mahjong/achievements';
 import MahjongBoard from './components/MahjongBoard';
 import { TileGlyph } from './components/Tile';
@@ -375,8 +376,10 @@ export const App: React.FC = () => {
 
     if (newMultiplier > 1) {
       soundSynth.playComboChime(newMultiplier);
+      haptics.combo(newMultiplier);
     } else {
       soundSynth.playMatch();
+      haptics.match();
     }
     triggerSparkMatchEvent(t1, t2);
   };
@@ -390,6 +393,7 @@ export const App: React.FC = () => {
       setComboPopup(null);
       setComboMultiplier(1);
       soundSynth.playVictory();
+      haptics.win();
       // Extra flourish for a genius-level finish
       if (score >= 180) setTimeout(() => soundSynth.playAchievementUnlock(), 250);
 
@@ -509,6 +513,7 @@ export const App: React.FC = () => {
     // Blocked tiles can't be taken — wobble feedback (both modes)
     if (!clicked.isFree) {
       soundSynth.playClick();
+      haptics.blocked();
       setTiles(prev => prev.map(t => t.id === clicked.id ? { ...t, wobbling: true } : t));
       setTimeout(() => {
         setTiles(prev => prev.map(t => t.id === clicked.id ? { ...t, wobbling: false } : t));
@@ -547,6 +552,7 @@ export const App: React.FC = () => {
       lastMatchTimeRef.current = 0;
       if (newTray.length >= TRAY_CAPACITY) {
         soundSynth.playClick();
+        haptics.lose();
         stopTimer();
         if (comboPopupTimeoutRef.current) clearTimeout(comboPopupTimeoutRef.current);
         setComboPopup(null);
