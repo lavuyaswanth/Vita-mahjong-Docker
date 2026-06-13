@@ -177,8 +177,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 <div className="rule-item">
                   <span className="rule-num">3</span>
                   <div>
-                    <h4>Special Matching Types</h4>
-                    <p>All <strong>Moon Phase</strong> tiles (New, Crescent, Half, Harvest) match with one another. All <strong>Poison Plant</strong> tiles (Black Rose, Nightshade, Flytrap, Toadstool) match with one another.</p>
+                    <h4>Match Identical Tiles</h4>
+                    <p>Every tile has an exact twin — match <strong>two identical tiles</strong> (same picture) to clear them. There are no tricky wildcards, so a matching pair is always easy to spot.</p>
                   </div>
                 </div>
                 <div className="rule-item">

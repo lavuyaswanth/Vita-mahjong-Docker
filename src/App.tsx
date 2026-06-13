@@ -92,12 +92,13 @@ export const App: React.FC = () => {
   const [showWinScreen, setShowWinScreen] = useState(false);
 
   // Redesign Active States
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState(100); // IQ starts at an average 100
 
   // Combo Streak System (#1)
   const [comboMultiplier, setComboMultiplier] = useState(1);
   const [comboPopup, setComboPopup] = useState<{ text: string; key: number } | null>(null);
   const lastMatchTimeRef = useRef<number>(0);
+  const comboBonusRef = useRef<number>(0); // accumulated combo IQ bonus this game
   const comboPopupTimeoutRef = useRef<number | null>(null);
   const hintTimeoutRef = useRef<number | null>(null);
 
@@ -284,7 +285,8 @@ export const App: React.FC = () => {
     setRewardClaimed(false);
     setTray([]);
     setHintedPair(null);
-    setScore(0);
+    setScore(100);
+    comboBonusRef.current = 0;
     setComboMultiplier(1);
     setComboPopup(null);
     setMoveCount(0);
@@ -335,7 +337,12 @@ export const App: React.FC = () => {
     window.dispatchEvent(event);
   };
 
-  // Shared scoring for a cleared pair: combo streak, score, move count, sound, spark.
+  // Shared scoring for a cleared pair. Score is modelled as an IQ that starts at
+  // an average 100 and climbs toward a genius ceiling of 200 as the board clears.
+  // Each pair adds a realistic, board-scaled increment (a clean full clear lands
+  // right at ~200); fast combo streaks add a small bonus so you reach 200 sooner.
+  const IQ_BASE = 100;
+  const IQ_MAX = 200;
   const scoreMatch = (t1: TileState, t2: TileState) => {
     const now = getCurrentTime();
     const elapsed = now - lastMatchTimeRef.current;
@@ -347,14 +354,24 @@ export const App: React.FC = () => {
     setComboMultiplier(newMultiplier);
     if (newMultiplier >= 5) unlockAchievement('combo_master');
 
-    const matchScore = 100 * newMultiplier;
-    setScore(prev => prev + matchScore);
-    setMoveCount(prev => prev + 1);
+    const matchedPairs = moveCount + 1;            // this pair included
+    const totalPairs = Math.max(1, totalTileCount / 2);
+    comboBonusRef.current += Math.max(0, newMultiplier - 1); // persistent combo reward
+    const progressIQ = IQ_BASE + Math.round((IQ_MAX - IQ_BASE) * (matchedPairs / totalPairs));
+    const newScore = Math.min(IQ_MAX, progressIQ + comboBonusRef.current);
+
+    setMoveCount(matchedPairs);
+    setScore(prev => {
+      const gain = newScore - prev;
+      if (newMultiplier > 1 || gain > 0) {
+        setComboPopup({ text: newMultiplier > 1 ? `+${gain} IQ · x${newMultiplier}` : `+${gain} IQ`, key: now });
+        if (comboPopupTimeoutRef.current) clearTimeout(comboPopupTimeoutRef.current);
+        comboPopupTimeoutRef.current = window.setTimeout(() => setComboPopup(null), 1200);
+      }
+      return newScore;
+    });
 
     if (newMultiplier > 1) {
-      setComboPopup({ text: `+${matchScore} x${newMultiplier}`, key: now });
-      if (comboPopupTimeoutRef.current) clearTimeout(comboPopupTimeoutRef.current);
-      comboPopupTimeoutRef.current = window.setTimeout(() => setComboPopup(null), 1200);
       soundSynth.playComboChime(newMultiplier);
     } else {
       soundSynth.playMatch();
@@ -878,7 +895,7 @@ export const App: React.FC = () => {
             </p>
             <div className="victory-stats">
               <div className="v-stat">
-                <span className="v-stat-lbl">Score</span>
+                <span className="v-stat-lbl">IQ</span>
                 <span className="v-stat-val">{score.toLocaleString()}</span>
               </div>
               <div className="v-stat">
@@ -923,7 +940,7 @@ export const App: React.FC = () => {
             
             <div className="victory-stats">
               <div className="v-stat">
-                <span className="v-stat-lbl">Final Score</span>
+                <span className="v-stat-lbl">Final IQ</span>
                 <span className="v-stat-val">{score.toLocaleString()}</span>
               </div>
               <div className="v-stat">
