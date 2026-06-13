@@ -1145,10 +1145,11 @@ body {
   overflow: hidden;
   margin: 0;
   padding: 18px;
-  /* Airy light-zen backdrop with faint ink-wash glow (Inference #2 feel) */
+  /* Bright sunny-meadow felt to match the kids menu: a warm glow up top over
+     fresh spring grass-green that stays light to the edges. */
   background:
-    radial-gradient(ellipse at 50% 38%, rgba(255, 255, 255, 0.18) 0%, transparent 60%),
-    radial-gradient(ellipse at center, #a7c98f 0%, #6e9657 60%, #496b39 100%);
+    radial-gradient(ellipse at 50% 18%, rgba(255, 250, 200, 0.45) 0%, transparent 52%),
+    radial-gradient(ellipse at center, #d3efaa 0%, #a9dd82 55%, #84c45d 100%);
 }
 
 .app-theme-ocean .game-board-area {
