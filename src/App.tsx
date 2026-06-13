@@ -1155,11 +1155,6 @@ export const App: React.FC = () => {
                   Next Level ➡️
                 </button>
               )}
-              {!dailyMode && (
-                <button className="confirm-btn glassmorphism" onClick={() => initGame(currentLevel)} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-                  <RestartIcon size={16} inline /> Replay {bestRecord ? `(beat ${bestRecord.iq})` : ''}
-                </button>
-              )}
               <button className="cancel-btn glassmorphism" onClick={handleBackToMenu} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
                 <BackIcon size={16} inline /> Main Menu
               </button>
