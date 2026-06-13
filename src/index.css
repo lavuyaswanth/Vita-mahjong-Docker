@@ -222,7 +222,7 @@ body {
   width: 100vw;
   box-sizing: border-box;
   padding: 35px 20px;
-  background: linear-gradient(180deg, rgba(18, 9, 36, 0.80) 0%, rgba(7, 3, 16, 0.93) 100%), url('./assets/menu_bg.png') center center / cover no-repeat;
+  background: linear-gradient(180deg, rgba(10, 6, 20, 0.45) 0%, rgba(7, 3, 16, 0.72) 100%), url('./assets/menu_bg.png') center center / cover no-repeat;
   position: relative;
   overflow-y: auto;
   animation: fadeInMenu 1s ease-out;
