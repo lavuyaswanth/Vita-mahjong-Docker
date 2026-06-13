@@ -158,42 +158,6 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Theme picker swatches (settings modal) */
-.theme-swatch-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 18px;
-}
-
-.theme-swatch {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1.5px solid var(--glass-border);
-  color: var(--text-primary);
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
-}
-
-.theme-swatch:hover { transform: translateY(-1px); }
-
-.theme-swatch.active {
-  border-color: var(--accent-gold);
-  box-shadow: 0 0 12px rgba(201, 168, 76, 0.45);
-}
-
-.theme-swatch-emoji { font-size: 18px; }
-
-/* Each swatch previews its theme's table felt */
-.theme-swatch-zen    { background: radial-gradient(circle at center, #3c5430 0%, #1b2713 100%); }
-.theme-swatch-ocean  { background: radial-gradient(circle at center, #1b263b 0%, #0d131f 100%); }
-.theme-swatch-sunset { background: radial-gradient(circle at center, #3e1f13 0%, #1b0c07 100%); }
-.theme-swatch-dark   { background: radial-gradient(circle at center, #0f0f15 0%, #050508 100%); }
 
 /* Stalemate overlay warnings */
 .stalemate-modal {

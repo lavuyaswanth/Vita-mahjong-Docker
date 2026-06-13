@@ -199,8 +199,8 @@ export const App: React.FC = () => {
   // Total tile count for progress bar (#17)
   const [totalTileCount, setTotalTileCount] = useState(0);
 
-  // Settings preferences (synced to LocalStorage)
-  const [bgTheme, setBgTheme] = useState<string>(() => localStorage.getItem('vita_theme') || 'dark');
+  // Settings preferences (synced to LocalStorage). The visual theme is driven by
+  // the campaign realm (see realms.ts), so there is no manual theme setting.
   const [highContrast, setHighContrast] = useState<boolean>(() => {
     return localStorage.getItem('vita_high_contrast') === 'true';
   });
@@ -222,13 +222,12 @@ export const App: React.FC = () => {
 
   // Sync settings to localstorage
   useEffect(() => {
-    localStorage.setItem('vita_theme', bgTheme);
     localStorage.setItem('vita_high_contrast', String(highContrast));
     localStorage.setItem('vita_sfx_vol', String(sfxVolume));
     localStorage.setItem('vita_ambient_vol', String(ambientVolume));
     localStorage.setItem('vita_ambient_enabled', String(isAmbientEnabled));
     soundSynth.configure(true, sfxVolume, ambientVolume);
-  }, [bgTheme, highContrast, sfxVolume, ambientVolume, isAmbientEnabled]);
+  }, [highContrast, sfxVolume, ambientVolume, isAmbientEnabled]);
 
   // Start stopwatch timer
   const startTimer = () => {
@@ -777,7 +776,7 @@ export const App: React.FC = () => {
           {/* Progress bar (#17) */}
           <div className="progress-bar-container">
             <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }}></div>
-            <span className="progress-bar-text">{inPlay} / {totalTileCount} left · {layouts[activeLayout].displayName}</span>
+            <span className="progress-bar-text">{inPlay} / {totalTileCount} left · {currentRealm.name} · {layouts[activeLayout].displayName}</span>
           </div>
 
           {/* Combo popup floating text */}
@@ -886,8 +885,6 @@ export const App: React.FC = () => {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        bgTheme={bgTheme}
-        setBgTheme={setBgTheme}
         highContrast={highContrast}
         setHighContrast={setHighContrast}
         sfxVolume={sfxVolume}

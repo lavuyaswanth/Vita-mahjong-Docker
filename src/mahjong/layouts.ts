@@ -130,32 +130,32 @@ function generateTurtle() {
 export const layouts: Record<LayoutName, LayoutConfig> = {
   Garden: {
     name: 'Garden',
-    displayName: '🌲 Enchanted Grove',
-    description: 'A misty grove to begin your quest — three gentle layers, big easy-to-read tiles.',
+    displayName: '🍃 Meadow',
+    description: 'A gentle three-layer pile to begin — big, easy-to-read tiles.',
     coords: generateGarden()
   },
   Pagoda: {
     name: 'Pagoda',
-    displayName: '🏰 Castle Keep',
-    description: 'A four-layer tower rising toward the centre — a step deeper into the realm.',
+    displayName: '🗼 Tower',
+    description: 'A four-layer tower stacked toward the centre — a step up in depth.',
     coords: generatePagoda()
   },
   Pyramids: {
     name: 'Pyramids',
-    displayName: '⚔️ Ancient Crypt',
-    description: 'A broad, steep stone pyramid — plenty of free flanks but a deep ancient core.',
+    displayName: '🔺 Pyramid',
+    description: 'A broad, steep pyramid — plenty of free flanks but a deep core.',
     coords: generatePyramids()
   },
   Butterfly: {
     name: 'Butterfly',
-    displayName: '🐉 Dragon Lair',
-    description: 'A wide sprawling lair crowned by a clustered hoard. Balanced and perilous.',
+    displayName: '🦋 Butterfly',
+    description: 'A wide spreading base crowned by a clustered body. Balanced and beautiful.',
     coords: generateButterfly()
   },
   Turtle: {
     name: 'Turtle',
-    displayName: '👑 Throne of Legends',
-    description: 'The legendary deep throne-dome — the biggest, deepest pile and the ultimate test of skill.',
+    displayName: '🛡️ Citadel',
+    description: 'The biggest, deepest dome — the ultimate test of skill.',
     coords: generateTurtle()
   }
 };

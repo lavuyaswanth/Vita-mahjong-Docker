@@ -2,6 +2,7 @@ import React from 'react';
 import { layouts } from '../mahjong/layouts';
 import type { LayoutName } from '../mahjong/layouts';
 import { soundSynth } from '../mahjong/soundSynth';
+import { realmForLevel } from '../mahjong/realms';
 import {
   SettingsIcon,
   LayoutIcon,
@@ -10,20 +11,9 @@ import {
   CloseIcon
 } from './SvgIcons';
 
-// Selectable background themes — each is fully styled in index.css and drives
-// its own particle physics on the board (petals / bubbles / embers / stars).
-const THEMES = [
-  { id: 'zen', label: 'Zen Forest', emoji: '🌿' },
-  { id: 'ocean', label: 'Deep Ocean', emoji: '🌊' },
-  { id: 'sunset', label: 'Amber Sunset', emoji: '🌅' },
-  { id: 'dark', label: 'Mystic Dark', emoji: '🌌' }
-];
-
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  bgTheme: string;
-  setBgTheme: (theme: string) => void;
   highContrast: boolean;
   setHighContrast: (val: boolean) => void;
   sfxVolume: number;
@@ -44,8 +34,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
   const {
     isOpen,
     onClose,
-    bgTheme,
-    setBgTheme,
     highContrast,
     setHighContrast,
     sfxVolume,
@@ -180,11 +168,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
               >
                 {Array.from({ length: maxUnlockedLevel }).map((_, i) => {
                   const lvlNum = i + 1;
-                  const layoutsList = ['Garden', 'Pagoda', 'Pyramids', 'Butterfly', 'Turtle'];
-                  const layoutName = layoutsList[(lvlNum - 1) % layoutsList.length];
                   return (
                     <option key={lvlNum} value={lvlNum}>
-                      Level {lvlNum} ({layoutName})
+                      Level {lvlNum} · {realmForLevel(lvlNum).name}
                     </option>
                   );
                 })}
@@ -199,24 +185,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
             {/* Section 2: Visual Adjustments */}
             <div className="settings-section">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                Visual Style
+                Accessibility
               </h3>
-
-              {/* Background theme picker */}
-              <div className="theme-swatch-grid" role="radiogroup" aria-label="Background theme">
-                {THEMES.map(t => (
-                  <button
-                    key={t.id}
-                    className={`theme-swatch theme-swatch-${t.id} ${bgTheme === t.id ? 'active' : ''}`}
-                    role="radio"
-                    aria-checked={bgTheme === t.id}
-                    onClick={() => { setBgTheme(t.id); soundSynth.playSelect(); }}
-                  >
-                    <span className="theme-swatch-emoji">{t.emoji}</span>
-                    <span className="theme-swatch-label">{t.label}</span>
-                  </button>
-                ))}
-              </div>
 
               {/* Accessibility toggles */}
               <div className="form-group checkbox-group">
