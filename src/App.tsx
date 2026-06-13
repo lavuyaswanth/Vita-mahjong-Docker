@@ -296,9 +296,9 @@ export const App: React.FC = () => {
 
     // Use unique seed based on level number to ensure deterministic solvable boards
     const seed = levelNum * 12345 + 42;
-    // Difficulty ramp: few distinct tile faces early (easier for little ones to
-    // spot pairs), climbing to full variety by ~level 30. (0 = unlimited)
-    const maxTypes = levelNum >= 30 ? 0 : 10 + levelNum;
+    // Ages 3+: keep every level GENTLE — always few distinct tile faces so there
+    // are lots of duplicates and pairs are easy to spot. No difficulty ramp.
+    const maxTypes = 10;
     const newTiles = buildBoard(layout, seed, maxTypes);
     setTotalTileCount(newTiles.length);
 
