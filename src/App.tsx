@@ -12,7 +12,7 @@ import type { LayoutName } from './mahjong/layouts';
 import { soundSynth } from './mahjong/soundSynth';
 import { haptics } from './mahjong/haptics';
 import { achievementsList } from './mahjong/achievements';
-import { realmForLevel } from './mahjong/realms';
+import { realmForLevel, nextRealmChange } from './mahjong/realms';
 import MahjongBoard from './components/MahjongBoard';
 import { TileGlyph } from './components/Tile';
 import MainMenu from './components/MainMenu';
@@ -312,7 +312,10 @@ export const App: React.FC = () => {
 
     // Use unique seed based on level number to ensure deterministic solvable boards
     const seed = levelNum * 12345 + 42;
-    const newTiles = buildBoard(layout, seed);
+    // Difficulty ramp: few distinct tile faces early (easier to spot pairs),
+    // climbing to full 42-face variety by ~level 30. (0 = unlimited)
+    const maxTypes = levelNum >= 30 ? 0 : 10 + levelNum;
+    const newTiles = buildBoard(layout, seed, maxTypes);
     setTotalTileCount(newTiles.length);
 
     setTiles(newTiles);
@@ -1062,6 +1065,17 @@ export const App: React.FC = () => {
                 )}
               </div>
             )}
+
+            {/* Dangle the next realm to pull the player onward */}
+            {currentLevel < 240 && (() => {
+              const nxt = nextRealmChange(currentLevel);
+              const soon = nxt.atLevel - currentLevel;
+              return (
+                <div className="realm-teaser">
+                  🔓 <strong>{nxt.realm.name}</strong> {soon <= 1 ? 'unlocks next!' : `awaits at Level ${nxt.atLevel}`}
+                </div>
+              );
+            })()}
 
             <div className="victory-buttons">
               {currentLevel < 240 && (

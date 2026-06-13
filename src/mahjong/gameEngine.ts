@@ -125,7 +125,10 @@ export function checkIfTileIsFree(tile: TileCoords, activeTiles: TileCoords[]): 
 // 2. Repeatedly find two "free" tiles, remove them as a pair, and record the order.
 // 3. Reverse the removal order → valid placement order (each placed pair was free).
 // 4. Assign shuffled tile face values to each pair.
-export function buildSolvableBoard(layoutName: LayoutName, seed?: number): TileState[] {
+// `maxTypes` (optional) caps how many DISTINCT tile faces a board uses. Fewer
+// faces = more duplicates = easier to spot pairs, so early levels pass a small
+// value and it ramps up. Undefined/0 = full variety.
+export function buildSolvableBoard(layoutName: LayoutName, seed?: number, maxTypes?: number): TileState[] {
   const config = layouts[layoutName];
   const coords = config.coords;
   const totalSlots = coords.length;
@@ -196,8 +199,18 @@ export function buildSolvableBoard(layoutName: LayoutName, seed?: number): TileS
     let deck = generateStandardDeck();
     deckRng.shuffle(deck);
 
-    // For layouts with fewer than 144 tiles, select a balanced subset of pairs
-    if (totalSlots < 144) {
+    // Difficulty ramp: cap distinct faces to make early boards easier. Phase 3
+    // doubles each pair's face, so drawing from a limited face pool keeps every
+    // count even and the board solvable — just with more duplicates.
+    if (totalSlots < 144 && maxTypes) {
+      const allKeys = [...new Set(deck.map(t => `${t.type}_${t.value}`))];
+      deckRng.shuffle(allKeys);
+      const allowed = allKeys.slice(0, Math.max(2, maxTypes));
+      const parse = (k: string) => { const i = k.lastIndexOf('_'); return { type: k.slice(0, i), value: Number(k.slice(i + 1)) }; };
+      const subset: typeof deck = [];
+      for (let i = 0; i < totalSlots; i++) subset.push(parse(deckRng.choose(allowed)));
+      deck = subset;
+    } else if (totalSlots < 144) {
       const subset: typeof deck = [];
 
       // Group the deck by exact identity so every selected pair is identical
@@ -343,9 +356,10 @@ function buildBoardLegacy(layoutName: LayoutName, seed: number): TileState[] {
   return recalculateFreeState(tiles);
 }
 
-// Generate the initial board state for a given layout and seed
-export function buildBoard(layoutName: LayoutName, seed?: number): TileState[] {
-  return buildSolvableBoard(layoutName, seed);
+// Generate the initial board state for a given layout and seed. `maxTypes`
+// (optional) caps distinct tile faces for the difficulty ramp.
+export function buildBoard(layoutName: LayoutName, seed?: number, maxTypes?: number): TileState[] {
+  return buildSolvableBoard(layoutName, seed, maxTypes);
 }
 
 // Recalculates the 'isFree' state for all non-matched tiles on the board.

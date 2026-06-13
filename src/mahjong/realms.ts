@@ -40,3 +40,12 @@ export function realmForLevel(level: number): Realm {
   const band = Math.floor((Math.max(1, level) - 1) / LEVELS_PER_REALM);
   return realms[ROTATION[band % ROTATION.length]];
 }
+
+// The next level at which the realm changes, and which realm it becomes — used
+// to dangle the upcoming world ("Frozen North awaits at Level 11!").
+export function nextRealmChange(level: number): { realm: Realm; atLevel: number } {
+  const current = realmForLevel(level);
+  let n = Math.max(1, level) + 1;
+  while (realmForLevel(n).id === current.id && n < level + LEVELS_PER_REALM + 1) n++;
+  return { realm: realmForLevel(n), atLevel: n };
+}
