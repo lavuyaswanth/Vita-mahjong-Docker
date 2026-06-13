@@ -1142,6 +1142,21 @@ body {
     radial-gradient(ellipse at center, rgba(60, 220, 190, 0.07) 0%, transparent 55%),
     radial-gradient(ellipse at center, #0c2a2c 0%, #03100f 100%);
 }
+.app-realm-inferno .game-board-area {
+  background:
+    radial-gradient(ellipse at center, rgba(255, 110, 40, 0.09) 0%, transparent 55%),
+    radial-gradient(ellipse at center, #2a0f08 0%, #0c0402 100%);
+}
+.app-realm-forest .game-board-area {
+  background:
+    radial-gradient(ellipse at center, rgba(90, 220, 120, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at center, #122414 0%, #050d07 100%);
+}
+.app-realm-celestial .game-board-area {
+  background:
+    radial-gradient(ellipse at center, rgba(150, 130, 255, 0.09) 0%, transparent 55%),
+    radial-gradient(ellipse at center, #16142e 0%, #06050f 100%);
+}
 
 .menu-realm-badge {
   margin: 6px 0 0 0;
