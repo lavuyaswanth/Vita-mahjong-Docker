@@ -343,9 +343,8 @@ body {
   max-width: 320px;
   height: auto;
   /* Moonlit grade so the classic logo sits in the midnight palette */
-  filter: saturate(0.55) brightness(0.82) contrast(1.08) hue-rotate(-12deg)
-    drop-shadow(0 0 18px rgba(123, 79, 208, 0.55))
-    drop-shadow(0px 8px 16px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 0 18px rgba(123, 79, 208, 0.55))
+          drop-shadow(0px 8px 16px rgba(0, 0, 0, 0.6));
   animation: floatLogo 6s ease-in-out infinite;
 }
 
@@ -1378,19 +1377,19 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  /* Polished warm-ivory gradient face — premium feel */
+  /* Dark slate stone face — lets the moody Legends art read as mature */
   background:
-    radial-gradient(circle at 22% 18%, #ffffff 0%, #fdf6e3 45%, #f5e9c8 100%);
+    radial-gradient(circle at 24% 18%, #3a3550 0%, #262236 45%, #161320 100%);
   border: 2px solid var(--tile-border-3d);
   border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    inset 2px 2px 2px rgba(255,255,255,0.95),
-    inset -2px -3px 4px rgba(120, 80, 30, 0.28),
-    inset 0 0 0 1px rgba(255, 240, 200, 0.45),
-    1px 2px 3px rgba(0,0,0,0.22);
+    inset 2px 2px 2px rgba(150, 140, 180, 0.30),
+    inset -2px -3px 4px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(180, 160, 220, 0.18),
+    1px 2px 3px rgba(0,0,0,0.30);
   overflow: hidden;
 }
 
@@ -1449,6 +1448,14 @@ body {
   height: 92%;
   /* High contrast drop-shadow filter to simulate real carved paint indent */
   filter: drop-shadow(0.6px 0.8px 0.4px rgba(0,0,0,0.45));
+}
+
+/* Pre-rendered raster tile art (Legends edition) */
+.tile-art {
+  width: 96%;
+  height: 96%;
+  object-fit: contain;
+  filter: drop-shadow(0.6px 1px 0.8px rgba(0, 0, 0, 0.55));
 }
 
 .tile-placeholder {
