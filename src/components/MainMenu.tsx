@@ -213,7 +213,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             </div>
             <div className="modal-content">
               <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: 'var(--text-secondary)', textAlign: 'center' }}>
-                Track your wellness journey and brain milestones. Solving puzzles unlocks Zen badges.
+                Track your conquests. Clear puzzles and master the realm to unlock legendary badges.
               </p>
 
               <div className="achievements-grid">

@@ -2427,20 +2427,20 @@ body {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
 }
 
+/* Lock sits as a corner badge so it never collides with the card title/text */
 .lock-overlay {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 42px;
+  top: 8px;
+  right: 8px;
+  font-size: 22px;
   z-index: 5;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
   animation: lockBounce 2s ease-in-out infinite;
 }
 
 @keyframes lockBounce {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -55%) scale(1.08); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
 }
 
 .layout-best-stars {
