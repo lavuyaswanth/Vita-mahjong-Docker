@@ -98,11 +98,13 @@ export const App: React.FC = () => {
 
   // Combo Streak System (#1)
   const [comboMultiplier, setComboMultiplier] = useState(1);
-  const [comboPopup, setComboPopup] = useState<{ text: string; key: number } | null>(null);
+  const [comboPopup, setComboPopup] = useState<{ text: string; key: number; mult: number } | null>(null);
+  const [shaking, setShaking] = useState(false); // board shake on big combos
   const lastMatchTimeRef = useRef<number>(0);
   const comboBonusRef = useRef<number>(0); // accumulated combo IQ bonus this game
   const scoreRef = useRef<number>(100);    // live IQ (triggerVictory reads this, not stale state)
   const comboPopupTimeoutRef = useRef<number | null>(null);
+  const shakeTimeoutRef = useRef<number | null>(null);
   const hintTimeoutRef = useRef<number | null>(null);
 
   // Move Counter (#23)
@@ -343,9 +345,9 @@ export const App: React.FC = () => {
   // Emits global custom event to trigger canvas sparkles. Carries tile ids so
   // the board can burst particles at the tiles' actual on-screen positions
   // (which depend on zoom/pan/orientation, not just grid coordinates).
-  const triggerSparkMatchEvent = (t1: TileState, t2: TileState) => {
+  const triggerSparkMatchEvent = (t1: TileState, t2: TileState, mult = 1) => {
     const event = new CustomEvent('tile-match', {
-      detail: { id1: t1.id, id2: t2.id }
+      detail: { id1: t1.id, id2: t2.id, mult }
     });
     window.dispatchEvent(event);
   };
@@ -382,12 +384,19 @@ export const App: React.FC = () => {
       // Floating popup only for combo streaks; single matches read via the
       // spark burst + the live header IQ (keeps the board uncluttered).
       if (newMultiplier > 1) {
-        setComboPopup({ text: `+${gain} IQ · x${newMultiplier}`, key: now });
+        setComboPopup({ text: `+${gain} IQ · x${newMultiplier}`, key: now, mult: newMultiplier });
         if (comboPopupTimeoutRef.current) clearTimeout(comboPopupTimeoutRef.current);
         comboPopupTimeoutRef.current = window.setTimeout(() => setComboPopup(null), 1200);
       }
       return newScore;
     });
+
+    // Combo crunch: at x5+ the board shakes and the burst gets bigger.
+    if (newMultiplier >= 5) {
+      setShaking(true);
+      if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
+      shakeTimeoutRef.current = window.setTimeout(() => setShaking(false), 500);
+    }
 
     if (newMultiplier > 1) {
       soundSynth.playComboChime(newMultiplier);
@@ -396,7 +405,7 @@ export const App: React.FC = () => {
       soundSynth.playMatch();
       haptics.match();
     }
-    triggerSparkMatchEvent(t1, t2);
+    triggerSparkMatchEvent(t1, t2, newMultiplier);
   };
 
   // Victory! Compute stars, persist progress, unlock achievements, show win screen.
@@ -584,8 +593,10 @@ export const App: React.FC = () => {
       const newTray = [...tray, clicked];
       setTray(newTray);
       soundSynth.playSelect();
-      setComboMultiplier(1);
-      lastMatchTimeRef.current = 0;
+      // NOTE: don't reset the combo here. In tray mode you nearly always park a
+      // tile before matching its partner, so resetting on collect made combos
+      // almost impossible. The streak is driven purely by match-to-match timing
+      // (the 3s window in scoreMatch), so it lapses on its own if you slow down.
       if (newTray.length >= TRAY_CAPACITY) {
         soundSynth.playClick();
         haptics.lose();
@@ -820,15 +831,15 @@ export const App: React.FC = () => {
             <span className="progress-bar-text">{inPlay} / {totalTileCount} left · {currentRealm.name} · {layouts[activeLayout].displayName}</span>
           </div>
 
-          {/* Combo popup floating text */}
+          {/* Combo popup floating text — scales up as the streak climbs */}
           {comboPopup && (
-            <div className="combo-popup" key={comboPopup.key}>
+            <div className={`combo-popup ${comboPopup.mult >= 8 ? 'combo-huge' : comboPopup.mult >= 5 ? 'combo-big' : ''}`} key={comboPopup.key}>
               {comboPopup.text}
             </div>
           )}
 
           {/* Gameplay Canvas Container */}
-          <main className="game-board-area">
+          <main className={`game-board-area ${shaking ? 'combo-shake' : ''}`}>
             {tiles.length > 0 && (
               <MahjongBoard
                 tiles={tiles}

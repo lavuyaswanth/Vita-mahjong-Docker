@@ -205,8 +205,8 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
 
   // Listen for global tiles match custom events to trigger bursts
   useEffect(() => {
-    const handleMatchEvent = (e: CustomEvent<{ id1: string; id2: string }>) => {
-      const { id1, id2 } = e.detail;
+    const handleMatchEvent = (e: CustomEvent<{ id1: string; id2: string; mult?: number }>) => {
+      const { id1, id2, mult = 1 } = e.detail;
       const canvas = canvasRef.current;
       const container = containerRef.current;
       if (!canvas || !container) return;
@@ -233,6 +233,11 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
         colors = ['#ff007f', '#d500f9', '#7c4dff', '#00e5ff', '#ffffff']; // Cyber purple/magenta
       }
 
+      // Combo crunch: more, faster, bigger sparks as the streak climbs.
+      const comboBoost = Math.min(mult, 10);
+      const burstCount = 16 + (comboBoost - 1) * 6;   // 16 → ~70 at x10
+      const sizeBoost = 1 + (comboBoost - 1) * 0.12;  // bigger sparks at high combo
+
       // Recycle and activate particles from the pool instead of push
       const spawnBurst = (cx: number, cy: number) => {
         const pool = particlesPoolRef.current;
@@ -246,10 +251,10 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
             pool[i].active = true;
             pool[i].x = cx;
             pool[i].y = cy;
-            pool[i].vx = Math.cos(angle) * speed;
+            pool[i].vx = Math.cos(angle) * speed * (1 + (comboBoost - 1) * 0.08);
             pool[i].vy = Math.sin(angle) * speed - 1.5; // blast upwards slightly
             pool[i].color = colors[Math.floor(Math.random() * colors.length)];
-            pool[i].size = 2.5 + Math.random() * 4.5;
+            pool[i].size = (2.5 + Math.random() * 4.5) * sizeBoost;
             pool[i].alpha = 1.0;
             pool[i].life = 30 + Math.floor(Math.random() * 20);
             pool[i].maxLife = 50;
@@ -257,7 +262,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
             pool[i].rotationSpeed = (Math.random() - 0.5) * 0.15;
 
             spawned++;
-            if (spawned >= 16) {
+            if (spawned >= burstCount) {
               break;
             }
           }

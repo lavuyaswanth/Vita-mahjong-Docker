@@ -2287,6 +2287,29 @@ body {
   letter-spacing: 1px;
 }
 
+/* The streak escalates: bigger, hotter text at x5 and x8+ */
+.combo-popup.combo-big {
+  font-size: 42px;
+  color: #ffae42;
+  text-shadow: 0 0 18px rgba(255, 140, 40, 0.9), 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+.combo-popup.combo-huge {
+  font-size: 54px;
+  color: #ff5a4d;
+  text-shadow: 0 0 26px rgba(255, 60, 40, 0.95), 0 3px 8px rgba(0, 0, 0, 0.8);
+}
+
+/* Screen shake on big combos */
+.game-board-area.combo-shake {
+  animation: comboShake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+@keyframes comboShake {
+  10%, 90% { transform: translate(-1px, 1px); }
+  20%, 80% { transform: translate(2px, -2px); }
+  30%, 50%, 70% { transform: translate(-4px, 2px); }
+  40%, 60% { transform: translate(4px, -1px); }
+}
+
 @keyframes comboFloat {
   0% {
     opacity: 1;
