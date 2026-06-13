@@ -72,30 +72,25 @@ export function generateStandardDeck(): { type: string; value: number }[] {
     }
   }
 
-  // 4. Seasons: Spring, Summer, Autumn, Winter (4 tiles, unique values)
+  // 4. Seasons & Flowers (Moon Phases / Poison Plants in the Legends skin).
+  //    Classic mahjong uses one of each as a wildcard group, but that leaves
+  //    tiles that LOOK unmatched (a lone New Moon + lone Harvest Moon). We make
+  //    them ordinary 4-value suits with 4 copies each, so every tile on the
+  //    board always has an identical twin — no "these aren't a pair" confusion.
   for (let season = 0; season < 4; season++) {
-    deck.push({ type: 'season', value: season });
+    for (let i = 0; i < 4; i++) deck.push({ type: 'season', value: season });
   }
-
-  // 5. Flowers: Plum, Orchid, Bamboo, Chrysanthemum (4 tiles, unique values)
   for (let flower = 0; flower < 4; flower++) {
-    deck.push({ type: 'flower', value: flower });
+    for (let i = 0; i < 4; i++) deck.push({ type: 'flower', value: flower });
   }
 
   return deck;
 }
 
-// Check if two tiles are matching according to Solitaire rules
+// Check if two tiles match: every pair is two identical tiles (same type AND
+// value), so a matching pair is always visually obvious to the player.
 export function tilesMatch(a: TileState, b: TileState): boolean {
-  if (a.type !== b.type) return false;
-
-  // Seasons and Flowers match with ANY tile of the same type
-  if (a.type === 'season' || a.type === 'flower') {
-    return true;
-  }
-
-  // Other suits/winds/dragons must have exact matching values
-  return a.value === b.value;
+  return a.type === b.type && a.value === b.value;
 }
 
 // Check if a specific tile is "free" (unblocked) on a board.
@@ -130,7 +125,10 @@ export function checkIfTileIsFree(tile: TileCoords, activeTiles: TileCoords[]): 
 // 2. Repeatedly find two "free" tiles, remove them as a pair, and record the order.
 // 3. Reverse the removal order → valid placement order (each placed pair was free).
 // 4. Assign shuffled tile face values to each pair.
-export function buildSolvableBoard(layoutName: LayoutName, seed?: number): TileState[] {
+// `maxTypes` (optional) caps how many DISTINCT tile faces a board uses. Fewer
+// faces = more duplicates = easier to spot pairs, so early levels pass a small
+// value and it ramps up. Undefined/0 = full variety.
+export function buildSolvableBoard(layoutName: LayoutName, seed?: number, maxTypes?: number): TileState[] {
   const config = layouts[layoutName];
   const coords = config.coords;
   const totalSlots = coords.length;
@@ -201,14 +199,24 @@ export function buildSolvableBoard(layoutName: LayoutName, seed?: number): TileS
     let deck = generateStandardDeck();
     deckRng.shuffle(deck);
 
-    // For layouts with fewer than 144 tiles, select a balanced subset of pairs
-    if (totalSlots < 144) {
+    // Difficulty ramp: cap distinct faces to make early boards easier. Phase 3
+    // doubles each pair's face, so drawing from a limited face pool keeps every
+    // count even and the board solvable — just with more duplicates.
+    if (totalSlots < 144 && maxTypes) {
+      const allKeys = [...new Set(deck.map(t => `${t.type}_${t.value}`))];
+      deckRng.shuffle(allKeys);
+      const allowed = allKeys.slice(0, Math.max(2, maxTypes));
+      const parse = (k: string) => { const i = k.lastIndexOf('_'); return { type: k.slice(0, i), value: Number(k.slice(i + 1)) }; };
+      const subset: typeof deck = [];
+      for (let i = 0; i < totalSlots; i++) subset.push(parse(deckRng.choose(allowed)));
+      deck = subset;
+    } else if (totalSlots < 144) {
       const subset: typeof deck = [];
 
-      // Group the deck by match identity
+      // Group the deck by exact identity so every selected pair is identical
       const groups: Record<string, typeof deck> = {};
       deck.forEach(t => {
-        const key = (t.type === 'season' || t.type === 'flower') ? t.type : `${t.type}_${t.value}`;
+        const key = `${t.type}_${t.value}`;
         if (!groups[key]) groups[key] = [];
         groups[key].push(t);
       });
@@ -252,21 +260,11 @@ export function buildSolvableBoard(layoutName: LayoutName, seed?: number): TileS
 
     for (const [posA, posB] of placementOrder) {
       const tileA = deck[deckIndex++] || { type: 'bamboo', value: 1 };
-      const tileB = deck[deckIndex++] || { type: 'bamboo', value: 1 };
+      deckIndex++; // consume the paired slot; both positions take tileA's face
 
-      // Both tiles in the pair must match, so give them the same face identity.
-      // For seasons/flowers they already match by type, so we keep their distinct values.
-      const isWildType = tileA.type === 'season' || tileA.type === 'flower';
-
-      if (isWildType && tileA.type === tileB.type) {
-        // Seasons/flowers: same type is enough to match — keep unique values
-        tileAssignments[posA] = tileA;
-        tileAssignments[posB] = tileB;
-      } else {
-        // Assign the same face to both positions in the pair
-        tileAssignments[posA] = { type: tileA.type, value: tileA.value };
-        tileAssignments[posB] = { type: tileA.type, value: tileA.value };
-      }
+      // Assign the SAME face to both positions so the pair is two identical tiles
+      tileAssignments[posA] = { type: tileA.type, value: tileA.value };
+      tileAssignments[posB] = { type: tileA.type, value: tileA.value };
     }
 
     // --- Phase 4: Build the final TileState array ---
@@ -307,7 +305,7 @@ function buildBoardLegacy(layoutName: LayoutName, seed: number): TileState[] {
 
     const groups: Record<string, typeof deck> = {};
     deck.forEach(t => {
-      const key = (t.type === 'season' || t.type === 'flower') ? t.type : `${t.type}_${t.value}`;
+      const key = `${t.type}_${t.value}`;
       if (!groups[key]) groups[key] = [];
       groups[key].push(t);
     });
@@ -358,9 +356,10 @@ function buildBoardLegacy(layoutName: LayoutName, seed: number): TileState[] {
   return recalculateFreeState(tiles);
 }
 
-// Generate the initial board state for a given layout and seed
-export function buildBoard(layoutName: LayoutName, seed?: number): TileState[] {
-  return buildSolvableBoard(layoutName, seed);
+// Generate the initial board state for a given layout and seed. `maxTypes`
+// (optional) caps distinct tile faces for the difficulty ramp.
+export function buildBoard(layoutName: LayoutName, seed?: number, maxTypes?: number): TileState[] {
+  return buildSolvableBoard(layoutName, seed, maxTypes);
 }
 
 // Recalculates the 'isFree' state for all non-matched tiles on the board.
@@ -423,4 +422,10 @@ export function shuffleActiveTiles(tiles: TileState[]): TileState[] {
   }
 
   return result;
+}
+
+// Deterministic seed for a calendar date (YYYYMMDD) — used by the Daily
+// Challenge so everyone plays the same board each day.
+export function getDailyChallengeSeed(date: Date): number {
+  return date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
 }

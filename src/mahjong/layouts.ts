@@ -130,32 +130,32 @@ function generateTurtle() {
 export const layouts: Record<LayoutName, LayoutConfig> = {
   Garden: {
     name: 'Garden',
-    displayName: '🌿 Zen Garden',
-    description: 'A relaxing stacked pile to begin your journey — three soft layers, big easy-to-see tiles.',
+    displayName: '🍃 Meadow',
+    description: 'A gentle three-layer pile to begin — big, easy-to-read tiles.',
     coords: generateGarden()
   },
   Pagoda: {
     name: 'Pagoda',
-    displayName: '🏯 Jade Pagoda',
-    description: 'A four-layer tower stacked toward the centre — a gentle step up in depth.',
+    displayName: '🗼 Tower',
+    description: 'A four-layer tower stacked toward the centre — a step up in depth.',
     coords: generatePagoda()
   },
   Pyramids: {
     name: 'Pyramids',
-    displayName: '🔺 Twin Pyramids',
-    description: 'A broad, steep step-pyramid — plenty of free flanks but a deep core.',
+    displayName: '🔺 Pyramid',
+    description: 'A broad, steep pyramid — plenty of free flanks but a deep core.',
     coords: generatePyramids()
   },
   Butterfly: {
     name: 'Butterfly',
-    displayName: '🦋 Flying Papillon',
+    displayName: '🦋 Butterfly',
     description: 'A wide spreading base crowned by a clustered body. Balanced and beautiful.',
     coords: generateButterfly()
   },
   Turtle: {
     name: 'Turtle',
-    displayName: '🐢 Golden Turtle',
-    description: 'The legendary deep dome — the biggest, deepest pile and the ultimate test of patience.',
+    displayName: '🛡️ Citadel',
+    description: 'The biggest, deepest dome — the ultimate test of skill.',
     coords: generateTurtle()
   }
 };

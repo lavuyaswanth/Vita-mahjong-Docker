@@ -10,6 +10,7 @@ import type { TileState } from './mahjong/gameEngine';
 import { layouts } from './mahjong/layouts';
 import type { LayoutName } from './mahjong/layouts';
 import { soundSynth } from './mahjong/soundSynth';
+import { haptics } from './mahjong/haptics';
 import { achievementsList } from './mahjong/achievements';
 import MahjongBoard from './components/MahjongBoard';
 import { TileGlyph } from './components/Tile';
@@ -295,7 +296,10 @@ export const App: React.FC = () => {
 
     // Use unique seed based on level number to ensure deterministic solvable boards
     const seed = levelNum * 12345 + 42;
-    const newTiles = buildBoard(layout, seed);
+    // Difficulty ramp: few distinct tile faces early (easier for little ones to
+    // spot pairs), climbing to full variety by ~level 30. (0 = unlimited)
+    const maxTypes = levelNum >= 30 ? 0 : 10 + levelNum;
+    const newTiles = buildBoard(layout, seed, maxTypes);
     setTotalTileCount(newTiles.length);
 
     setTiles(newTiles);
@@ -356,8 +360,10 @@ export const App: React.FC = () => {
       if (comboPopupTimeoutRef.current) clearTimeout(comboPopupTimeoutRef.current);
       comboPopupTimeoutRef.current = window.setTimeout(() => setComboPopup(null), 1200);
       soundSynth.playComboChime(newMultiplier);
+      haptics.combo(newMultiplier);
     } else {
       soundSynth.playMatch();
+      haptics.match();
     }
     triggerSparkMatchEvent(t1, t2);
   };
@@ -367,6 +373,7 @@ export const App: React.FC = () => {
     {
       stopTimer();
       soundSynth.playVictory();
+      haptics.win();
 
       // Star Rating computation (#2)
       const stars = computeStarRating(
@@ -484,6 +491,7 @@ export const App: React.FC = () => {
     // Blocked tiles can't be taken — wobble feedback (both modes)
     if (!clicked.isFree) {
       soundSynth.playClick();
+      haptics.blocked();
       setTiles(prev => prev.map(t => t.id === clicked.id ? { ...t, wobbling: true } : t));
       setTimeout(() => {
         setTiles(prev => prev.map(t => t.id === clicked.id ? { ...t, wobbling: false } : t));
@@ -518,10 +526,12 @@ export const App: React.FC = () => {
       const newTray = [...tray, clicked];
       setTray(newTray);
       soundSynth.playSelect();
-      setComboMultiplier(1);
-      lastMatchTimeRef.current = 0;
+      // Don't reset the combo on collect — you nearly always park a tile before
+      // matching its partner, so resetting here made combos impossible. The
+      // streak lapses on its own via the match-to-match timer in scoreMatch.
       if (newTray.length >= TRAY_CAPACITY) {
         soundSynth.playClick();
+        haptics.lose();
         stopTimer();
         setShowGameOver(true);
       }
