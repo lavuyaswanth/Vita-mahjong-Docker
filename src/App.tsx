@@ -101,6 +101,7 @@ export const App: React.FC = () => {
   const [comboPopup, setComboPopup] = useState<{ text: string; key: number } | null>(null);
   const lastMatchTimeRef = useRef<number>(0);
   const comboBonusRef = useRef<number>(0); // accumulated combo IQ bonus this game
+  const scoreRef = useRef<number>(100);    // live IQ (triggerVictory reads this, not stale state)
   const comboPopupTimeoutRef = useRef<number | null>(null);
   const hintTimeoutRef = useRef<number | null>(null);
 
@@ -109,6 +110,14 @@ export const App: React.FC = () => {
 
   // Star Rating (#2)
   const [earnedStars, setEarnedStars] = useState(0);
+
+  // Per-level best records (IQ / time / stars) — the reason to replay a board.
+  type LevelRecord = { iq: number; time: number; stars: number };
+  const loadRecords = (): Record<string, LevelRecord> => {
+    try { return JSON.parse(localStorage.getItem('vita_records') || '{}'); } catch { return {}; }
+  };
+  const [bestRecord, setBestRecord] = useState<LevelRecord | null>(null); // for the active level
+  const [isNewBest, setIsNewBest] = useState(false);
   const hintsUsedRef = useRef(0);
   const shufflesUsedRef = useRef(0);
 
@@ -288,10 +297,13 @@ export const App: React.FC = () => {
     setHintedPair(null);
     setScore(100);
     comboBonusRef.current = 0;
+    scoreRef.current = 100;
     setComboMultiplier(1);
     setComboPopup(null);
     setMoveCount(0);
     setEarnedStars(0);
+    setIsNewBest(false);
+    setBestRecord(loadRecords()[levelNum] ?? null);
     lastMatchTimeRef.current = 0;
     hintsUsedRef.current = 0;
     shufflesUsedRef.current = 0;
@@ -339,11 +351,13 @@ export const App: React.FC = () => {
   };
 
   // Shared scoring for a cleared pair. Score is modelled as an IQ that starts at
-  // an average 100 and climbs toward a genius ceiling of 200 as the board clears.
-  // Each pair adds a realistic, board-scaled increment (a clean full clear lands
-  // right at ~200); fast combo streaks add a small bonus so you reach 200 sooner.
+  // an average 100. Simply clearing the board earns up to +CLEAR_IQ (≈160 total);
+  // the remaining points up to the genius ceiling of 200 come from fast combo
+  // streaks. So a careful clear ≈160, a fast combo-heavy run approaches 200 —
+  // the final IQ reflects skill, giving players a score worth beating on replay.
   const IQ_BASE = 100;
   const IQ_MAX = 200;
+  const CLEAR_IQ = 60;
   const scoreMatch = (t1: TileState, t2: TileState) => {
     const now = getCurrentTime();
     const elapsed = now - lastMatchTimeRef.current;
@@ -358,8 +372,9 @@ export const App: React.FC = () => {
     const matchedPairs = moveCount + 1;            // this pair included
     const totalPairs = Math.max(1, totalTileCount / 2);
     comboBonusRef.current += Math.max(0, newMultiplier - 1); // persistent combo reward
-    const progressIQ = IQ_BASE + Math.round((IQ_MAX - IQ_BASE) * (matchedPairs / totalPairs));
+    const progressIQ = IQ_BASE + Math.round(CLEAR_IQ * (matchedPairs / totalPairs));
     const newScore = Math.min(IQ_MAX, progressIQ + comboBonusRef.current);
+    scoreRef.current = newScore;
 
     setMoveCount(matchedPairs);
     setScore(prev => {
@@ -394,8 +409,9 @@ export const App: React.FC = () => {
       setComboMultiplier(1);
       soundSynth.playVictory();
       haptics.win();
+      const finalIQ = scoreRef.current;
       // Extra flourish for a genius-level finish
-      if (score >= 180) setTimeout(() => soundSynth.playAchievementUnlock(), 250);
+      if (finalIQ >= 180) setTimeout(() => soundSynth.playAchievementUnlock(), 250);
 
       // Star Rating computation (#2)
       const stars = computeStarRating(
@@ -419,6 +435,24 @@ export const App: React.FC = () => {
         console.warn("Could not save star rating:", e);
       }
 
+      // Per-level best record (IQ ↑, time ↓, stars ↑). Drives the "beat your
+      // best" replay loop. `score` here is the final IQ for this run.
+      const prevBest = loadRecords()[currentLevel] ?? null;
+      const beat = !prevBest || finalIQ > prevBest.iq || stars > prevBest.stars ||
+        (finalIQ === prevBest.iq && timer < prevBest.time);
+      const merged: LevelRecord = {
+        iq: Math.max(finalIQ, prevBest?.iq ?? 0),
+        stars: Math.max(stars, prevBest?.stars ?? 0),
+        time: prevBest ? Math.min(timer, prevBest.time) : timer
+      };
+      try {
+        const recs = loadRecords();
+        recs[currentLevel] = merged;
+        localStorage.setItem('vita_records', JSON.stringify(recs));
+      } catch { /* ignore */ }
+      setBestRecord(merged);
+      setIsNewBest(beat);
+
       // Progressive Level Unlock (Up to 240 Levels, R4)
       const nextLevel = currentLevel + 1;
       if (nextLevel <= 240 && nextLevel > maxUnlockedLevel) {
@@ -438,7 +472,9 @@ export const App: React.FC = () => {
         { power: 'undo', min: 2, max: 5 }
       ];
       const pick = rewardPools[Math.floor(Math.random() * rewardPools.length)];
-      const amount = pick.min + Math.floor(Math.random() * (pick.max - pick.min + 1));
+      // Star-gated bonus: better play (more stars) yields a bigger booster reward.
+      const baseAmount = pick.min + Math.floor(Math.random() * (pick.max - pick.min + 1));
+      const amount = baseAmount * stars;
       setLevelReward({ power: pick.power, amount });
       setRewardClaimed(false);
 
@@ -738,6 +774,11 @@ export const App: React.FC = () => {
               <span className="header-timer" aria-label={`Elapsed time ${formatTime(timer)}`}>
                 {formatTime(timer)}
               </span>
+              {bestRecord && (
+                <span className="header-best" aria-label={`Best IQ ${bestRecord.iq}`}>
+                  ★ {bestRecord.iq}
+                </span>
+              )}
             </div>
 
             <button className="header-icon-btn settings-menu-btn" onClick={() => { soundSynth.playClick(); setIsSettingsOpen(true); }} title="Settings Menu" aria-label="Settings Menu">
@@ -965,6 +1006,9 @@ export const App: React.FC = () => {
               {renderStars(earnedStars)}
             </div>
             <div className="victory-iq-tier">{iqTier(score)} · IQ {score}</div>
+            {isNewBest
+              ? <div className="victory-best new-best">🌟 New Best! IQ {bestRecord?.iq} · {formatTime(bestRecord?.time ?? timer)}</div>
+              : bestRecord && <div className="victory-best">Best: IQ {bestRecord.iq} · {formatTime(bestRecord.time)}</div>}
             <p>Congratulations! You cleared all tiles in {formatTime(timer)} with {moveCount} moves.</p>
             
             <div className="victory-stats">
@@ -1027,6 +1071,9 @@ export const App: React.FC = () => {
                   Next Level ➡️
                 </button>
               )}
+              <button className="confirm-btn glassmorphism" onClick={() => initGame(currentLevel)} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                <RestartIcon size={16} inline /> Replay {bestRecord ? `(beat ${bestRecord.iq})` : ''}
+              </button>
               <button className="cancel-btn glassmorphism" onClick={handleBackToMenu} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
                 <BackIcon size={16} inline /> Main Menu
               </button>

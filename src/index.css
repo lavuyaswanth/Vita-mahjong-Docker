@@ -898,6 +898,32 @@ body {
   .header-timer { font-size: 13px; }
 }
 
+/* Best-IQ chip in the header (your target to beat on this level) */
+.header-best {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffd86b;
+  background: rgba(201, 168, 76, 0.16);
+  border: 1px solid rgba(201, 168, 76, 0.4);
+  border-radius: 10px;
+  padding: 2px 8px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Best / new-best line on the victory screen */
+.victory-best {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin: -4px 0 8px 0;
+}
+.victory-best.new-best {
+  color: #ffd700;
+  font-size: 15.5px;
+  font-weight: 800;
+  animation: geniusTierPulse 1.2s ease-in-out infinite;
+}
+
 .iq-display {
   display: inline-flex;
   align-items: baseline;
