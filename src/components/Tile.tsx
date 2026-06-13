@@ -67,7 +67,7 @@ const TileInner: React.FC<TileProps> = ({
         } as React.CSSProperties}
         aria-hidden="true"
       >
-        <div className="tile-3d-side-left"></div>
+        <div className="tile-3d-side-right"></div>
         <div className="tile-3d-side-bottom"></div>
         <div className="tile-face">
           <LegendIcon type={type} value={value} />
@@ -133,7 +133,7 @@ const TileInner: React.FC<TileProps> = ({
       tabIndex={isFree ? 0 : -1}
     >
       {/* 3D Tile block effects (Sides and bottom highlights) */}
-      <div className="tile-3d-side-left"></div>
+      <div className="tile-3d-side-right"></div>
       <div className="tile-3d-side-bottom"></div>
 
       {/* Main Face of the Tile */}

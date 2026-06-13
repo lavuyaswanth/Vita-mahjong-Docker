@@ -1339,36 +1339,33 @@ body {
   }
 }
 
-/* 3D side walls — depth scales with stack height (--wall) so taller stacks read clearly.
-   Bright ivory bevel cap (fixed), then a lit-to-shadow side that grows with height. */
-.tile-3d-side-left {
+/* 3D side walls — a tile is a solid ivory block. Higher layers shift up-left,
+   so each tile's real thickness shows on its RIGHT and BOTTOM faces (the sides
+   that descend down-right to the tile's base). Light comes from the top-left,
+   so the right face is mid-toned and the bottom face is the darkest. The colours
+   are fixed bone/ivory (not theme-tinted) so they read as physical tile edges. */
+.tile-3d-side-right {
   position: absolute;
-  top: calc(var(--wall, 10px) / 2);
-  left: calc(var(--wall, 10px) * -1);
+  top: 0;
+  right: calc(var(--wall, 10px) * -1);
   width: var(--wall, 10px);
   height: 100%;
-  background: linear-gradient(to right,
-    #fffaf0 0%, #f3e6c2 4px,
-    var(--tile-edge-light) 4px, var(--tile-border-dark) 55%, var(--tile-edge-dark) 100%);
-  transform: skewY(-45deg);
-  transform-origin: right top;
-  border-radius: 2px 0 0 2px;
-  box-shadow: inset -2px 0 3px rgba(0,0,0,0.5), inset 2px 0 1px rgba(255,255,255,0.22);
+  background: linear-gradient(to right, #efe6cd 0%, #cdba8e 55%, #9a875b 100%);
+  transform: skewY(45deg);
+  transform-origin: left top;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.35);
 }
 
 .tile-3d-side-bottom {
   position: absolute;
   bottom: calc(var(--wall, 10px) * -1);
-  left: calc(var(--wall, 10px) / -2);
+  left: 0;
   width: 100%;
   height: var(--wall, 10px);
-  background: linear-gradient(to bottom,
-    #fffaf0 0%, #f3e6c2 4px,
-    var(--tile-edge-light) 4px, var(--tile-border-dark) 55%, var(--tile-edge-dark) 100%);
-  transform: skewX(-45deg);
-  transform-origin: left top;
-  border-radius: 0 0 2px 2px;
-  box-shadow: inset 0 2px 3px rgba(0,0,0,0.5), inset 0 -2px 1px rgba(0,0,0,0.3);
+  background: linear-gradient(to bottom, #d6c397 0%, #ab9560 60%, #82703f 100%);
+  transform: skewX(45deg);
+  transform-origin: top left;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.4);
 }
 
 .tile-face {
@@ -1377,19 +1374,20 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  /* Dark slate stone face — lets the moody Legends art read as mature */
+  /* Aged ivory/bone tile face — like a real mahjong tile: light body, dark art
+     reads as a carved/painted symbol with strong contrast. Lit from top-left. */
   background:
-    radial-gradient(circle at 24% 18%, #3a3550 0%, #262236 45%, #161320 100%);
-  border: 2px solid var(--tile-border-3d);
+    radial-gradient(circle at 30% 22%, #fbf6e9 0%, #f1e8d2 48%, #ddccac 100%);
+  border: 1.5px solid #b29a68;
   border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    inset 2px 2px 2px rgba(150, 140, 180, 0.30),
-    inset -2px -3px 4px rgba(0, 0, 0, 0.55),
-    inset 0 0 0 1px rgba(180, 160, 220, 0.18),
-    1px 2px 3px rgba(0,0,0,0.30);
+    inset 2px 2px 2px rgba(255, 255, 255, 0.9),
+    inset -2px -3px 4px rgba(120, 95, 45, 0.30),
+    inset 0 0 0 1px rgba(255, 248, 225, 0.5),
+    1px 2px 3px rgba(0, 0, 0, 0.25);
   overflow: hidden;
 }
 
@@ -1450,12 +1448,13 @@ body {
   filter: drop-shadow(0.6px 0.8px 0.4px rgba(0,0,0,0.45));
 }
 
-/* Pre-rendered raster tile art (Legends edition) */
+/* Pre-rendered raster tile art (Legends edition). Inset from the tile edge so
+   the ivory body frames it like an engraved/painted symbol on a real tile. */
 .tile-art {
-  width: 96%;
-  height: 96%;
+  width: 82%;
+  height: 82%;
   object-fit: contain;
-  filter: drop-shadow(0.6px 1px 0.8px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0.5px 1px 0.8px rgba(0, 0, 0, 0.45));
 }
 
 .tile-placeholder {
