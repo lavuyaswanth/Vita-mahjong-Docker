@@ -130,32 +130,32 @@ function generateTurtle() {
 export const layouts: Record<LayoutName, LayoutConfig> = {
   Garden: {
     name: 'Garden',
-    displayName: '🦇 Haunted Grove',
-    description: 'A misty grove to begin your descent — three gentle layers, big easy-to-read tiles.',
+    displayName: '🌲 Enchanted Grove',
+    description: 'A misty grove to begin your quest — three gentle layers, big easy-to-read tiles.',
     coords: generateGarden()
   },
   Pagoda: {
     name: 'Pagoda',
-    displayName: '🏰 Vampire Tower',
-    description: 'A four-layer tower looming toward the centre — a step deeper into the dark.',
+    displayName: '🏰 Castle Keep',
+    description: 'A four-layer tower rising toward the centre — a step deeper into the realm.',
     coords: generatePagoda()
   },
   Pyramids: {
     name: 'Pyramids',
-    displayName: '⚰️ Crypt Pyramid',
-    description: 'A broad, steep burial pyramid — plenty of free flanks but a deep cursed core.',
+    displayName: '⚔️ Ancient Crypt',
+    description: 'A broad, steep stone pyramid — plenty of free flanks but a deep ancient core.',
     coords: generatePyramids()
   },
   Butterfly: {
     name: 'Butterfly',
-    displayName: '🕷️ Spider Nest',
-    description: 'A wide sprawling web crowned by a clustered nest. Balanced and sinister.',
+    displayName: '🐉 Dragon Lair',
+    description: 'A wide sprawling lair crowned by a clustered hoard. Balanced and perilous.',
     coords: generateButterfly()
   },
   Turtle: {
     name: 'Turtle',
-    displayName: '💀 Necropolis Dome',
-    description: 'The legendary deep tomb-dome — the biggest, deepest pile and the ultimate test of nerve.',
+    displayName: '👑 Throne of Legends',
+    description: 'The legendary deep throne-dome — the biggest, deepest pile and the ultimate test of skill.',
     coords: generateTurtle()
   }
 };

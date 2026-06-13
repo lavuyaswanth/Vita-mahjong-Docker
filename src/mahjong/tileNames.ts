@@ -1,12 +1,12 @@
-// Human-friendly names for each tile face (Midnight Edition) — used for
+// Human-friendly names for each tile face (Legends Edition) — used for
 // screen-reader labels and the high-contrast name tags.
 
 const TILE_NAMES: Record<string, string[]> = {
-  bamboo: ['Dracula', 'Werewolf', 'Frankenstein', 'Mummy', 'Zombie', 'Ghost', 'Witch', 'Reaper', 'Skeleton'],
-  circle: ['Potion', 'Crystal Ball', 'Spell Book', 'Cauldron', 'Coffin', 'Candle', 'Amulet', 'Dagger', 'Hourglass'],
-  character: ['Castle', 'Full Moon', 'Tombstone', 'Dead Tree', 'Haunted House', 'Bat', 'Spider', 'Raven', 'Black Cat'],
+  bamboo: ['Dracula', 'Werewolf', 'Golem', 'Knight', 'Kraken', 'Ghost', 'Wizard', 'Reaper', 'Skeleton'],
+  circle: ['Potion', 'Crystal Ball', 'Spell Book', 'Shield', 'Treasure', 'Candle', 'Amulet', 'Dagger', 'Hourglass'],
+  character: ['Castle', 'Full Moon', 'Excalibur', 'Dead Tree', 'Mage Tower', 'Bat', 'Spider', 'Raven', 'Black Cat'],
   wind: ['Storm', 'Blood Moon', 'Fog', 'Eclipse'],
-  dragon: ['Demon', 'Gargoyle', 'Cursed Crown'],
+  dragon: ['Dragon', 'Gargoyle', 'Cursed Crown'],
   season: ['New Moon', 'Crescent Moon', 'Half Moon', 'Harvest Moon'],
   flower: ['Black Rose', 'Nightshade', 'Flytrap', 'Toadstool']
 };

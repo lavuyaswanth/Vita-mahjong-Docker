@@ -11,12 +11,12 @@ interface TileProps {
   onClick: (tile: TileState) => void;
 }
 
-// Midnight Edition (ages 14+) tile art — gothic monsters, cursed artifacts,
-// haunted places, omens, legends, moon phases and poison plants.
+// Legends Edition (ages 14+) tile art — creatures of legend, relics,
+// realm landmarks, omens, myths, moon phases and wild flora.
 // All inline vector SVG, bold shapes tuned to stay readable at ~50px.
-const GothicIcon: React.FC<{ type: string; value: number }> = ({ type, value }) => {
+const LegendIcon: React.FC<{ type: string; value: number }> = ({ type, value }) => {
   switch (type) {
-    case 'bamboo': // MONSTERS
+    case 'bamboo': // CREATURES OF LEGEND
       switch (value) {
         case 1: // Dracula
           return (
@@ -76,73 +76,80 @@ const GothicIcon: React.FC<{ type: string; value: number }> = ({ type, value }) 
               <path d="M 25 52 L 30 59 L 35 52 L 30 55 Z" fill="#5b4334" />
             </svg>
           );
-        case 3: // Frankenstein's monster
+        case 3: // Golem
           return (
             <svg viewBox="0 0 60 70" className="tile-svg">
-              {/* Jacket shoulders */}
-              <rect x="13" y="46" width="34" height="18" rx="4" fill="#3a3f4a" stroke="#23262e" strokeWidth="1.8" />
-              <rect x="27" y="46" width="6" height="10" fill="#23262e" />
-              {/* Neck bolts */}
-              <rect x="7" y="32" width="9" height="5" rx="1.2" fill="#8c8c94" stroke="#5a5a62" strokeWidth="1" />
-              <circle cx="8.5" cy="34.5" r="2.2" fill="#aeaeb8" />
-              <rect x="44" y="32" width="9" height="5" rx="1.2" fill="#8c8c94" stroke="#5a5a62" strokeWidth="1" />
-              <circle cx="51.5" cy="34.5" r="2.2" fill="#aeaeb8" />
-              {/* Square green head */}
-              <rect x="16" y="10" width="28" height="34" rx="7" fill="#7fae6a" stroke="#557a44" strokeWidth="2" />
-              {/* Flat hair with jagged fringe */}
-              <path d="M 16 17 L 16 13 C 16 10.5 18 10 21 10 L 39 10 C 42 10 44 10.5 44 13 L 44 17 L 40.5 14 L 37 18 L 33.5 14.5 L 30 18 L 26.5 14.5 L 23 18 L 19.5 14 Z" fill="#10141a" />
-              {/* Forehead stitches */}
-              <line x1="20" y1="21.5" x2="30" y2="21.5" stroke="#3c5731" strokeWidth="1.4" />
-              <path d="M 22 19.8 L 22 23.2 M 25.5 19.8 L 25.5 23.2 M 28.5 19.8 L 28.5 23.2" stroke="#3c5731" strokeWidth="1.1" />
-              {/* Heavy-lidded eyes */}
-              <rect x="19.5" y="25" width="8" height="3" fill="#557a44" />
-              <circle cx="23.5" cy="28.6" r="2.1" fill="#1d1f16" />
-              <rect x="32.5" y="25" width="8" height="3" fill="#557a44" />
-              <circle cx="36.5" cy="28.6" r="2.1" fill="#1d1f16" />
-              {/* Nose + flat mouth, cheek stitch */}
-              <path d="M 30 30 L 30 34.5 M 26 38.5 L 34.5 38.5" stroke="#3c5731" strokeWidth="1.6" strokeLinecap="round" />
-              <path d="M 36 34.5 L 41 36.5 M 38 33.6 L 38.5 37.4 M 40 34.3 L 40.5 38" stroke="#3c5731" strokeWidth="1" />
+              {/* Stone shoulders */}
+              <rect x="12" y="46" width="36" height="18" rx="5" fill="#6b737d" stroke="#4a525c" strokeWidth="1.8" />
+              <path d="M 14 50 L 22 50 M 38 50 L 46 50 M 26 56 L 34 56" stroke="#4a525c" strokeWidth="1.2" />
+              {/* Stone head */}
+              <rect x="16" y="9" width="28" height="35" rx="7" fill="#828b96" stroke="#5a626c" strokeWidth="2" />
+              {/* Brow ledge */}
+              <path d="M 18 22 L 42 22 L 40 17.5 L 20 17.5 Z" fill="#6b737d" stroke="#5a626c" strokeWidth="1" />
+              {/* Glowing rune eyes */}
+              <rect x="21" y="24.5" width="6.5" height="4" rx="1.2" fill="#ffb84d" />
+              <rect x="32.5" y="24.5" width="6.5" height="4" rx="1.2" fill="#ffb84d" />
+              {/* Carved forehead rune */}
+              <path d="M 30 11 L 27.5 15 L 32.5 15 Z M 30 15 L 30 17" stroke="#5a626c" strokeWidth="1.3" fill="none" />
+              {/* Cracks */}
+              <path d="M 18 33 L 23 35 L 21 39 M 44 13 L 40 17 M 38 38 L 42 41 L 40 44" stroke="#5a626c" strokeWidth="1.3" fill="none" />
+              {/* Stone jaw */}
+              <path d="M 25 38.5 L 35 38.5" stroke="#4a525c" strokeWidth="2.2" strokeLinecap="round" />
+              <path d="M 28 36.8 L 28 40.2 M 32 36.8 L 32 40.2" stroke="#4a525c" strokeWidth="1.2" />
+              {/* Moss patches */}
+              <path d="M 16 14 C 18 11 22 11 23 14 C 20 16 17 16 16 14 Z" fill="#5d8a48" />
+              <path d="M 38 42 C 40 40 43 40 44 43 C 42 44.5 39 44.5 38 42 Z" fill="#5d8a48" />
+              <path d="M 14 47 C 16 44.5 19 44.5 20 47 C 18 48.8 15 48.8 14 47 Z" fill="#5d8a48" />
             </svg>
           );
-        case 4: // Mummy
+        case 4: // Knight
           return (
             <svg viewBox="0 0 60 70" className="tile-svg">
-              {/* Loose trailing bandage */}
-              <path d="M 44 12 Q 55 7 53 19 Q 52 25 46 23" fill="none" stroke="#d9cfb4" strokeWidth="4" strokeLinecap="round" />
-              {/* Head base */}
-              <ellipse cx="30" cy="32" rx="16.5" ry="18" fill="#d9cfb4" stroke="#b3a380" strokeWidth="2" />
-              {/* Eye gap band */}
-              <path d="M 14.5 26 C 22 23 38 23 45.5 26 L 45.5 33 C 38 36 22 36 14.5 33 Z" fill="#2c2218" />
-              {/* Glowing eye + closed eye */}
-              <circle cx="24" cy="29.5" r="3" fill="#ffd23f" />
-              <circle cx="24" cy="29.5" r="1.2" fill="#1d1410" />
-              <path d="M 34 30 Q 37 32 40 30" stroke="#8c7a52" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-              {/* Wrap strips */}
-              <path d="M 15 20 C 24 16 36 16 45 20 M 16 44 C 24 48 36 48 44 44 M 14 38 C 24 41 36 41 46 38" stroke="#b3a380" strokeWidth="1.6" fill="none" />
-              <path d="M 20 16 L 34 49 M 40 17 L 27 49" stroke="#b3a380" strokeWidth="1.6" />
-              {/* Stitched mouth */}
-              <path d="M 25 42.5 Q 30 44.5 35 42.5" stroke="#6e5e3e" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+              {/* Plumed crest */}
+              <path d="M 30 6 C 36 6 40 11 39 18 L 33 16 C 33 11 31 8 30 6 Z" fill="#b3122e" stroke="#7a0b14" strokeWidth="1" />
+              <path d="M 30 6 C 24 6 20 11 21 18 L 27 16 C 27 11 29 8 30 6 Z" fill="#c1313f" stroke="#7a0b14" strokeWidth="1" />
+              {/* Gorget / shoulders */}
+              <path d="M 13 64 C 13 52 20 48 30 48 C 40 48 47 52 47 64 Z" fill="#5a626c" stroke="#3a4048" strokeWidth="1.8" />
+              <path d="M 22 50 L 30 54 L 38 50" fill="none" stroke="#3a4048" strokeWidth="1.4" />
+              {/* Steel helm */}
+              <path d="M 17 30 C 17 16 43 16 43 30 L 43 44 C 43 49 38 51 30 51 C 22 51 17 49 17 44 Z" fill="#9aa3ad" stroke="#5a626c" strokeWidth="2" />
+              {/* Helm sheen */}
+              <path d="M 21 22 C 24 18 30 17 30 17 L 30 47 C 24 47 21 44 21 40 Z" fill="#b8c0c9" opacity="0.5" />
+              {/* Visor slit + breaths */}
+              <rect x="19" y="29" width="22" height="4.5" rx="2" fill="#16191e" />
+              <circle cx="25" cy="31.2" r="1.2" fill="#7df9ff" />
+              <circle cx="35" cy="31.2" r="1.2" fill="#7df9ff" />
+              <path d="M 23 40 L 23 47 M 27 41 L 27 48 M 30 41.5 L 30 48.5 M 33 41 L 33 48 M 37 40 L 37 47" stroke="#5a626c" strokeWidth="1.5" />
+              {/* Rivets */}
+              <circle cx="19" cy="27" r="1.3" fill="#5a626c" />
+              <circle cx="41" cy="27" r="1.3" fill="#5a626c" />
             </svg>
           );
-        case 5: // Zombie
+        case 5: // Kraken
           return (
             <svg viewBox="0 0 60 70" className="tile-svg">
-              {/* Ragged shirt */}
-              <path d="M 14 64 C 14 50 20 46 30 46 C 40 46 46 50 46 64 L 40 60 L 35 65 L 30 60 L 25 65 L 20 60 Z" fill="#4a3b5c" stroke="#2e2438" strokeWidth="1.8" />
-              {/* Green head, slightly lumpy */}
-              <path d="M 16 26 C 15 12 45 11 44 26 C 46 38 38 46 30 46 C 22 46 14 38 16 26 Z" fill="#8fbf76" stroke="#5d8a48" strokeWidth="2" />
-              {/* Messy hair patch */}
-              <path d="M 17 19 C 20 10 38 8 43 17 L 37 15 L 34 18 L 29 13 L 25 17 L 20 15 Z" fill="#2e4023" />
-              {/* Forehead stitch scar */}
-              <path d="M 21 22 L 35 24" stroke="#4a6e38" strokeWidth="1.5" />
-              <path d="M 24 20.5 L 23.5 25 M 28 21 L 27.5 25.5 M 32 21.5 L 31.5 26" stroke="#4a6e38" strokeWidth="1.1" />
-              {/* Mismatched eyes: wide + drooped */}
-              <circle cx="23.5" cy="30" r="4.2" fill="#f2ead8" stroke="#5d8a48" strokeWidth="1" />
-              <circle cx="24.5" cy="31" r="1.7" fill="#1d1410" />
-              <path d="M 33 28.5 L 41 28 M 34 31.5 Q 37 29.8 40 31" stroke="#1d1410" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-              {/* Crooked open mouth, missing tooth */}
-              <path d="M 23 39 Q 27 43.5 33 41.5 Q 37 40 38 37.5 L 34 38.5 L 31 37.8 L 27 39.2 Z" fill="#2c3a22" />
-              <rect x="28" y="38.2" width="3" height="2.6" rx="0.6" fill="#f2ead8" />
+              {/* Churning waves */}
+              <path d="M 5 58 Q 14 53 22 58 Q 30 53 38 58 Q 46 53 55 58 L 55 66 L 5 66 Z" fill="#1d3b4a" stroke="#12262f" strokeWidth="1.2" />
+              {/* Writhing tentacles */}
+              <path d="M 22 44 C 14 48 11 56 4 56 C 9 52 9 47 12 44 Z" fill="#4a2b6e" stroke="#2e1846" strokeWidth="1.2" />
+              <path d="M 38 44 C 46 48 49 56 56 56 C 51 52 51 47 48 44 Z" fill="#4a2b6e" stroke="#2e1846" strokeWidth="1.2" />
+              <path d="M 24 47 C 20 54 22 60 18 64 C 16 58 15 52 18 47 Z" fill="#5b357f" stroke="#2e1846" strokeWidth="1.2" />
+              <path d="M 36 47 C 40 54 38 60 42 64 C 44 58 45 52 42 47 Z" fill="#5b357f" stroke="#2e1846" strokeWidth="1.2" />
+              {/* Suckers */}
+              <circle cx="9" cy="53" r="1.3" fill="#3ab0c4" /><circle cx="14" cy="50" r="1.1" fill="#3ab0c4" />
+              <circle cx="51" cy="53" r="1.3" fill="#3ab0c4" /><circle cx="46" cy="50" r="1.1" fill="#3ab0c4" />
+              {/* Bulbous head */}
+              <path d="M 16 26 C 16 12 44 12 44 26 C 44 38 37 46 30 46 C 23 46 16 38 16 26 Z" fill="#6e3f96" stroke="#3f2360" strokeWidth="2" />
+              {/* Head sheen + mottling */}
+              <path d="M 22 19 C 25 15 30 14 30 14 C 30 14 28 22 26 28 C 23 27 21 23 22 19 Z" fill="#8a5cb0" opacity="0.6" />
+              <circle cx="36" cy="22" r="2" fill="#5b357f" /><circle cx="38" cy="30" r="1.6" fill="#5b357f" />
+              {/* Fierce eyes with slit pupils */}
+              <ellipse cx="24" cy="29" rx="4" ry="3.2" fill="#ffd23f" stroke="#9c7c12" strokeWidth="0.8" />
+              <line x1="24" y1="26.4" x2="24" y2="31.6" stroke="#1d1410" strokeWidth="1.4" />
+              <ellipse cx="36" cy="29" rx="4" ry="3.2" fill="#ffd23f" stroke="#9c7c12" strokeWidth="0.8" />
+              <line x1="36" y1="26.4" x2="36" y2="31.6" stroke="#1d1410" strokeWidth="1.4" />
+              {/* Beak */}
+              <polygon points="27,37 33,37 30,42" fill="#1d1410" />
             </svg>
           );
         case 6: // Ghost
@@ -163,27 +170,28 @@ const GothicIcon: React.FC<{ type: string; value: number }> = ({ type, value }) 
               <circle cx="41.5" cy="35" r="2.4" fill="#c9d6ff" opacity="0.6" />
             </svg>
           );
-        case 7: // Witch
+        case 7: // Wizard
           return (
             <svg viewBox="0 0 60 70" className="tile-svg">
-              {/* Purple hair falling from under the hat */}
-              <path d="M 17 24 C 13 32 13 40 16 46 L 22 38 L 21 27 Z" fill="#5b2a86" />
-              <path d="M 43 24 C 47 32 47 40 44 46 L 38 38 L 39 27 Z" fill="#5b2a86" />
-              {/* Green face */}
-              <ellipse cx="30" cy="34" rx="11.5" ry="11" fill="#9fc26f" stroke="#6f8f49" strokeWidth="2" />
-              {/* Pointed hat with bent tip */}
-              <ellipse cx="30" cy="23" rx="17.5" ry="4.8" fill="#1c1426" stroke="#0e0a14" strokeWidth="1.2" />
-              <path d="M 20 22 C 26 19 34 19 40 22 L 33 6 Q 32 1 26 4 Q 23 5.5 26 9 Z" fill="#2c1f3e" stroke="#0e0a14" strokeWidth="1.2" />
-              <rect x="26" y="18" width="8" height="4.5" rx="1" fill="#d4af37" stroke="#8c6d1f" strokeWidth="0.8" />
-              {/* Sly eyes */}
-              <path d="M 22 30.5 L 27 32 M 38 30.5 L 33 32" stroke="#3c5731" strokeWidth="1.6" strokeLinecap="round" />
-              <circle cx="24.8" cy="33.6" r="1.7" fill="#1d1410" />
-              <circle cx="35.2" cy="33.6" r="1.7" fill="#1d1410" />
-              {/* Hooked nose with wart */}
-              <path d="M 30 33 C 33 35 33 38.5 29.5 39.5" fill="none" stroke="#6f8f49" strokeWidth="1.8" strokeLinecap="round" />
-              <circle cx="32.4" cy="37.6" r="1" fill="#6f8f49" />
-              {/* Grin */}
-              <path d="M 24.5 41.5 Q 30 45 35.5 41.5" stroke="#3c5731" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+              {/* Robe shoulders */}
+              <path d="M 16 64 C 16 52 22 48 30 48 C 38 48 44 52 44 64 Z" fill="#2e2a6e" stroke="#1c1846" strokeWidth="1.8" />
+              {/* Long flowing beard */}
+              <path d="M 21 38 C 21 56 25 62 30 64 C 35 62 39 56 39 38 C 35 42 25 42 21 38 Z" fill="#e8e8ee" stroke="#c2c2cc" strokeWidth="1.2" />
+              <path d="M 27 50 Q 30 53 33 50 M 28 56 Q 30 58 32 56" stroke="#c2c2cc" strokeWidth="1" fill="none" />
+              {/* Face */}
+              <ellipse cx="30" cy="33" rx="10.5" ry="10" fill="#d8b58c" stroke="#b3936a" strokeWidth="1.5" />
+              {/* Tall pointed hat */}
+              <path d="M 18 25 C 25 21 35 21 42 25 L 34 5 Q 32 1 28 5 Z" fill="#312c7a" stroke="#1c1846" strokeWidth="1.4" />
+              <path d="M 18 25 C 25 21 35 21 42 25 L 41 28 C 35 24 25 24 19 28 Z" fill="#221d5c" />
+              {/* Stars on hat */}
+              <polygon points="30,12 31,15 34,15 31.5,17 32.5,20 30,18 27.5,20 28.5,17 26,15 29,15" fill="#ffd23f" />
+              <circle cx="26" cy="20" r="0.9" fill="#ffd23f" /><circle cx="35" cy="19" r="0.9" fill="#ffd23f" />
+              {/* Bushy brows + kind eyes */}
+              <path d="M 22 29 L 27.5 30.5 M 38 29 L 32.5 30.5" stroke="#e8e8ee" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="25.5" cy="32.5" r="1.6" fill="#2e4a6e" />
+              <circle cx="34.5" cy="32.5" r="1.6" fill="#2e4a6e" />
+              {/* Moustache flowing into beard */}
+              <path d="M 24 39 Q 30 41 36 39" stroke="#c2c2cc" strokeWidth="2" fill="none" strokeLinecap="round" />
             </svg>
           );
         case 8: // Grim Reaper
@@ -289,42 +297,55 @@ const GothicIcon: React.FC<{ type: string; value: number }> = ({ type, value }) 
               <path d="M 23 44 L 37 44 M 25 48 L 35 48" stroke="#9b6fb5" strokeWidth="1.4" strokeLinecap="round" />
             </svg>
           );
-        case 4: // Cauldron
+        case 4: // Shield
           return (
             <svg viewBox="0 0 60 70" className="tile-svg">
-              {/* Fire */}
-              <polygon points="20,60 25,52 28,58 32,50 36,58 40,53 44,60" fill="#ff8c2e" />
-              <polygon points="24,60 28,55 31,59 35,54 38,60" fill="#ffd23f" />
-              <line x1="14" y1="62" x2="46" y2="62" stroke="#5a4632" strokeWidth="3.5" strokeLinecap="round" />
-              {/* Pot */}
-              <path d="M 13 28 C 11 46 21 52 30 52 C 39 52 49 46 47 28 Z" fill="#2d2d38" stroke="#16161e" strokeWidth="2" />
-              <ellipse cx="30" cy="28" rx="18.5" ry="5.4" fill="#3d3d4c" stroke="#16161e" strokeWidth="2" />
-              {/* Side handles */}
-              <path d="M 11 30 Q 5 31 8 37 M 49 30 Q 55 31 52 37" stroke="#16161e" strokeWidth="2.4" fill="none" strokeLinecap="round" />
-              {/* Bubbling brew */}
-              <ellipse cx="30" cy="28" rx="14.5" ry="3.6" fill="#52e06d" />
-              <circle cx="23" cy="23.5" r="2.4" fill="#52e06d" />
-              <circle cx="33" cy="20" r="3" fill="#52e06d" />
-              <circle cx="39" cy="24" r="1.8" fill="#52e06d" />
-              <circle cx="33.8" cy="19.2" r="1" fill="#bdf5c8" />
-              {/* Drip */}
-              <path d="M 44 31 C 45 34 44.5 36 43 37 C 42 35 42.5 32.5 44 31 Z" fill="#52e06d" />
+              {/* Heater shield body */}
+              <path d="M 12 12 L 48 12 L 48 34 C 48 50 38 60 30 64 C 22 60 12 50 12 34 Z" fill="#3a5a8c" stroke="#22365a" strokeWidth="2.4" />
+              {/* Steel rim */}
+              <path d="M 12 12 L 48 12 L 48 34 C 48 50 38 60 30 64 C 22 60 12 50 12 34 Z" fill="none" stroke="#aeb6c4" strokeWidth="1.4" />
+              {/* Quartered field */}
+              <path d="M 30 12 L 30 64 M 12 24 L 48 24" stroke="#22365a" strokeWidth="1.6" />
+              <path d="M 12 12 L 30 24 L 12 24 Z M 48 12 L 30 24 L 48 24 Z" fill="#4a6e9e" opacity="0.7" />
+              {/* Gold lion crest */}
+              <circle cx="30" cy="40" r="11" fill="#d4af37" stroke="#8c6d1f" strokeWidth="1.4" />
+              <path d="M 24 40 C 24 35 36 35 36 40 C 36 45 33 47 30 47 C 27 47 24 45 24 40 Z" fill="#8c6d1f" />
+              <circle cx="27.5" cy="39" r="1.3" fill="#3a2a0e" />
+              <circle cx="32.5" cy="39" r="1.3" fill="#3a2a0e" />
+              <path d="M 27 43 Q 30 45 33 43" stroke="#3a2a0e" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+              {/* Mane spikes */}
+              <path d="M 30 29 L 30 27 M 23 31 L 21.5 29.5 M 37 31 L 38.5 29.5" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" />
+              {/* Rivets */}
+              <circle cx="16" cy="16" r="1.4" fill="#aeb6c4" />
+              <circle cx="44" cy="16" r="1.4" fill="#aeb6c4" />
             </svg>
           );
-        case 5: // Coffin
+        case 5: // Treasure Chest
           return (
             <svg viewBox="0 0 60 70" className="tile-svg">
-              {/* Dirt mound */}
-              <ellipse cx="30" cy="62" rx="20" ry="4" fill="#3e2b1f" opacity="0.5" />
-              {/* Tapered box */}
-              <polygon points="21,7 39,7 45,24 37,63 23,63 15,24" fill="#6b4a2f" stroke="#46301e" strokeWidth="2" />
-              {/* Lid seam + plank lines */}
-              <polygon points="23,9 37,9 42,24 35.5,60 24.5,60 18,24" fill="none" stroke="#46301e" strokeWidth="1.2" />
-              {/* Cross */}
-              <rect x="28" y="18" width="4" height="22" rx="1.2" fill="#d4af37" stroke="#8c6d1f" strokeWidth="0.8" />
-              <rect x="22" y="24" width="16" height="4" rx="1.2" fill="#d4af37" stroke="#8c6d1f" strokeWidth="0.8" />
-              {/* Handles */}
-              <path d="M 17 34 Q 13 36 16 40 M 43 34 Q 47 36 44 40" stroke="#8c8c94" strokeWidth="2" fill="none" strokeLinecap="round" />
+              {/* Glow from within */}
+              <ellipse cx="30" cy="34" rx="22" ry="10" fill="#ffd23f" opacity="0.25" />
+              {/* Domed lid */}
+              <path d="M 11 34 C 11 18 49 18 49 34 Z" fill="#6b4a2f" stroke="#3e2b1a" strokeWidth="2" />
+              <path d="M 11 34 C 11 18 49 18 49 34 Z" fill="none" stroke="#8a623c" strokeWidth="1" transform="translate(0,3)" />
+              {/* Iron bands on lid */}
+              <path d="M 22 20 L 20 34 M 38 20 L 40 34" stroke="#4a525c" strokeWidth="2.6" />
+              {/* Chest body */}
+              <rect x="11" y="34" width="38" height="24" rx="2.5" fill="#7a542f" stroke="#3e2b1a" strokeWidth="2" />
+              <path d="M 11 40 L 49 40" stroke="#3e2b1a" strokeWidth="1" />
+              {/* Iron bands on body */}
+              <rect x="19" y="34" width="4" height="24" fill="#4a525c" />
+              <rect x="37" y="34" width="4" height="24" fill="#4a525c" />
+              <rect x="9" y="44" width="42" height="4" fill="#5a626c" stroke="#3a4048" strokeWidth="0.8" />
+              {/* Gold lock */}
+              <rect x="26" y="42" width="8" height="9" rx="1.5" fill="#d4af37" stroke="#8c6d1f" strokeWidth="1" />
+              <circle cx="30" cy="46" r="1.6" fill="#3e2b1a" />
+              {/* Spilling coins */}
+              <circle cx="18" cy="32" r="2.4" fill="#ffd23f" stroke="#b8901f" strokeWidth="0.7" />
+              <circle cx="30" cy="29.5" r="2.6" fill="#ffe066" stroke="#b8901f" strokeWidth="0.7" />
+              <circle cx="42" cy="32" r="2.4" fill="#ffd23f" stroke="#b8901f" strokeWidth="0.7" />
+              {/* Sparkle */}
+              <polygon points="36,25 37,27.4 39.5,27.8 37.6,29.4 38.2,31.8 36,30.4 33.8,31.8 34.4,29.4 32.5,27.8 35,27.4" fill="#fff2c2" />
             </svg>
           );
         case 6: // Candle
@@ -441,21 +462,29 @@ const GothicIcon: React.FC<{ type: string; value: number }> = ({ type, value }) 
               <circle cx="14" cy="54" r="1" fill="#fff2c2" />
             </svg>
           );
-        case 3: // Tombstone
+        case 3: // Sword in the Stone
           return (
             <svg viewBox="0 0 60 70" className="tile-svg">
-              {/* Grave mound */}
-              <path d="M 6 58 Q 30 50 54 58 L 54 66 L 6 66 Z" fill="#2e4030" />
-              <path d="M 10 56 L 8 50 M 15 55 L 14 49 M 47 55 L 49 49" stroke="#476349" strokeWidth="1.6" strokeLinecap="round" />
-              {/* Stone */}
-              <path d="M 17 58 L 17 26 C 17 11 43 11 43 26 L 43 58 Z" fill="#9aa3ad" stroke="#6b737d" strokeWidth="2" />
-              <path d="M 20 58 L 20 27 C 20 15 40 15 40 27" fill="none" stroke="#828b96" strokeWidth="1.2" />
-              {/* Engraved cross + lines */}
-              <rect x="28.5" y="22" width="3" height="12" rx="1" fill="#6b737d" />
-              <rect x="24.5" y="25.5" width="11" height="3" rx="1" fill="#6b737d" />
-              <path d="M 23 42 L 37 42 M 25 47 L 35 47" stroke="#6b737d" strokeWidth="1.8" strokeLinecap="round" />
-              {/* Crack */}
-              <path d="M 39 33 L 35.5 38 L 38 41 L 35 46" fill="none" stroke="#6b737d" strokeWidth="1.2" />
+              {/* Glow halo */}
+              <ellipse cx="30" cy="20" rx="13" ry="16" fill="#9fd0ff" opacity="0.18" />
+              {/* Blade */}
+              <polygon points="30,5 33,9 32.5,38 27.5,38 27,9" fill="#dbe3ee" stroke="#9aa3ad" strokeWidth="1.4" />
+              <line x1="30" y1="9" x2="30" y2="37" stroke="#aeb6c4" strokeWidth="1" />
+              {/* Cross-guard */}
+              <rect x="19" y="37" width="22" height="4.5" rx="2" fill="#d4af37" stroke="#8c6d1f" strokeWidth="1.2" />
+              <circle cx="21.5" cy="39.2" r="1.3" fill="#9fd0ff" />
+              <circle cx="38.5" cy="39.2" r="1.3" fill="#9fd0ff" />
+              {/* Grip (rises out of the stone) */}
+              <rect x="27.5" y="41.5" width="5" height="9" rx="1.5" fill="#5a3a22" stroke="#3a2614" strokeWidth="1" />
+              <path d="M 27.5 44 L 32.5 45.5 M 27.5 47 L 32.5 48.5" stroke="#3a2614" strokeWidth="0.9" />
+              {/* The stone */}
+              <path d="M 12 60 C 11 50 16 46 22 46 L 38 46 C 44 46 49 50 48 60 Z" fill="#7a828c" stroke="#565d66" strokeWidth="2" />
+              <path d="M 12 60 C 11 50 16 46 22 46 L 38 46 C 44 46 49 50 48 60 Z" fill="none" stroke="#9aa3ad" strokeWidth="1" transform="translate(0,2)" />
+              {/* Embedded slot + cracks */}
+              <rect x="27" y="46" width="6" height="4" fill="#2c3138" />
+              <path d="M 18 52 L 22 55 L 20 58 M 42 52 L 38 55 L 40 58" stroke="#565d66" strokeWidth="1.2" fill="none" />
+              {/* Sparkle on blade */}
+              <polygon points="30,14 31,17 34,17.5 31.5,19 32,22 30,20.4 28,22 28.5,19 26,17.5 29,17" fill="#ffffff" />
             </svg>
           );
         case 4: // Dead Tree
@@ -471,25 +500,28 @@ const GothicIcon: React.FC<{ type: string; value: number }> = ({ type, value }) 
               <path d="M 26.5 62 L 20 65 M 33.5 62 L 40 65" stroke="#241a14" strokeWidth="2.6" strokeLinecap="round" />
             </svg>
           );
-        case 5: // Haunted House
+        case 5: // Mage Tower
           return (
             <svg viewBox="0 0 60 70" className="tile-svg">
-              {/* Crooked body */}
-              <polygon points="14,30 46,27 48,60 12,60" fill="#33243f" stroke="#1d1426" strokeWidth="1.8" />
-              {/* Sagging roof */}
-              <polygon points="8,33 31,8 52,30 45,29 31,15 16,34" fill="#1d1426" />
-              {/* Chimney */}
-              <rect x="40" y="13" width="5" height="9" fill="#1d1426" transform="rotate(4,42.5,17.5)" />
-              {/* Attic eye window */}
-              <circle cx="31" cy="22" r="3.4" fill="#ffd23f" stroke="#1d1426" strokeWidth="1.2" />
-              {/* Glowing windows + boarded one */}
-              <rect x="18" y="36" width="7" height="9" rx="1" fill="#ffd23f" />
-              <path d="M 18 36 L 25 45 M 25 36 L 18 45" stroke="#33243f" strokeWidth="1.2" />
-              <rect x="35" y="35" width="7" height="9" rx="1" fill="#ffd23f" />
-              {/* Door ajar */}
-              <path d="M 26 60 L 26 49 C 26 45 33 45 33 49 L 33 60 Z" fill="#14101c" />
-              {/* Fence */}
-              <path d="M 6 62 L 54 62 M 10 58 L 10 65 M 50 58 L 50 65" stroke="#1d1426" strokeWidth="1.8" strokeLinecap="round" />
+              {/* Tall tower shaft */}
+              <path d="M 21 60 L 22 26 L 38 26 L 39 60 Z" fill="#3a3550" stroke="#221f33" strokeWidth="1.8" />
+              {/* Stonework */}
+              <path d="M 22 34 L 38 34 M 22 42 L 38 42 M 22 50 L 38 50 M 30 26 L 30 34 M 26 34 L 26 42 M 34 34 L 34 42 M 30 42 L 30 50 M 26 50 L 26 58 M 34 50 L 34 58" stroke="#221f33" strokeWidth="0.9" />
+              {/* Battlement base of the cap */}
+              <path d="M 18 26 L 18 22 L 21 22 L 21 19 L 25 19 L 25 22 L 28 22 L 28 19 L 32 19 L 32 22 L 35 22 L 35 19 L 39 19 L 39 22 L 42 22 L 42 26 Z" fill="#4a4566" stroke="#221f33" strokeWidth="1.2" />
+              {/* Conical wizard roof */}
+              <polygon points="30,2 44,20 16,20" fill="#4a2b8c" stroke="#2c1856" strokeWidth="1.6" />
+              <path d="M 30 2 L 30 20 M 23 11 L 37 11" stroke="#2c1856" strokeWidth="0.9" />
+              {/* Banner */}
+              <line x1="30" y1="2" x2="30" y2="-2" stroke="#8c6d1f" strokeWidth="1" />
+              <polygon points="30,0 38,2 30,5" fill="#b3122e" />
+              {/* Glowing arcane window */}
+              <path d="M 27 36 C 27 31 33 31 33 36 L 33 44 L 27 44 Z" fill="#7df9ff" stroke="#2c4a5a" strokeWidth="1" />
+              <circle cx="30" cy="39" r="1.6" fill="#ffffff" />
+              {/* Magic sparkles around the spire */}
+              <polygon points="48,16 49,18.4 51.5,18.8 49.6,20.4 50.2,22.8 48,21.4 45.8,22.8 46.4,20.4 44.5,18.8 47,18.4" fill="#c9b3ff" />
+              <circle cx="12" cy="22" r="1.3" fill="#c9b3ff" />
+              <circle cx="46" cy="30" r="1.1" fill="#c9b3ff" />
             </svg>
           );
         case 6: // Bat
@@ -664,30 +696,36 @@ const GothicIcon: React.FC<{ type: string; value: number }> = ({ type, value }) 
 
     case 'dragon': // LEGENDS
       switch (value) {
-        case 0: // Demon
+        case 0: // Dragon
           return (
             <svg viewBox="0 0 60 70" className="tile-svg">
-              {/* Curved ivory horns */}
-              <path d="M 17 22 C 9 18 6 9 9 3 C 13 9 17 13 21 15 Z" fill="#e8dcc0" stroke="#b3a380" strokeWidth="1.4" />
-              <path d="M 43 22 C 51 18 54 9 51 3 C 47 9 43 13 39 15 Z" fill="#e8dcc0" stroke="#b3a380" strokeWidth="1.4" />
-              {/* Red head */}
-              <path d="M 16 24 C 16 12 44 12 44 24 L 44 38 C 44 50 36 56 30 56 C 24 56 16 50 16 38 Z" fill="#b3122e" stroke="#7a0b14" strokeWidth="2" />
-              {/* Pointed ears */}
-              <polygon points="14,28 8,24 15,36" fill="#b3122e" stroke="#7a0b14" strokeWidth="1.2" />
-              <polygon points="46,28 52,24 45,36" fill="#b3122e" stroke="#7a0b14" strokeWidth="1.2" />
-              {/* Glowing eyes with slits */}
-              <path d="M 19 27 L 27 30 M 41 27 L 33 30" stroke="#4d0710" strokeWidth="2.2" strokeLinecap="round" />
-              <ellipse cx="23.5" cy="32" rx="3.2" ry="2.6" fill="#ffd23f" />
-              <line x1="23.5" y1="30" x2="23.5" y2="34" stroke="#7a0b14" strokeWidth="1.2" />
-              <ellipse cx="36.5" cy="32" rx="3.2" ry="2.6" fill="#ffd23f" />
-              <line x1="36.5" y1="30" x2="36.5" y2="34" stroke="#7a0b14" strokeWidth="1.2" />
-              {/* Nostrils + wicked grin with fangs */}
-              <path d="M 27.5 38 L 26.5 40 M 32.5 38 L 33.5 40" stroke="#4d0710" strokeWidth="1.6" strokeLinecap="round" />
-              <path d="M 22 44 Q 30 49 38 44" stroke="#4d0710" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-              <polygon points="23.5,44.8 26,45.8 24.5,49.5" fill="#f2ead8" />
-              <polygon points="36.5,44.8 34,45.8 35.5,49.5" fill="#f2ead8" />
-              {/* Goatee */}
-              <path d="M 27 52 L 30 60 L 33 52 Q 30 54 27 52 Z" fill="#4d0710" />
+              {/* Spread wings */}
+              <path d="M 20 30 C 9 22 4 13 5 5 C 12 11 18 16 24 19 L 22 24 L 27 24 Z" fill="#1f5a3a" stroke="#0e3320" strokeWidth="1.4" />
+              <path d="M 40 30 C 51 22 56 13 55 5 C 48 11 42 16 36 19 L 38 24 L 33 24 Z" fill="#1f5a3a" stroke="#0e3320" strokeWidth="1.4" />
+              <path d="M 8 9 L 16 19 M 52 9 L 44 19" stroke="#0e3320" strokeWidth="1" />
+              {/* Back horns */}
+              <polygon points="20,20 14,12 23,17" fill="#cdd6c4" stroke="#8f9c84" strokeWidth="1" />
+              <polygon points="40,20 46,12 37,17" fill="#cdd6c4" stroke="#8f9c84" strokeWidth="1" />
+              {/* Scaled head */}
+              <path d="M 18 30 C 18 19 42 19 42 30 L 42 40 C 42 50 36 55 30 55 C 24 55 18 50 18 40 Z" fill="#2e8c52" stroke="#176336" strokeWidth="2" />
+              {/* Brow ridges */}
+              <path d="M 21 28 L 28 31 M 39 28 L 32 31" stroke="#176336" strokeWidth="2.4" strokeLinecap="round" />
+              {/* Reptilian eyes with slit pupils */}
+              <ellipse cx="24" cy="33" rx="3.4" ry="2.8" fill="#ffd23f" stroke="#9c7c12" strokeWidth="0.8" />
+              <line x1="24" y1="30.6" x2="24" y2="35.4" stroke="#1d1410" strokeWidth="1.3" />
+              <ellipse cx="36" cy="33" rx="3.4" ry="2.8" fill="#ffd23f" stroke="#9c7c12" strokeWidth="0.8" />
+              <line x1="36" y1="30.6" x2="36" y2="35.4" stroke="#1d1410" strokeWidth="1.3" />
+              {/* Snout + nostrils */}
+              <path d="M 24 42 C 26 45 34 45 36 42" fill="#247044" />
+              <path d="M 27 41 L 26.5 43 M 33 41 L 33.5 43" stroke="#0e3320" strokeWidth="1.5" strokeLinecap="round" />
+              {/* Fangs */}
+              <polygon points="25,45 27.5,45.5 26,49" fill="#f2ead8" />
+              <polygon points="35,45 32.5,45.5 34,49" fill="#f2ead8" />
+              {/* Belly scales */}
+              <path d="M 26 51 L 30 53 L 34 51" fill="none" stroke="#176336" strokeWidth="1.2" />
+              {/* Curl of flame */}
+              <path d="M 30 55 C 31 59 29 61 30 64 C 32 61 34 60 33 56 Z" fill="#ff8c2e" />
+              <path d="M 30 57 C 30.6 59.5 29.8 60.8 30.4 62.5 C 31.4 60.8 32 60 31.4 57.6 Z" fill="#ffd23f" />
             </svg>
           );
         case 1: // Gargoyle
@@ -883,7 +921,7 @@ const GothicIcon: React.FC<{ type: string; value: number }> = ({ type, value }) 
 
 // Lightweight glyph renderer (used by the matching tray)
 export const TileGlyph: React.FC<{ type: string; value: number }> = ({ type, value }) => (
-  <GothicIcon type={type} value={value} />
+  <LegendIcon type={type} value={value} />
 );
 
 const TileInner: React.FC<TileProps> = ({
@@ -920,7 +958,7 @@ const TileInner: React.FC<TileProps> = ({
         <div className="tile-3d-side-left"></div>
         <div className="tile-3d-side-bottom"></div>
         <div className="tile-face">
-          <GothicIcon type={type} value={value} />
+          <LegendIcon type={type} value={value} />
         </div>
       </div>
     );
@@ -988,7 +1026,7 @@ const TileInner: React.FC<TileProps> = ({
 
       {/* Main Face of the Tile */}
       <div className="tile-face">
-        <GothicIcon type={type} value={value} />
+        <LegendIcon type={type} value={value} />
         {renderContrastLabel()}
       </div>
     </div>

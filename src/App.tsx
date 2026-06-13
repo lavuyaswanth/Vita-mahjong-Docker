@@ -42,7 +42,7 @@ const computeStarRating = (time: number, hintsUsed: number, shufflesUsed: number
 };
 
 // Bump this whenever the build changes so it's easy to confirm the deploy updated
-export const APP_VERSION = 'v0.1.0-midnight';
+export const APP_VERSION = 'v0.1.0-legends';
 
 const getCurrentTime = () => Date.now();
 

@@ -1,7 +1,7 @@
 {
-  "name": "Vita Mahjong: Midnight",
-  "short_name": "Midnight",
-  "description": "A spooky monster-matching Mahjong Solitaire for ages 14 and up.",
+  "name": "Vita Mahjong: Legends",
+  "short_name": "Legends",
+  "description": "A dark-fantasy Mahjong Solitaire for ages 14 and up.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
