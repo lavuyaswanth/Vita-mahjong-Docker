@@ -1201,12 +1201,6 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
-.toolbar-hint {
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-left: 5px;
-}
-
 .mahjong-board-container {
   width: 100%;
   height: 100%;
@@ -1283,9 +1277,10 @@ body {
 /* Dynamic grid spacing for exact stacking coordinates */
 .mahjong-grid {
   display: grid;
-  /* Width corresponds to X coordinates (0 to 30), height to Y (0 to 18) */
-  grid-template-columns: repeat(30, 28px);
-  grid-template-rows: repeat(18, 30px);
+  /* Cells are half-tile units (a tile spans 2x2). Rows are taller than columns
+     so each tile renders TALLER THAN WIDE, like a real mahjong tile (~4:5). */
+  grid-template-columns: repeat(30, 30px);
+  grid-template-rows: repeat(18, 38px);
   gap: 0;
   position: absolute;
   /* Centering the board inside container */
@@ -1298,8 +1293,8 @@ body {
 
 @media (max-width: 1024px) {
   .mahjong-grid {
-    grid-template-columns: repeat(30, 22px);
-    grid-template-rows: repeat(18, 24px);
+    grid-template-columns: repeat(30, 24px);
+    grid-template-rows: repeat(18, 30px);
   }
 }
 
@@ -1309,8 +1304,10 @@ body {
 
 .mahjong-tile {
   position: relative;
-  width: 56px; /* spans 2 cols */
-  height: 60px; /* spans 2 rows */
+  /* Size comes from the 2x2 grid area it spans, so the tile aspect ratio is
+     defined in one place (the grid-template cells) per orientation. */
+  width: 100%;
+  height: 100%;
   cursor: pointer;
   user-select: none;
   box-sizing: border-box;
@@ -1332,12 +1329,6 @@ body {
   border-color: rgba(255, 255, 255, 0.85);
 }
 
-@media (max-width: 1024px) {
-  .mahjong-tile {
-    width: 44px;
-    height: 48px;
-  }
-}
 
 /* 3D side walls — a tile is a solid ivory block. Higher layers shift up-left,
    so each tile's real thickness shows on its RIGHT and BOTTOM faces (the sides
@@ -2882,13 +2873,13 @@ body {
 
 /* Portrait grid layout: transposes columns and rows dynamically */
 .mahjong-grid.portrait-grid {
-  grid-template-columns: repeat(18, 30px);
-  grid-template-rows: repeat(30, 28px);
+  grid-template-columns: repeat(18, 32px);
+  grid-template-rows: repeat(30, 40px);
 }
 
 @media (max-width: 1024px) {
   .mahjong-grid.portrait-grid {
-    grid-template-columns: repeat(18, 24px);
-    grid-template-rows: repeat(30, 22px);
+    grid-template-columns: repeat(18, 27px);
+    grid-template-rows: repeat(30, 34px);
   }
 }

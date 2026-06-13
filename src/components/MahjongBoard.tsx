@@ -282,13 +282,14 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     const containerHeight = containerRef.current.clientHeight;
 
     // Grid cell sizes must match the CSS grid-template (and its 1024px breakpoint):
-    // landscape 28x30 (22x24 small), portrait transposed 30x28 (24x22 small).
+    // landscape 30x38 (24x30 small), portrait 32x40 (27x34 small). Rows taller
+    // than columns => tiles render taller than wide.
     const isSmallScreen = window.innerWidth <= 1024;
-    let cellW = isSmallScreen ? 22 : 28;
-    let cellH = isSmallScreen ? 24 : 30;
+    let cellW = isSmallScreen ? 24 : 30;
+    let cellH = isSmallScreen ? 30 : 38;
     if (isPortrait) {
-      cellW = isSmallScreen ? 24 : 30;
-      cellH = isSmallScreen ? 22 : 28;
+      cellW = isSmallScreen ? 27 : 32;
+      cellH = isSmallScreen ? 34 : 40;
     }
 
     // Bounding box of all tiles in grid units (each tile spans 2 units)
@@ -305,7 +306,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     }
 
     // Bounding box in pixels + padding for 3D walls, stacking shift and shadows
-    const padPx = 48;
+    const padPx = 32;
     const bboxW = (maxX - minX) * cellW + padPx * 2;
     const bboxH = (maxY - minY) * cellH + padPx * 2;
 
@@ -462,7 +463,6 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
         <button onClick={resetZoom} aria-label="Reset zoom and center" className="toolbar-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ResetZoomIcon size={18} />
         </button>
-        <span className="toolbar-hint">Drag board to pan</span>
       </div>
 
       <div
