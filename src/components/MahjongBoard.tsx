@@ -5,6 +5,7 @@ import { ZoomInIcon, ZoomOutIcon, ResetZoomIcon } from './SvgIcons';
 
 interface MahjongBoardProps {
   tiles: TileState[];
+  realm: string;
   highContrast: boolean;
   hintedPair: [string, string] | null;
   onTileClick: (tile: TileState) => void;
@@ -28,6 +29,7 @@ interface Particle {
 
 export const MahjongBoard: React.FC<MahjongBoardProps> = ({
   tiles,
+  realm,
   highContrast,
   hintedPair,
   onTileClick,
@@ -509,6 +511,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
                 key={tile.id}
                 tile={tile}
                 transpose={isPortrait}
+                realm={realm}
                 highContrast={highContrast}
                 isHinted={isHinted}
                 onClick={onTileClick}

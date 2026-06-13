@@ -13,12 +13,16 @@ interface MainMenuProps {
   onStartGame: () => void;
   onOpenSettings: () => void;
   unlockedLevels: number[];
+  menuBg?: string;
+  realmName?: string;
 }
 
 export const MainMenu: React.FC<MainMenuProps> = ({
   onStartGame,
   onOpenSettings,
-  unlockedLevels
+  unlockedLevels,
+  menuBg,
+  realmName
 }) => {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
@@ -62,7 +66,12 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   };
 
   return (
-    <div className="main-menu-container">
+    <div
+      className="main-menu-container"
+      style={menuBg ? {
+        background: `linear-gradient(180deg, rgba(10, 6, 20, 0.45) 0%, rgba(7, 3, 16, 0.72) 100%), url('${menuBg}') center center / cover no-repeat`
+      } : undefined}
+    >
       {/* Falling Cherry Blossoms Particle Layer */}
       <div className="cherry-blossoms-container">
         <div className="petal"></div>
@@ -113,6 +122,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         <div className="logo-glow-behind"></div>
         <img src={logoImg} className="menu-logo-img" alt="Vita Mahjong Logo" />
         <p className="menu-subtitle">Match the Creatures of Legend — Ages 14+</p>
+        {realmName && (
+          <p className="menu-realm-badge">🗺️ Realm: {realmName}</p>
+        )}
         {unlockedLevels.length > 1 && (
           <p className="menu-unlock-badge">🏆 {unlockedLevels.length}/5 Boards Unlocked</p>
         )}

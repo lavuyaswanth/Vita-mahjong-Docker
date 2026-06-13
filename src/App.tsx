@@ -12,6 +12,7 @@ import type { LayoutName } from './mahjong/layouts';
 import { soundSynth } from './mahjong/soundSynth';
 import { haptics } from './mahjong/haptics';
 import { achievementsList } from './mahjong/achievements';
+import { realmForLevel } from './mahjong/realms';
 import MahjongBoard from './components/MahjongBoard';
 import { TileGlyph } from './components/Tile';
 import MainMenu from './components/MainMenu';
@@ -669,8 +670,10 @@ export const App: React.FC = () => {
 
 
 
-  // Background Theme Styling Class
-  const themeClass = `app-theme-${bgTheme}`;
+  // The active realm (visual world) is driven by the current campaign level.
+  // It reskins the tiles, the menu background, and the board felt/particles.
+  const currentRealm = realmForLevel(currentLevel);
+  const themeClass = `app-theme-${currentRealm.particleTheme} app-realm-${currentRealm.id}`;
 
   const boardLeft = tiles.filter(t => !t.matched).length; // tiles still on the board
   const inPlay = boardLeft + tray.length;                 // not yet cleared (board + tray)
@@ -714,6 +717,8 @@ export const App: React.FC = () => {
           onStartGame={() => initGame(activeLayout)}
           onOpenSettings={() => setIsSettingsOpen(true)}
           unlockedLevels={unlockedLevels}
+          menuBg={currentRealm.menuBg}
+          realmName={currentRealm.name}
         />
       )}
 
@@ -757,7 +762,7 @@ export const App: React.FC = () => {
                     <div key={i} className={`tray-slot ${t ? 'filled' : ''}`}>
                       {t && (
                         <div className="tray-tile" key={t.id}>
-                          <TileGlyph type={t.type} value={t.value} />
+                          <TileGlyph type={t.type} value={t.value} realm={currentRealm.id} />
                         </div>
                       )}
                     </div>
@@ -787,10 +792,11 @@ export const App: React.FC = () => {
             {tiles.length > 0 && (
               <MahjongBoard
                 tiles={tiles}
+                realm={currentRealm.id}
                 highContrast={highContrast}
                 hintedPair={hintedPair}
                 onTileClick={stableTileClick}
-                bgTheme={bgTheme}
+                bgTheme={currentRealm.particleTheme}
               />
             )}
           </main>

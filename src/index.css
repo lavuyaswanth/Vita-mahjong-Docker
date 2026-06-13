@@ -1161,6 +1161,33 @@ body {
     radial-gradient(ellipse at center, #14141d 0%, #050507 100%);
 }
 
+/* Per-realm board felt (overrides the particle-theme felt above so each world
+   has its own distinct mood even when two realms share a particle palette). */
+.app-realm-frost .game-board-area {
+  background:
+    radial-gradient(ellipse at center, rgba(120, 200, 255, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at center, #16273a 0%, #060b14 100%);
+}
+.app-realm-desert .game-board-area {
+  background:
+    radial-gradient(ellipse at center, rgba(255, 196, 80, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at center, #2c2010 0%, #0c0803 100%);
+}
+.app-realm-seas .game-board-area {
+  background:
+    radial-gradient(ellipse at center, rgba(60, 220, 190, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at center, #0c2a2c 0%, #03100f 100%);
+}
+
+.menu-realm-badge {
+  margin: 6px 0 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffe2a6;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
+}
+
 .mahjong-board-outer {
   width: 100%;
   height: 100%;

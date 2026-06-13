@@ -6,39 +6,41 @@ interface TileProps {
   tile: TileState;
   // Swap x/y for portrait rendering (the layouts are authored landscape-wide)
   transpose?: boolean;
+  realm?: string;
   highContrast: boolean;
   isHinted: boolean;
   onClick: (tile: TileState) => void;
 }
 
-// Legends Edition (ages 14+) tile art — pre-rendered dark-fantasy icons sliced
-// from the generated sprite sheet. Vite resolves every PNG in /assets/tiles to
-// a hashed URL at build time; we look one up by `${type}_${value}`.
-const tileArt = import.meta.glob('../assets/tiles/*.png', {
+// Pre-rendered tile art per realm, sliced from the generated sprite sheets into
+// src/assets/tiles/<realm>/{type}_{value}.png. Vite resolves every PNG to a
+// hashed URL at build time; we look one up by realm + face.
+const tileArt = import.meta.glob('../assets/tiles/*/*.png', {
   eager: true,
   query: '?url',
   import: 'default'
 }) as Record<string, string>;
 
-const artUrl = (type: string, value: number): string | undefined => {
-  const key = `../assets/tiles/${type}_${value}.png`;
-  return tileArt[key];
+const artUrl = (realm: string, type: string, value: number): string | undefined => {
+  return tileArt[`../assets/tiles/${realm}/${type}_${value}.png`]
+    ?? tileArt[`../assets/tiles/legends/${type}_${value}.png`]; // fallback
 };
 
-const LegendIcon: React.FC<{ type: string; value: number }> = ({ type, value }) => {
-  const url = artUrl(type, value);
+const RealmIcon: React.FC<{ realm: string; type: string; value: number }> = ({ realm, type, value }) => {
+  const url = artUrl(realm, type, value);
   if (!url) return null;
   return <img className="tile-art" src={url} alt="" draggable={false} />;
 };
 
 // Lightweight glyph renderer (used by the matching tray)
-export const TileGlyph: React.FC<{ type: string; value: number }> = ({ type, value }) => (
-  <LegendIcon type={type} value={value} />
+export const TileGlyph: React.FC<{ type: string; value: number; realm?: string }> = ({ type, value, realm = 'legends' }) => (
+  <RealmIcon realm={realm} type={type} value={value} />
 );
 
 const TileInner: React.FC<TileProps> = ({
   tile,
   transpose = false,
+  realm = 'legends',
   highContrast,
   isHinted,
   onClick
@@ -70,7 +72,7 @@ const TileInner: React.FC<TileProps> = ({
         <div className="tile-3d-side-right"></div>
         <div className="tile-3d-side-bottom"></div>
         <div className="tile-face">
-          <LegendIcon type={type} value={value} />
+          <RealmIcon realm={realm} type={type} value={value} />
         </div>
       </div>
     );
@@ -138,7 +140,7 @@ const TileInner: React.FC<TileProps> = ({
 
       {/* Main Face of the Tile */}
       <div className="tile-face">
-        <LegendIcon type={type} value={value} />
+        <RealmIcon realm={realm} type={type} value={value} />
         {renderContrastLabel()}
       </div>
     </div>
