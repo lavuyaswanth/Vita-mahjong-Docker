@@ -4,7 +4,8 @@ import {
   recalculateFreeState,
   findAvailableMoves,
   shuffleActiveTiles,
-  tilesMatch
+  tilesMatch,
+  getDailyChallengeSeed
 } from './mahjong/gameEngine';
 import type { TileState } from './mahjong/gameEngine';
 import { layouts } from './mahjong/layouts';
@@ -12,7 +13,8 @@ import type { LayoutName } from './mahjong/layouts';
 import { soundSynth } from './mahjong/soundSynth';
 import { haptics } from './mahjong/haptics';
 import { achievementsList } from './mahjong/achievements';
-import { realmForLevel, nextRealmChange } from './mahjong/realms';
+import { realmForLevel, nextRealmChange, realms } from './mahjong/realms';
+import type { RealmId } from './mahjong/realms';
 import MahjongBoard from './components/MahjongBoard';
 import { TileGlyph } from './components/Tile';
 import MainMenu from './components/MainMenu';
@@ -55,12 +57,13 @@ export const App: React.FC = () => {
   // references "Launch Level 5 (Golden Turtle)" etc.).
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const botMode = urlParams.has('bot');
+  const dailyParam = urlParams.has('daily'); // ?daily=1 deep-links the Daily Challenge
   const levelParam = (() => {
     const raw = urlParams.get('level');
     const n = raw ? parseInt(raw, 10) : NaN;
     return Number.isFinite(n) && n >= 1 && n <= 240 ? n : null;
   })();
-  const autoStart = botMode || levelParam !== null;
+  const autoStart = botMode || levelParam !== null || dailyParam;
 
   // Navigation State. 'tray' = collect into the holder tray (the single unified game mode).
   type GameMode = 'menu' | 'tray';
@@ -120,6 +123,19 @@ export const App: React.FC = () => {
   };
   const [bestRecord, setBestRecord] = useState<LevelRecord | null>(null); // for the active level
   const [isNewBest, setIsNewBest] = useState(false);
+
+  // Daily Challenge: one deterministic board per calendar day + a streak that
+  // grows on consecutive days played. The single biggest retention hook.
+  const todayKey = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  type DailyState = { lastCompleted: string; streak: number };
+  const loadDaily = (): DailyState => {
+    try { return JSON.parse(localStorage.getItem('vita_daily') || '{"lastCompleted":"","streak":0}'); }
+    catch { return { lastCompleted: '', streak: 0 }; }
+  };
+  const [dailyMode, setDailyMode] = useState(false);
+  const [dailyRealmId, setDailyRealmId] = useState<string | null>(null);
+  const [daily, setDaily] = useState<DailyState>(() => loadDaily());
+  const dailyDoneToday = daily.lastCompleted === todayKey();
   const hintsUsedRef = useRef(0);
   const shufflesUsedRef = useRef(0);
 
@@ -259,36 +275,53 @@ export const App: React.FC = () => {
   // Stop the stopwatch when the app unmounts
   useEffect(() => stopTimer, []);
 
-  // Set up board state when starting or restarting
-  const initGame = (target: number | LayoutName) => {
+  // Set up board state when starting or restarting. `daily=true` builds today's
+  // shared Daily Challenge board instead of a campaign level.
+  const layoutsList: LayoutName[] = ['Garden', 'Pagoda', 'Pyramids', 'Butterfly', 'Turtle'];
+  const initGame = (target: number | LayoutName, daily = false) => {
     let levelNum: number;
     let layout: LayoutName;
+    let seed: number;
+    let maxTypes: number;
 
-    if (typeof target === 'number') {
-      levelNum = target;
-      const layoutsList: LayoutName[] = ['Garden', 'Pagoda', 'Pyramids', 'Butterfly', 'Turtle'];
-      layout = layoutsList[(levelNum - 1) % layoutsList.length];
+    if (daily) {
+      const dseed = getDailyChallengeSeed(new Date());
+      layout = layoutsList[dseed % layoutsList.length];
+      levelNum = currentLevel;            // campaign progress untouched
+      seed = dseed;
+      maxTypes = 0;                        // daily uses full variety (a fair test)
+      const dRealm = realmForLevel(dseed); // a themed realm for the day
+      setDailyMode(true);
+      setDailyRealmId(dRealm.id);
     } else {
-      layout = target;
-      const layoutLevels: Record<LayoutName, number> = {
-        'Garden': 1,
-        'Pagoda': 2,
-        'Pyramids': 3,
-        'Butterfly': 4,
-        'Turtle': 5
-      };
-      levelNum = layoutLevels[layout] || 1;
+      setDailyMode(false);
+      setDailyRealmId(null);
+      if (typeof target === 'number') {
+        levelNum = target;
+        layout = layoutsList[(levelNum - 1) % layoutsList.length];
+      } else {
+        layout = target;
+        const layoutLevels: Record<LayoutName, number> = {
+          'Garden': 1, 'Pagoda': 2, 'Pyramids': 3, 'Butterfly': 4, 'Turtle': 5
+        };
+        levelNum = layoutLevels[layout] || 1;
+      }
+      seed = levelNum * 12345 + 42;
+      // Difficulty ramp: few distinct tile faces early, full variety by ~level 30.
+      maxTypes = levelNum >= 30 ? 0 : 10 + levelNum;
     }
 
     setGameMode('tray');
     setCurrentLevel(levelNum);
     setActiveLayout(layout);
 
-    // Save level state
-    try {
-      localStorage.setItem('vita_current_level', String(levelNum));
-    } catch (e) {
-      console.warn("Could not save current level:", e);
+    // Save level state (campaign only)
+    if (!daily) {
+      try {
+        localStorage.setItem('vita_current_level', String(levelNum));
+      } catch (e) {
+        console.warn("Could not save current level:", e);
+      }
     }
 
     setShowWinScreen(false);
@@ -305,16 +338,11 @@ export const App: React.FC = () => {
     setMoveCount(0);
     setEarnedStars(0);
     setIsNewBest(false);
-    setBestRecord(loadRecords()[levelNum] ?? null);
+    setBestRecord(daily ? null : (loadRecords()[levelNum] ?? null));
     lastMatchTimeRef.current = 0;
     hintsUsedRef.current = 0;
     shufflesUsedRef.current = 0;
 
-    // Use unique seed based on level number to ensure deterministic solvable boards
-    const seed = levelNum * 12345 + 42;
-    // Difficulty ramp: few distinct tile faces early (easier to spot pairs),
-    // climbing to full 42-face variety by ~level 30. (0 = unlimited)
-    const maxTypes = levelNum >= 30 ? 0 : 10 + levelNum;
     const newTiles = buildBoard(layout, seed, maxTypes);
     setTotalTileCount(newTiles.length);
 
@@ -330,7 +358,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (isPlaying && tiles.length === 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      initGame(currentLevel);
+      initGame(currentLevel, dailyParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameMode]);
@@ -434,6 +462,20 @@ export const App: React.FC = () => {
       );
       setEarnedStars(stars);
 
+      // ---- Daily Challenge: update the streak, don't touch campaign progress ----
+      if (dailyMode) {
+        const today = todayKey();
+        const d = loadDaily();
+        if (d.lastCompleted !== today) {
+          const yest = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+          const streak = d.lastCompleted === yest ? d.streak + 1 : 1;
+          const next = { lastCompleted: today, streak };
+          try { localStorage.setItem('vita_daily', JSON.stringify(next)); } catch { /* ignore */ }
+          setDaily(next);
+        }
+        setBestRecord(null);
+        setIsNewBest(false);
+      } else {
       // Save best stars per layout (#2)
       try {
         const stored = localStorage.getItem('vita_best_stars');
@@ -474,6 +516,7 @@ export const App: React.FC = () => {
         } catch (e) {
           console.warn("Could not save max unlocked level:", e);
         }
+      }
       }
 
       // Roll a random power-up reward to carry into the next level.
@@ -719,9 +762,11 @@ export const App: React.FC = () => {
 
 
 
-  // The active realm (visual world) is driven by the current campaign level.
-  // It reskins the tiles, the menu background, and the board felt/particles.
-  const currentRealm = realmForLevel(currentLevel);
+  // The active realm (visual world). Driven by the campaign level, or by the
+  // Daily Challenge's themed realm when playing the daily board.
+  const currentRealm = (dailyMode && dailyRealmId && realms[dailyRealmId as RealmId])
+    ? realms[dailyRealmId as RealmId]
+    : realmForLevel(currentLevel);
   const themeClass = `app-theme-${currentRealm.particleTheme} app-realm-${currentRealm.id}`;
 
   const boardLeft = tiles.filter(t => !t.matched).length; // tiles still on the board
@@ -764,10 +809,13 @@ export const App: React.FC = () => {
       {gameMode === 'menu' && (
         <MainMenu
           onStartGame={() => initGame(activeLayout)}
+          onStartDaily={() => initGame(0, true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
           unlockedLevels={unlockedLevels}
           menuBg={currentRealm.menuBg}
           realmName={currentRealm.name}
+          dailyStreak={daily.streak}
+          dailyDoneToday={dailyDoneToday}
         />
       )}
 
@@ -1013,14 +1061,16 @@ export const App: React.FC = () => {
             <div className="victory-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto' }}>
               <EarnedStampIcon size={64} />
             </div>
-            <h2>Puzzle Solved!</h2>
+            <h2>{dailyMode ? 'Daily Cleared!' : 'Puzzle Solved!'}</h2>
 
             {/* Star Rating Display (#2) */}
             <div className="victory-stars">
               {renderStars(earnedStars)}
             </div>
             <div className="victory-iq-tier">{iqTier(score)} · IQ {score}</div>
-            {isNewBest
+            {dailyMode
+              ? <div className="victory-best new-best">🔥 {daily.streak}-day streak!</div>
+              : isNewBest
               ? <div className="victory-best new-best">🌟 New Best! IQ {bestRecord?.iq} · {formatTime(bestRecord?.time ?? timer)}</div>
               : bestRecord && <div className="victory-best">Best: IQ {bestRecord.iq} · {formatTime(bestRecord.time)}</div>}
             <p>Congratulations! You cleared all tiles in {formatTime(timer)} with {moveCount} moves.</p>
@@ -1066,8 +1116,8 @@ export const App: React.FC = () => {
               </div>
             )}
 
-            {/* Dangle the next realm to pull the player onward */}
-            {currentLevel < 240 && (() => {
+            {/* Dangle the next realm to pull the player onward (campaign only) */}
+            {!dailyMode && currentLevel < 240 && (() => {
               const nxt = nextRealmChange(currentLevel);
               const soon = nxt.atLevel - currentLevel;
               return (
@@ -1076,19 +1126,22 @@ export const App: React.FC = () => {
                 </div>
               );
             })()}
+            {dailyMode && (
+              <div className="realm-teaser">🗓️ Come back tomorrow to keep your streak alive!</div>
+            )}
 
             <div className="victory-buttons">
-              {currentLevel < 240 && (
-                <button 
-                  className="confirm-btn glassmorphism" 
-                  onClick={() => initGame(currentLevel + 1)} 
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '6px', 
-                    justifyContent: 'center', 
-                    background: 'linear-gradient(to bottom, #d4af37 0%, #a8841a 100%)', 
-                    color: '#1a0f09', 
+              {!dailyMode && currentLevel < 240 && (
+                <button
+                  className="confirm-btn glassmorphism"
+                  onClick={() => initGame(currentLevel + 1)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(to bottom, #d4af37 0%, #a8841a 100%)',
+                    color: '#1a0f09',
                     borderColor: '#ffd700',
                     fontWeight: 'bold'
                   }}
@@ -1096,9 +1149,11 @@ export const App: React.FC = () => {
                   Next Level ➡️
                 </button>
               )}
-              <button className="confirm-btn glassmorphism" onClick={() => initGame(currentLevel)} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-                <RestartIcon size={16} inline /> Replay {bestRecord ? `(beat ${bestRecord.iq})` : ''}
-              </button>
+              {!dailyMode && (
+                <button className="confirm-btn glassmorphism" onClick={() => initGame(currentLevel)} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                  <RestartIcon size={16} inline /> Replay {bestRecord ? `(beat ${bestRecord.iq})` : ''}
+                </button>
+              )}
               <button className="cancel-btn glassmorphism" onClick={handleBackToMenu} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
                 <BackIcon size={16} inline /> Main Menu
               </button>

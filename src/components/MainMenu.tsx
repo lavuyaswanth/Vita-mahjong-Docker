@@ -11,18 +11,24 @@ import {
 
 interface MainMenuProps {
   onStartGame: () => void;
+  onStartDaily: () => void;
   onOpenSettings: () => void;
   unlockedLevels: number[];
   menuBg?: string;
   realmName?: string;
+  dailyStreak?: number;
+  dailyDoneToday?: boolean;
 }
 
 export const MainMenu: React.FC<MainMenuProps> = ({
   onStartGame,
+  onStartDaily,
   onOpenSettings,
   unlockedLevels,
   menuBg,
-  realmName
+  realmName,
+  dailyStreak = 0,
+  dailyDoneToday = false
 }) => {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
@@ -154,6 +160,20 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             </div>
           </button>
         </div>
+
+        <button
+          className={`daily-challenge-btn ${dailyDoneToday ? 'done' : ''}`}
+          onClick={() => { soundSynth.playClick(); onStartDaily(); }}
+        >
+          <span className="daily-icon">🗓️</span>
+          <span className="daily-text">
+            <span className="daily-title">Daily Challenge</span>
+            <span className="daily-sub">
+              {dailyStreak > 0 && <span className="daily-streak">🔥 {dailyStreak}-day streak</span>}
+              {dailyDoneToday ? ' · done today ✓' : dailyStreak > 0 ? ' · play today' : 'A new board every day'}
+            </span>
+          </span>
+        </button>
 
         <p className="menu-board-hint">Tap the gear to choose your puzzle level shape</p>
       </div>

@@ -910,6 +910,29 @@ body {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
+/* Daily Challenge button on the main menu */
+.daily-challenge-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px auto 0;
+  padding: 11px 20px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(123, 79, 208, 0.35) 0%, rgba(60, 30, 110, 0.5) 100%);
+  border: 1.5px solid rgba(180, 150, 255, 0.5);
+  color: #f0e9ff;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.daily-challenge-btn:hover { transform: translateY(-2px); box-shadow: 0 9px 22px rgba(0, 0, 0, 0.5); }
+.daily-challenge-btn.done { opacity: 0.78; }
+.daily-icon { font-size: 26px; }
+.daily-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25; }
+.daily-title { font-size: 15px; font-weight: 800; letter-spacing: 0.3px; }
+.daily-sub { font-size: 11.5px; color: #cbb8f5; }
+.daily-streak { color: #ffb347; font-weight: 700; }
+
 /* "Next realm" teaser on the victory screen */
 .realm-teaser {
   font-size: 13.5px;

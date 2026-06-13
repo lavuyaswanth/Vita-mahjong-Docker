@@ -423,3 +423,9 @@ export function shuffleActiveTiles(tiles: TileState[]): TileState[] {
 
   return result;
 }
+
+// Deterministic seed for a calendar date (YYYYMMDD) — used by the Daily
+// Challenge so everyone plays the same board each day.
+export function getDailyChallengeSeed(date: Date): number {
+  return date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+}
