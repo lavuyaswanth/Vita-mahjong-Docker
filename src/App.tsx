@@ -667,6 +667,15 @@ export const App: React.FC = () => {
     tiles.some(t => t.isFree && !t.matched && tray.some(tt => tilesMatch(tt, t)));
 
   // Star display helper
+  // Brain-tier label for the final IQ (genius ceiling = 200)
+  const iqTier = (iq: number): string => {
+    if (iq >= 200) return '🧠 Genius';
+    if (iq >= 180) return '🧠 Brilliant';
+    if (iq >= 160) return '✨ Sharp';
+    if (iq >= 130) return '👍 Clever';
+    return '🌱 Warming Up';
+  };
+
   const renderStars = (count: number) => {
     return Array.from({ length: 3 }).map((_, i) => (
       <span key={i} className={`star-icon ${i < count ? 'star-earned' : 'star-empty'}`}>
@@ -936,6 +945,7 @@ export const App: React.FC = () => {
             <div className="victory-stars">
               {renderStars(earnedStars)}
             </div>
+            <div className="victory-iq-tier">{iqTier(score)} · IQ {score}</div>
             <p>Congratulations! You cleared all tiles in {formatTime(timer)} with {moveCount} moves.</p>
             
             <div className="victory-stats">

@@ -1422,13 +1422,22 @@ body {
   cursor: not-allowed;
 }
 .mahjong-tile.blocked .tile-face {
-  filter: brightness(0.8) saturate(0.9);
+  /* Clearly recede blocked tiles so the playable ones pop on the ivory faces */
+  filter: brightness(0.6) saturate(0.6) contrast(0.95);
   transition: filter 0.3s ease;
+}
+.mahjong-tile.blocked .tile-face::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 16, 30, 0.28);
+  border-radius: 5px;
+  pointer-events: none;
 }
 
 /* Free (playable) tiles stay bright, warm and crisp */
 .mahjong-tile.free .tile-face {
-  filter: brightness(1.06) saturate(1.08);
+  filter: brightness(1.04) saturate(1.05);
   transition: filter 0.3s ease;
 }
 
@@ -2382,7 +2391,17 @@ body {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin: 10px 0 15px 0;
+  margin: 10px 0 8px 0;
+}
+
+.victory-iq-tier {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: #ffd86b;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  margin-bottom: 12px;
 }
 
 .star-icon {
