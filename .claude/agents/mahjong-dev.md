@@ -43,9 +43,16 @@ the surrounding code's style.
   high-contrast tags). `achievements.ts` — shared list. `soundSynth.ts` — Web
   Audio synth. `haptics.ts` — guarded `navigator.vibrate`.
 - `src/components/Tile.tsx` — one tile. `age-14plus` renders raster art from
-  `src/assets/tiles/{type}_{value}.png` via `import.meta.glob`; `main`/`age-3plus`
-  render inline SVG. `TileGlyph` = tray renderer. Component is `React.memo`'d, so
-  keep board updates immutable or memoization breaks. Tiles are always face-up.
+  `src/assets/tiles/<realm>/{type}_{value}.png` via `import.meta.glob('*/*.png')`
+  keyed by realm + face (falls back to `legends`); `main`/`age-3plus` render
+  inline SVG. `TileGlyph` = tray renderer (takes a `realm` prop). Component is
+  `React.memo`'d, so keep board updates immutable or memoization breaks. Tiles
+  are always face-up.
+- `src/mahjong/realms.ts` (age-14plus) — visual "realms" the campaign rotates
+  through. Each realm = a 42-tile reskin + menu background + particle palette +
+  board felt. `realmForLevel(level)` rotates every 10 levels through ROTATION.
+  The realm is derived from the current level in App and threaded to the board,
+  tray, menu (bg + badge), felt class (`app-realm-<id>`) and particles.
 - `src/components/MahjongBoard.tsx` — grid + fit-to-screen transform + particle
   canvas + zoom/pan/pinch/wheel. The `cellW`/`cellH` constants in
   `computeFitTransform` MUST match the CSS `.mahjong-grid` / `.portrait-grid`
@@ -80,10 +87,17 @@ viewport 414×896 (portrait). Load `?bot=1&level=N`, wait for `.victory-modal`
 (or `Tray Full`), capture console/pageerror, screenshot. Confirm the biggest
 boards (levels 4 & 5) are still winnable in tray mode after engine changes.
 
-**Tile art pipeline (reskin)** — source is a sprite sheet; slice with Python PIL
-into `src/assets/tiles/{type}_{value}.png` in this exact row-major order:
-bamboo 1-9, circle 1-9, character 1-9, wind 0-3, dragon 0-2, season 0-3,
-flower 0-3 (42 faces). Auto-crop each cell to its opaque bbox and re-center.
+**Tile art pipeline (reskin / new realm)** — source is a 6x7 sprite sheet (1024²,
+transparent). Slice with Python PIL into `src/assets/tiles/<realm>/{type}_{value}.png`
+in this exact row-major order: bamboo 1-9, circle 1-9, character 1-9, wind 0-3,
+dragon 0-2, season 0-3, flower 0-3 (42 faces). Auto-crop each cell to its opaque
+bbox, scale longest side to ~92% of a 256px canvas, and center on transparency.
+**To add a new realm:** (1) slice the sheet into `tiles/<id>/`; (2) add a
+`menu_bg_<id>.png` (1080×1920); (3) register it in `realms.ts` — import the menu
+bg, add a `Realm` entry (id, name, menuBg, particleTheme of dark|ocean|sunset|zen)
+and append the id to `ROTATION`; (4) add an `.app-realm-<id> .game-board-area`
+felt gradient in index.css. Then verify in-browser at a level in that realm's
+band (realm = floor((level-1)/10) % ROTATION.length).
 
 ## Conventions
 - Never mutate React state arrays in place; the engine helpers are pure — keep
