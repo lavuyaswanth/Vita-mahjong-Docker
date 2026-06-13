@@ -2404,6 +2404,25 @@ body {
   margin-bottom: 12px;
 }
 
+/* Genius (IQ 200) finish — golden pulsing aura on the victory card */
+.victory-modal.genius-win {
+  border-color: #ffd700;
+  animation: scaleUp 0.4s ease, geniusGlow 1.8s ease-in-out 0.4s infinite;
+}
+.victory-modal.genius-win .victory-iq-tier {
+  font-size: 19px;
+  color: #fff1b8;
+  animation: geniusTierPulse 1.4s ease-in-out infinite;
+}
+@keyframes geniusGlow {
+  0%, 100% { box-shadow: 0 0 24px rgba(255, 215, 0, 0.35), 0 12px 32px rgba(0,0,0,0.6); }
+  50% { box-shadow: 0 0 46px rgba(255, 215, 0, 0.75), 0 12px 32px rgba(0,0,0,0.6); }
+}
+@keyframes geniusTierPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
 .star-icon {
   font-size: 32px;
   transition: transform 0.3s ease, filter 0.3s ease;

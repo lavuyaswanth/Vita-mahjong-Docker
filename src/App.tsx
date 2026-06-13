@@ -363,8 +363,10 @@ export const App: React.FC = () => {
     setMoveCount(matchedPairs);
     setScore(prev => {
       const gain = newScore - prev;
-      if (newMultiplier > 1 || gain > 0) {
-        setComboPopup({ text: newMultiplier > 1 ? `+${gain} IQ · x${newMultiplier}` : `+${gain} IQ`, key: now });
+      // Floating popup only for combo streaks; single matches read via the
+      // spark burst + the live header IQ (keeps the board uncluttered).
+      if (newMultiplier > 1) {
+        setComboPopup({ text: `+${gain} IQ · x${newMultiplier}`, key: now });
         if (comboPopupTimeoutRef.current) clearTimeout(comboPopupTimeoutRef.current);
         comboPopupTimeoutRef.current = window.setTimeout(() => setComboPopup(null), 1200);
       }
@@ -383,7 +385,13 @@ export const App: React.FC = () => {
   const triggerVictory = () => {
     {
       stopTimer();
+      // Clear any lingering combo popup/streak so it doesn't float over the modal
+      if (comboPopupTimeoutRef.current) clearTimeout(comboPopupTimeoutRef.current);
+      setComboPopup(null);
+      setComboMultiplier(1);
       soundSynth.playVictory();
+      // Extra flourish for a genius-level finish
+      if (score >= 180) setTimeout(() => soundSynth.playAchievementUnlock(), 250);
 
       // Star Rating computation (#2)
       const stars = computeStarRating(
@@ -540,6 +548,8 @@ export const App: React.FC = () => {
       if (newTray.length >= TRAY_CAPACITY) {
         soundSynth.playClick();
         stopTimer();
+        if (comboPopupTimeoutRef.current) clearTimeout(comboPopupTimeoutRef.current);
+        setComboPopup(null);
         setShowGameOver(true);
       }
     }
@@ -935,7 +945,7 @@ export const App: React.FC = () => {
       {/* --- VICTORY SCREEN OVERLAY --- */}
       {showWinScreen && (
         <div className="modal-overlay victory-overlay animate-fade-in">
-          <div className="modal-container glassmorphism victory-modal text-center animate-scale-up">
+          <div className={`modal-container glassmorphism victory-modal text-center animate-scale-up ${score >= 200 ? 'genius-win' : ''}`}>
             <div className="victory-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto' }}>
               <EarnedStampIcon size={64} />
             </div>
