@@ -405,22 +405,28 @@ export const App: React.FC = () => {
     const matchedPairs = moveCount + 1;            // this pair included
     const totalPairs = Math.max(1, totalTileCount / 2);
     comboBonusRef.current += Math.max(0, newMultiplier - 1); // persistent combo reward
+    const prevScore = scoreRef.current;
     const progressIQ = IQ_BASE + Math.round(CLEAR_IQ * (matchedPairs / totalPairs));
     const newScore = Math.min(IQ_MAX, progressIQ + comboBonusRef.current);
     scoreRef.current = newScore;
+    const gain = newScore - prevScore;
 
     setMoveCount(matchedPairs);
-    setScore(prev => {
-      const gain = newScore - prev;
-      // Floating popup only for combo streaks; single matches read via the
-      // spark burst + the live header IQ (keeps the board uncluttered).
-      if (newMultiplier > 1) {
-        setComboPopup({ text: `+${gain} IQ · x${newMultiplier}`, key: now, mult: newMultiplier });
-        if (comboPopupTimeoutRef.current) clearTimeout(comboPopupTimeoutRef.current);
-        comboPopupTimeoutRef.current = window.setTimeout(() => setComboPopup(null), 1200);
-      }
-      return newScore;
-    });
+    setScore(newScore);
+
+    // Floating popup only for combo streaks (single matches read via the spark
+    // burst + the live header IQ). Set OUTSIDE the score updater so a final
+    // match that triggers victory can have its popup cleared by triggerVictory.
+    // At the IQ cap the gain is 0, so just show the streak (avoids "+0 IQ").
+    if (newMultiplier > 1) {
+      setComboPopup({
+        text: gain > 0 ? `+${gain} IQ · x${newMultiplier}` : `x${newMultiplier} 🔥`,
+        key: now,
+        mult: newMultiplier
+      });
+      if (comboPopupTimeoutRef.current) clearTimeout(comboPopupTimeoutRef.current);
+      comboPopupTimeoutRef.current = window.setTimeout(() => setComboPopup(null), 1200);
+    }
 
     // Combo crunch: at x5+ the board shakes and the burst gets bigger.
     if (newMultiplier >= 5) {
