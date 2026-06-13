@@ -254,8 +254,10 @@ export const App: React.FC = () => {
 
     if (typeof target === 'number') {
       levelNum = target;
-      const layoutsList: LayoutName[] = ['Garden', 'Pagoda', 'Pyramids', 'Butterfly', 'Turtle'];
-      layout = layoutsList[(levelNum - 1) % layoutsList.length];
+      // Ages 3+: only the two smallest board shapes (Meadow 52, Tower 70) so the
+      // campaign always stays small and gentle — never the big deep piles.
+      const kidLayouts: LayoutName[] = ['Garden', 'Pagoda'];
+      layout = kidLayouts[(levelNum - 1) % kidLayouts.length];
     } else {
       layout = target;
       const layoutLevels: Record<LayoutName, number> = {

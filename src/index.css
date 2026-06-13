@@ -1198,11 +1198,6 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
-.toolbar-hint {
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-left: 5px;
-}
 
 .mahjong-board-container {
   width: 100%;
@@ -1280,9 +1275,10 @@ body {
 /* Dynamic grid spacing for exact stacking coordinates */
 .mahjong-grid {
   display: grid;
-  /* Width corresponds to X coordinates (0 to 30), height to Y (0 to 18) */
-  grid-template-columns: repeat(30, 28px);
-  grid-template-rows: repeat(18, 30px);
+  /* Cells are half-tile units (a tile spans 2x2). Rows are taller than columns
+     so each tile renders TALLER THAN WIDE, like a real mahjong tile (~4:5). */
+  grid-template-columns: repeat(30, 30px);
+  grid-template-rows: repeat(18, 38px);
   gap: 0;
   position: absolute;
   /* Centering the board inside container */
@@ -1295,8 +1291,8 @@ body {
 
 @media (max-width: 1024px) {
   .mahjong-grid {
-    grid-template-columns: repeat(30, 22px);
-    grid-template-rows: repeat(18, 24px);
+    grid-template-columns: repeat(30, 24px);
+    grid-template-rows: repeat(18, 30px);
   }
 }
 
@@ -1306,8 +1302,10 @@ body {
 
 .mahjong-tile {
   position: relative;
-  width: 56px; /* spans 2 cols */
-  height: 60px; /* spans 2 rows */
+  /* Size comes from the 2x2 grid area it spans, so the tile aspect ratio is
+     defined in one place (the grid-template cells) per orientation. */
+  width: 100%;
+  height: 100%;
   cursor: pointer;
   user-select: none;
   box-sizing: border-box;
@@ -1329,43 +1327,33 @@ body {
   border-color: rgba(255, 255, 255, 0.85);
 }
 
-@media (max-width: 1024px) {
-  .mahjong-tile {
-    width: 44px;
-    height: 48px;
-  }
-}
-
-/* 3D side walls — depth scales with stack height (--wall) so taller stacks read clearly.
-   Bright ivory bevel cap (fixed), then a lit-to-shadow side that grows with height. */
-.tile-3d-side-left {
+/* 3D side walls — a tile is a solid ivory block. Higher layers shift up-left, so
+   each tile's real thickness shows on its RIGHT and BOTTOM faces (the sides that
+   descend down-right to the base). Light comes from the top-left, so the right
+   face is mid-toned and the bottom face is darkest. Fixed bone/ivory colours so
+   they read as physical tile edges. */
+.tile-3d-side-right {
   position: absolute;
-  top: calc(var(--wall, 10px) / 2);
-  left: calc(var(--wall, 10px) * -1);
+  top: 0;
+  right: calc(var(--wall, 10px) * -1);
   width: var(--wall, 10px);
   height: 100%;
-  background: linear-gradient(to right,
-    #fffaf0 0%, #f3e6c2 4px,
-    var(--tile-edge-light) 4px, var(--tile-border-dark) 55%, var(--tile-edge-dark) 100%);
-  transform: skewY(-45deg);
-  transform-origin: right top;
-  border-radius: 2px 0 0 2px;
-  box-shadow: inset -2px 0 3px rgba(0,0,0,0.5), inset 2px 0 1px rgba(255,255,255,0.22);
+  background: linear-gradient(to right, #efe6cd 0%, #cdba8e 55%, #9a875b 100%);
+  transform: skewY(45deg);
+  transform-origin: left top;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.35);
 }
 
 .tile-3d-side-bottom {
   position: absolute;
   bottom: calc(var(--wall, 10px) * -1);
-  left: calc(var(--wall, 10px) / -2);
+  left: 0;
   width: 100%;
   height: var(--wall, 10px);
-  background: linear-gradient(to bottom,
-    #fffaf0 0%, #f3e6c2 4px,
-    var(--tile-edge-light) 4px, var(--tile-border-dark) 55%, var(--tile-edge-dark) 100%);
-  transform: skewX(-45deg);
-  transform-origin: left top;
-  border-radius: 0 0 2px 2px;
-  box-shadow: inset 0 2px 3px rgba(0,0,0,0.5), inset 0 -2px 1px rgba(0,0,0,0.3);
+  background: linear-gradient(to bottom, #d6c397 0%, #ab9560 60%, #82703f 100%);
+  transform: skewX(45deg);
+  transform-origin: top left;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.4);
 }
 
 .tile-face {
@@ -2872,13 +2860,13 @@ body {
 
 /* Portrait grid layout: transposes columns and rows dynamically */
 .mahjong-grid.portrait-grid {
-  grid-template-columns: repeat(18, 30px);
-  grid-template-rows: repeat(30, 28px);
+  grid-template-columns: repeat(18, 32px);
+  grid-template-rows: repeat(30, 40px);
 }
 
 @media (max-width: 1024px) {
   .mahjong-grid.portrait-grid {
-    grid-template-columns: repeat(18, 24px);
-    grid-template-rows: repeat(30, 22px);
+    grid-template-columns: repeat(18, 27px);
+    grid-template-rows: repeat(30, 34px);
   }
 }
