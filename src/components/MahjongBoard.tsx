@@ -47,6 +47,9 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
   const PARTICLE_POOL_SIZE = 500;
   const particlesPoolRef = useRef<Particle[]>([]);
   const animationFrameRef = useRef<number | null>(null);
+  // The draw loop only runs while sparks are alive; bursts wake it via kickBurstRef.
+  const burstRunningRef = useRef(false);
+  const kickBurstRef = useRef<() => void>(() => {});
 
   // Initialize the particle pool once on mount
   useEffect(() => {
@@ -95,6 +98,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     const updateAndDraw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const pool = particlesPoolRef.current;
+      let activeCount = 0;
 
       for (let i = 0; i < pool.length; i++) {
         const p = pool[i];
@@ -187,16 +191,31 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
 
         if (p.life <= 0) {
           p.active = false; // Recycle in pool
+        } else {
+          activeCount++;
         }
       }
 
+      if (activeCount > 0) {
+        animationFrameRef.current = requestAnimationFrame(updateAndDraw);
+      } else {
+        // Nothing left to animate: wipe the final frame and idle the loop so a
+        // static board doesn't pay a full-canvas redraw every frame. The next
+        // match burst restarts it via kickBurstRef.
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        burstRunningRef.current = false;
+      }
+    };
+
+    kickBurstRef.current = () => {
+      if (burstRunningRef.current) return;
+      burstRunningRef.current = true;
       animationFrameRef.current = requestAnimationFrame(updateAndDraw);
     };
 
-    updateAndDraw();
-
     return () => {
       window.removeEventListener('resize', resizeCanvas);
+      burstRunningRef.current = false;
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -271,6 +290,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
 
       spawnBurst(px1, py1);
       spawnBurst(px2, py2);
+      kickBurstRef.current(); // wake the draw loop for this burst
     };
 
     window.addEventListener('tile-match', handleMatchEvent as EventListener);
