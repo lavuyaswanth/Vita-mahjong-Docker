@@ -2,13 +2,13 @@
 // same 42 tile slots (art in src/assets/tiles/<id>/) plus a menu background and a
 // board felt/particle palette. The engine is identical across realms.
 
-import menuLegends from '../assets/menu_bg.png';
-import menuFrost from '../assets/menu_bg_frost.png';
-import menuDesert from '../assets/menu_bg_desert.png';
-import menuSeas from '../assets/menu_bg_seas.png';
-import menuInferno from '../assets/menu_bg_inferno.png';
-import menuForest from '../assets/menu_bg_forest.png';
-import menuCelestial from '../assets/menu_bg_celestial.png';
+import menuLegends from '../assets/menu_bg.webp';
+import menuFrost from '../assets/menu_bg_frost.webp';
+import menuDesert from '../assets/menu_bg_desert.webp';
+import menuSeas from '../assets/menu_bg_seas.webp';
+import menuInferno from '../assets/menu_bg_inferno.webp';
+import menuForest from '../assets/menu_bg_forest.webp';
+import menuCelestial from '../assets/menu_bg_celestial.webp';
 
 export type RealmId = 'legends' | 'frost' | 'desert' | 'seas' | 'inferno' | 'forest' | 'celestial';
 
