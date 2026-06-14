@@ -670,8 +670,8 @@ export const App: React.FC = () => {
 
   // --- AUTO-PLAY BOT (debug/QA) ---
   // Enable with ?bot=1. Paced by a tick; one tap per tick using fresh state.
-  // Classic: tap a free tile, then next tick tap its free partner → match.
-  // Tray: tap a tile matching one in the tray (clear), else start a pair.
+  // Tray loop: tap a free tile matching one already in the tray (instant clear),
+  // else park a free tile whose partner is also free (cleared next tick).
   // Useful for solvability testing and for demoing on the simulator.
   const [botTick, setBotTick] = useState(0);
   useEffect(() => {
