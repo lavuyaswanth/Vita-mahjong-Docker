@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { soundSynth } from '../mahjong/soundSynth';
 import { achievementsList } from '../mahjong/achievements';
-import logoImg from '../assets/logo.png';
+import logoImg from '../assets/logo.webp';
 import {
   SettingsIcon,
   HelpIcon,
