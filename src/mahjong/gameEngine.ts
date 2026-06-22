@@ -44,7 +44,9 @@ export class SeededRandom {
   }
 }
 
-// Generate the complete standard deck of 144 tiles
+// Generate the complete standard deck (168 tiles: 108 suits + 16 winds +
+// 12 dragons + 16 seasons + 16 flowers). Only the set of distinct faces is
+// used by the generator — see ALL_FACES below.
 export function generateStandardDeck(): { type: string; value: number }[] {
   const deck: { type: string; value: number }[] = [];
 
