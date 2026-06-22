@@ -46,10 +46,7 @@ const computeStarRating = (time: number, hintsUsed: number, shufflesUsed: number
 };
 
 // Bump this whenever the build changes so it's easy to confirm the deploy updated
-export const APP_VERSION = 'v0.1.0-legends';
-
-const getCurrentTime = () => Date.now();
-
+const APP_VERSION = 'v0.1.0-legends';
 
 export const App: React.FC = () => {
   // Auto-play bot flag (?bot=1) — drives the game itself for QA / simulator demos.
@@ -391,7 +388,7 @@ export const App: React.FC = () => {
   const IQ_MAX = 200;
   const CLEAR_IQ = 60;
   const scoreMatch = (t1: TileState, t2: TileState) => {
-    const now = getCurrentTime();
+    const now = Date.now();
     const elapsed = now - lastMatchTimeRef.current;
     let newMultiplier = 1;
     if (lastMatchTimeRef.current > 0 && elapsed < 3000) {
