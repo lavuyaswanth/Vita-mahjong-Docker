@@ -71,11 +71,6 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     particlesPoolRef.current = pool;
   }, []);
 
-  // Spawns spark particles at the grid center of matching tiles
-  useEffect(() => {
-    // Look for freshly matched tiles
-  }, [tiles]);
-
   // Particle Canvas loop
   useEffect(() => {
     const canvas = canvasRef.current;
