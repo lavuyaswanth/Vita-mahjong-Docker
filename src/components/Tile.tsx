@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import type { TileState } from '../mahjong/gameEngine';
 import { tileDisplayName } from '../mahjong/tileNames';
 
@@ -53,6 +53,13 @@ const TileInner: React.FC<TileProps> = ({
   const shiftX = z * -7; // Shift left per layer (survives zoom-out)
   const shiftY = z * -9; // Shift up per layer
   const wallDepth = 10;  // Uniform tile depth (chunky 3D, but no per-stack height)
+
+  // Press-and-hold "peek" state (hooks must run before any early return).
+  const [peeking, setPeeking] = useState(false);
+  const peekTimer = useRef<number | null>(null);
+  const peekStart = useRef<{ x: number; y: number } | null>(null);
+  const didPeek = useRef(false);
+  const movedRef = useRef(false);
 
   if (matched) {
     return (
@@ -111,9 +118,41 @@ const TileInner: React.FC<TileProps> = ({
     );
   };
 
-  const handleTileClick = () => {
-    onClick(tile);
+  // Tap vs hold vs drag, all from pointer events so the three never conflict:
+  //  • quick still press            → collect (tap)
+  //  • press-and-hold (≥220ms still) → "peek": lift + translucent + name label
+  //  • press-and-drag (moved >8px)   → board pan (handled by the container)
+  const clearPeek = () => {
+    if (peekTimer.current) { clearTimeout(peekTimer.current); peekTimer.current = null; }
+    setPeeking(false);
   };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (matched) return;
+    didPeek.current = false;
+    movedRef.current = false;
+    peekStart.current = { x: e.clientX, y: e.clientY };
+    // Capture so the lifted tile keeps the hold even as it shifts under the finger
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* ignore */ }
+    if (peekTimer.current) clearTimeout(peekTimer.current);
+    peekTimer.current = window.setTimeout(() => { didPeek.current = true; setPeeking(true); }, 220);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!peekStart.current) return;
+    const dx = e.clientX - peekStart.current.x;
+    const dy = e.clientY - peekStart.current.y;
+    if (Math.abs(dx) + Math.abs(dy) > 8) { movedRef.current = true; clearPeek(); }
+  };
+
+  const handlePointerUp = () => {
+    const wasTap = !didPeek.current && !movedRef.current;
+    clearPeek();
+    peekStart.current = null;
+    if (wasTap) onClick(tile); // quick still press → collect
+  };
+
+  const handlePointerLeave = () => { clearPeek(); peekStart.current = null; };
 
   // Keyboard play: Enter or Space activates a focused tile
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -125,11 +164,15 @@ const TileInner: React.FC<TileProps> = ({
 
   return (
     <div
-      className={classes}
+      className={`${classes}${peeking ? ' peeking' : ''}`}
       style={tileStyle}
       data-tile-id={tile.id}
-      onClick={handleTileClick}
       onKeyDown={handleKeyDown}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerLeave}
+      onPointerCancel={handlePointerLeave}
       role="button"
       aria-label={`${tileDisplayName(type, value)}, layer ${z + 1}. ${isFree ? 'Free' : 'Blocked'}`}
       tabIndex={isFree ? 0 : -1}
@@ -143,6 +186,9 @@ const TileInner: React.FC<TileProps> = ({
         <RealmIcon realm={realm} type={type} value={value} />
         {renderContrastLabel()}
       </div>
+
+      {/* Peek label — what this tile is, while held */}
+      {peeking && <span className="tile-peek-label">{tileDisplayName(type, value)}</span>}
     </div>
   );
 };

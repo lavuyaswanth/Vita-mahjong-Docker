@@ -608,7 +608,7 @@ Design guidance:
 Vita currently runs a **holder‑tray** twist (Tile‑Master / "Sheep"‑style) layered
 on the classic board:
 
-- Tapping a **free** tile sends it to a **tray** of N slots (currently 7).
+- Tapping a **free** tile sends it to a **tray** of N slots (currently 4).
 - When two tiles in the tray match, they **auto‑clear** and score.
 - If the tray fills with no match, it's **game over** unless you spend a power
   (Undo returns the last tile to the board).
@@ -621,7 +621,8 @@ exactly what drives the genre's modern viral hits.
 Design rules specific to the tray:
 
 - **Tray size tunes difficulty more than anything.** 3 slots is brutal; 7 is
-  forgiving; 5 is tense. Vita moved 4 → 7 for accessibility — good.
+  forgiving; 5 is tense. Vita ships **4 slots** — tense but fair, with the
+  boosters (Undo/Magnet) as the safety net.
 - **Auto‑clear pairs immediately** so the player isn't doing tray bookkeeping.
 - **Telegraph danger**: the tray should turn amber at N‑1 and pulse red at N
   (Vita does this with `.tray-warn` / `.tray-danger`).
@@ -777,11 +778,11 @@ Mapping to the repo's `production-ready-checklist`:
 - *Easy / accessible* — improved (tutorial, big tiles, free/blocked signaling);
   still needs colorblind/large‑text defaults.
 - *Beautiful / unique* — strong (cute art + red‑edge zen theme).
-- *Rewarding* — stars, achievements, combos. Add daily streak.
+- *Rewarding* — stars, achievements, combos, daily streak. Good.
 - *Optimized* — assets compressed, small bundle. Good.
 - *Polished* — close, **once the 3‑D stacking read is fixed** (this doc's §11).
 - *Production‑ready* — blocked mainly by: automated tests, accessibility
-  defaults, the dead tile‑style setting, and the stacking polish.
+  defaults, and the stacking polish.
 
 Fix the stacking (§11) + add tests + accessibility defaults and the score crosses
 from "beta" into "production."

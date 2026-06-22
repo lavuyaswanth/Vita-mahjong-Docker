@@ -65,11 +65,10 @@ export const App: React.FC = () => {
   })();
   const autoStart = botMode || levelParam !== null || dailyParam;
 
-  // Navigation State. 'tray' = collect into the holder tray (the single unified game mode).
-  type GameMode = 'menu' | 'tray';
-  const [gameMode, setGameMode] = useState<GameMode>(autoStart ? 'tray' : 'menu');
+  // Navigation State. There is one play screen (the holder tray); `isPlaying`
+  // toggles between the menu and that board.
+  const [isPlaying, setIsPlaying] = useState<boolean>(autoStart);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const isPlaying = gameMode === 'tray';
 
   // Layout and Tiles State (default = portrait, large-tile Garden for seniors)
   const [activeLayout, setActiveLayout] = useState<LayoutName>('Garden');
@@ -311,7 +310,7 @@ export const App: React.FC = () => {
       maxTypes = levelNum >= 30 ? 0 : 10 + levelNum;
     }
 
-    setGameMode('tray');
+    setIsPlaying(true);
     setCurrentLevel(levelNum);
     setActiveLayout(layout);
 
@@ -361,17 +360,17 @@ export const App: React.FC = () => {
       initGame(currentLevel, dailyParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameMode]);
+  }, [isPlaying]);
 
   // Handle ambient audio on initial mount / page actions
   useEffect(() => {
-    if (isAmbientEnabled && gameMode !== 'menu') {
+    if (isAmbientEnabled && isPlaying) {
       soundSynth.startAmbient();
     } else {
       soundSynth.stopAmbient();
     }
     return () => soundSynth.stopAmbient();
-  }, [isAmbientEnabled, gameMode]);
+  }, [isAmbientEnabled, isPlaying]);
 
   // Emits global custom event to trigger canvas sparkles. Carries tile ids so
   // the board can burst particles at the tiles' actual on-screen positions
@@ -755,7 +754,7 @@ export const App: React.FC = () => {
   const handleBackToMenu = () => {
     soundSynth.playClick();
     stopTimer();
-    setGameMode('menu');
+    setIsPlaying(false);
   };
 
   // Render stopwatch helper (MM:SS)
@@ -812,7 +811,7 @@ export const App: React.FC = () => {
       <div className="version-badge">{APP_VERSION}</div>
 
       {/* --- MENU LAYER --- */}
-      {gameMode === 'menu' && (
+      {!isPlaying && (
         <MainMenu
           onStartGame={() => initGame(activeLayout)}
           onStartDaily={() => initGame(0, true)}
@@ -826,8 +825,8 @@ export const App: React.FC = () => {
       )}
 
       {/* --- SOLITAIRE GAMEBOARD LAYER --- */}
-      {gameMode !== 'menu' && (
-        <div className={`gameplay-wrapper mode-${gameMode}`}>
+      {isPlaying && (
+        <div className="gameplay-wrapper">
           {/* Premium Dark Jade Felt Status Header */}
           <header className="game-header">
             <button className="header-icon-btn back-menu-btn" onClick={handleBackToMenu} title="Main Menu" aria-label="Back to main menu">
@@ -854,31 +853,29 @@ export const App: React.FC = () => {
             </button>
           </header>
 
-          {/* Tray bar (Rush mode only) — collected tiles; matching pairs auto-clear */}
-          {gameMode === 'tray' && (
-            <div className="tray-bar">
-              {comboMultiplier > 1 && (
-                <span className="combo-inline-chip tray-combo">
-                  <span className="combo-fire">🔥</span>
-                  <span>x{comboMultiplier}</span>
-                </span>
-              )}
-              <div className={`tray-slots ${tray.length >= TRAY_CAPACITY ? 'tray-danger' : ''} ${tray.length === TRAY_CAPACITY - 1 ? 'tray-warn' : ''}`} aria-label="Tile tray">
-                {Array.from({ length: TRAY_CAPACITY }).map((_, i) => {
-                  const t = tray[i];
-                  return (
-                    <div key={i} className={`tray-slot ${t ? 'filled' : ''}`}>
-                      {t && (
-                        <div className="tray-tile" key={t.id}>
-                          <TileGlyph type={t.type} value={t.value} realm={currentRealm.id} />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+          {/* Tray bar — collected tiles; matching pairs auto-clear */}
+          <div className="tray-bar">
+            {comboMultiplier > 1 && (
+              <span className="combo-inline-chip tray-combo">
+                <span className="combo-fire">🔥</span>
+                <span>x{comboMultiplier}</span>
+              </span>
+            )}
+            <div className={`tray-slots ${tray.length >= TRAY_CAPACITY ? 'tray-danger' : ''} ${tray.length === TRAY_CAPACITY - 1 ? 'tray-warn' : ''}`} aria-label="Tile tray">
+              {Array.from({ length: TRAY_CAPACITY }).map((_, i) => {
+                const t = tray[i];
+                return (
+                  <div key={i} className={`tray-slot ${t ? 'filled' : ''}`}>
+                    {t && (
+                      <div className="tray-tile" key={t.id}>
+                        <TileGlyph type={t.type} value={t.value} realm={currentRealm.id} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          )}
+          </div>
 
 
 
@@ -1006,7 +1003,7 @@ export const App: React.FC = () => {
         unlockedLevels={unlockedLevels}
         onSelectLayout={(layout) => {
           setActiveLayout(layout);
-          if (gameMode !== 'menu') {
+          if (isPlaying) {
             initGame(layout);
           }
         }}
@@ -1153,11 +1150,6 @@ export const App: React.FC = () => {
                   }}
                 >
                   Next Level ➡️
-                </button>
-              )}
-              {!dailyMode && (
-                <button className="confirm-btn glassmorphism" onClick={() => initGame(currentLevel)} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-                  <RestartIcon size={16} inline /> Replay {bestRecord ? `(beat ${bestRecord.iq})` : ''}
                 </button>
               )}
               <button className="cancel-btn glassmorphism" onClick={handleBackToMenu} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>

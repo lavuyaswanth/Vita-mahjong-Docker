@@ -44,7 +44,9 @@ export class SeededRandom {
   }
 }
 
-// Generate the complete standard deck of 144 tiles
+// Generate the complete standard deck (168 tiles: 108 suits + 16 winds +
+// 12 dragons + 16 seasons + 16 flowers). Only the set of distinct faces is
+// used by the generator — see ALL_FACES below.
 export function generateStandardDeck(): { type: string; value: number }[] {
   const deck: { type: string; value: number }[] = [];
 
@@ -120,246 +122,109 @@ export function checkIfTileIsFree(tile: TileCoords, activeTiles: TileCoords[]): 
   return !leftBlocked || !rightBlocked;
 }
 
+// The set of distinct tile faces, derived once from the canonical deck. Pairs
+// are synthesized two-identical-at-a-time, so only the faces matter here — the
+// per-face copy counts in generateStandardDeck() are irrelevant to placement.
+type Face = { type: string; value: number };
+const ALL_FACES: Face[] = (() => {
+  const seen = new Map<string, Face>();
+  for (const t of generateStandardDeck()) {
+    const key = `${t.type}_${t.value}`;
+    if (!seen.has(key)) seen.set(key, { type: t.type, value: t.value });
+  }
+  return [...seen.values()];
+})();
+
 // Build a guaranteed-solvable board using the reverse-placement algorithm.
-// 1. Start with all layout positions filled (conceptually).
-// 2. Repeatedly find two "free" tiles, remove them as a pair, and record the order.
-// 3. Reverse the removal order → valid placement order (each placed pair was free).
-// 4. Assign shuffled tile face values to each pair.
-// `maxTypes` (optional) caps how many DISTINCT tile faces a board uses. Fewer
-// faces = more duplicates = easier to spot pairs, so early levels pass a small
-// value and it ramps up. Undefined/0 = full variety.
-export function buildSolvableBoard(layoutName: LayoutName, seed?: number, maxTypes?: number): TileState[] {
-  const config = layouts[layoutName];
-  const coords = config.coords;
+// 1. Repeatedly remove two "free" tiles as a pair until the layout is empty,
+//    recording the order — this depends only on geometry, so the reverse of it
+//    is always a valid placement order (each placed pair was free when placed).
+// 2. Walk that placement order and assign each pair a single face, written to
+//    both positions, so every pair is two identical, obviously-matching tiles.
+// `maxTypes` (optional) caps how many DISTINCT faces a board uses. Fewer faces
+// = more duplicates = easier to spot pairs, so early levels pass a small value
+// and it ramps up. Undefined/0 = full variety.
+export function buildBoard(layoutName: LayoutName, seed?: number, maxTypes?: number): TileState[] {
+  const coords = layouts[layoutName].coords;
   const totalSlots = coords.length;
   const effectiveSeed = seed || Math.floor(Math.random() * 1000000);
 
   const MAX_ATTEMPTS = 20;
 
+  const assign = (pairs: [number, number][], rng: SeededRandom): TileState[] => {
+    // Difficulty ramp: restrict the face pool on smaller (early) boards.
+    let pool = ALL_FACES;
+    if (totalSlots < 144 && maxTypes) {
+      pool = [...ALL_FACES];
+      rng.shuffle(pool);
+      pool = pool.slice(0, Math.max(2, maxTypes));
+    }
+
+    const faces = new Array<Face>(totalSlots);
+    for (const [a, b] of pairs) {
+      const face = rng.choose(pool);
+      faces[a] = face;
+      faces[b] = face;
+    }
+
+    const tiles: TileState[] = coords.map((coord, i) => ({
+      x: coord.x,
+      y: coord.y,
+      z: coord.z,
+      id: `tile_${coord.x}_${coord.y}_${coord.z}`,
+      type: (faces[i] ?? ALL_FACES[0]).type,
+      value: (faces[i] ?? ALL_FACES[0]).value,
+      isFree: false,
+      matched: false
+    }));
+    return recalculateFreeState(tiles);
+  };
+
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    // Use a different RNG stream per attempt so retries explore new orderings
+    // A fresh RNG stream per attempt so retries explore new removal orderings.
     const rng = new SeededRandom(effectiveSeed + attempt * 7919);
 
-    // --- Phase 1: Simulate removal of free pairs ---
-    // Track which positions are still "active" in the simulated board
+    // Simulate removing free pairs until the board clears (or we get stuck).
     const active = new Array<boolean>(totalSlots).fill(true);
-    // Record removal order as pairs of indices into coords[]
     const removalOrder: [number, number][] = [];
-
     let remaining = totalSlots;
 
     while (remaining > 0) {
-      // Build the list of currently active coordinates for free-check
-      // checkIfTileIsFree expects TileCoords (with id), so attach placeholder ids
-      const activeCoordsWithIndex: { coord: TileCoords; idx: number }[] = [];
+      // checkIfTileIsFree expects TileCoords (with id) — attach placeholder ids.
+      const activeEntries: { coord: TileCoords; idx: number }[] = [];
       for (let i = 0; i < totalSlots; i++) {
-        if (active[i]) {
-          activeCoordsWithIndex.push({
-            coord: { ...coords[i], id: `sim-${i}` },
-            idx: i
-          });
-        }
+        if (active[i]) activeEntries.push({ coord: { ...coords[i], id: `sim-${i}` }, idx: i });
       }
+      const activeCoords = activeEntries.map(e => e.coord);
 
-      const activeCoordsList = activeCoordsWithIndex.map(a => a.coord);
+      const freeIndices = activeEntries
+        .filter(e => checkIfTileIsFree(e.coord, activeCoords))
+        .map(e => e.idx);
 
-      // Find all free tiles among active ones
-      const freeTileIndices: number[] = [];
-      for (const entry of activeCoordsWithIndex) {
-        if (checkIfTileIsFree(entry.coord, activeCoordsList)) {
-          freeTileIndices.push(entry.idx);
-        }
-      }
+      if (freeIndices.length < 2) break; // stuck — retry with a new ordering
 
-      if (freeTileIndices.length < 2) {
-        // Stuck — can't form a pair; break and retry
-        break;
-      }
-
-      // Shuffle free tiles to randomize which pair we pick
-      rng.shuffle(freeTileIndices);
-
-      // Pick the first two free tiles as a removal pair
-      const idxA = freeTileIndices[0];
-      const idxB = freeTileIndices[1];
-
+      rng.shuffle(freeIndices);
+      const [idxA, idxB] = freeIndices;
       active[idxA] = false;
       active[idxB] = false;
       removalOrder.push([idxA, idxB]);
       remaining -= 2;
     }
 
-    if (remaining > 0) {
-      // This attempt failed to clear all tiles — retry
-      continue;
-    }
+    if (remaining > 0) continue; // this attempt couldn't clear the board
 
-    // --- Phase 2: Build a balanced deck for this layout ---
-    const deckRng = new SeededRandom(effectiveSeed + attempt * 7919 + 1);
-    let deck = generateStandardDeck();
-    deckRng.shuffle(deck);
-
-    // Difficulty ramp: cap distinct faces to make early boards easier. Phase 3
-    // doubles each pair's face, so drawing from a limited face pool keeps every
-    // count even and the board solvable — just with more duplicates.
-    if (totalSlots < 144 && maxTypes) {
-      const allKeys = [...new Set(deck.map(t => `${t.type}_${t.value}`))];
-      deckRng.shuffle(allKeys);
-      const allowed = allKeys.slice(0, Math.max(2, maxTypes));
-      const parse = (k: string) => { const i = k.lastIndexOf('_'); return { type: k.slice(0, i), value: Number(k.slice(i + 1)) }; };
-      const subset: typeof deck = [];
-      for (let i = 0; i < totalSlots; i++) subset.push(parse(deckRng.choose(allowed)));
-      deck = subset;
-    } else if (totalSlots < 144) {
-      const subset: typeof deck = [];
-
-      // Group the deck by exact identity so every selected pair is identical
-      const groups: Record<string, typeof deck> = {};
-      deck.forEach(t => {
-        const key = `${t.type}_${t.value}`;
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(t);
-      });
-
-      const groupKeys = Object.keys(groups);
-      let pairCount = Math.floor(totalSlots / 2);
-
-      while (pairCount > 0 && groupKeys.length > 0) {
-        const randomKey = deckRng.choose(groupKeys);
-        const group = groups[randomKey];
-
-        if (group && group.length >= 2) {
-          subset.push(group.pop()!);
-          subset.push(group.pop()!);
-          pairCount--;
-        } else {
-          const idx = groupKeys.indexOf(randomKey);
-          if (idx > -1) groupKeys.splice(idx, 1);
-        }
-      }
-
-      // Odd-slot fallback (shouldn't happen)
-      if (subset.length < totalSlots) {
-        const oddKeys = Object.keys(groups).filter(k => groups[k].length > 0);
-        if (oddKeys.length > 0) {
-          subset.push(groups[oddKeys[0]].pop()!);
-        }
-      }
-
-      deck = subset;
-      deckRng.shuffle(deck);
-    }
-
-    // --- Phase 3: Assign tile faces using reversed removal order ---
-    // Reverse the removal order → placement order (pairs placed first are deepest)
+    // Reverse removal → placement order (deepest pairs placed first), then
+    // assign faces with an independent RNG stream.
     const placementOrder = [...removalOrder].reverse();
-
-    // Consume deck in pairs, assigning matching faces to each pair of positions
-    const tileAssignments = new Array<{ type: string; value: number }>(totalSlots);
-    let deckIndex = 0;
-
-    for (const [posA, posB] of placementOrder) {
-      const tileA = deck[deckIndex++] || { type: 'bamboo', value: 1 };
-      deckIndex++; // consume the paired slot; both positions take tileA's face
-
-      // Assign the SAME face to both positions so the pair is two identical tiles
-      tileAssignments[posA] = { type: tileA.type, value: tileA.value };
-      tileAssignments[posB] = { type: tileA.type, value: tileA.value };
-    }
-
-    // --- Phase 4: Build the final TileState array ---
-    const tiles: TileState[] = coords.map((coord, index) => {
-      const tileDef = tileAssignments[index] || { type: 'bamboo', value: 1 };
-
-      return {
-        x: coord.x,
-        y: coord.y,
-        z: coord.z,
-        id: `tile_${coord.x}_${coord.y}_${coord.z}`,
-        type: tileDef.type,
-        value: tileDef.value,
-        isFree: false,
-        matched: false
-      };
-    });
-
-    return recalculateFreeState(tiles);
+    return assign(placementOrder, new SeededRandom(effectiveSeed + attempt * 7919 + 1));
   }
 
-  // Fallback: all attempts failed — use legacy random placement (should be extremely rare)
-  return buildBoardLegacy(layoutName, effectiveSeed);
-}
-
-// Legacy random board builder (original algorithm, kept as fallback)
-function buildBoardLegacy(layoutName: LayoutName, seed: number): TileState[] {
-  const config = layouts[layoutName];
-  const totalSlots = config.coords.length;
-
-  const rng = new SeededRandom(seed);
-
-  let deck = generateStandardDeck();
-  rng.shuffle(deck);
-
-  if (totalSlots < 144) {
-    const subset: typeof deck = [];
-
-    const groups: Record<string, typeof deck> = {};
-    deck.forEach(t => {
-      const key = `${t.type}_${t.value}`;
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(t);
-    });
-
-    const groupKeys = Object.keys(groups);
-    let pairCount = Math.floor(totalSlots / 2);
-
-    while (pairCount > 0 && groupKeys.length > 0) {
-      const randomKey = rng.choose(groupKeys);
-      const group = groups[randomKey];
-
-      if (group && group.length >= 2) {
-        subset.push(group.pop()!);
-        subset.push(group.pop()!);
-        pairCount--;
-      } else {
-        const idx = groupKeys.indexOf(randomKey);
-        if (idx > -1) groupKeys.splice(idx, 1);
-      }
-    }
-
-    if (subset.length < totalSlots) {
-      const oddKeys = Object.keys(groups).filter(k => groups[k].length > 0);
-      if (oddKeys.length > 0) {
-        subset.push(groups[oddKeys[0]].pop()!);
-      }
-    }
-
-    deck = subset;
-    rng.shuffle(deck);
-  }
-
-  const tiles: TileState[] = config.coords.map((coord, index) => {
-    const tileDef = deck[index] || { type: 'bamboo', value: 1 };
-
-    return {
-      x: coord.x,
-      y: coord.y,
-      z: coord.z,
-      id: `tile_${coord.x}_${coord.y}_${coord.z}`,
-      type: tileDef.type,
-      value: tileDef.value,
-      isFree: false,
-      matched: false
-    };
-  });
-
-  return recalculateFreeState(tiles);
-}
-
-// Generate the initial board state for a given layout and seed. `maxTypes`
-// (optional) caps distinct tile faces for the difficulty ramp.
-export function buildBoard(layoutName: LayoutName, seed?: number, maxTypes?: number): TileState[] {
-  return buildSolvableBoard(layoutName, seed, maxTypes);
+  // Effectively unreachable for these symmetric piles: every attempt failed to
+  // find a removal sequence. Fall back to pairing coords in order so we always
+  // return a full board (not guaranteed solvable, but it never gets here).
+  const fallbackPairs: [number, number][] = [];
+  for (let i = 0; i + 1 < totalSlots; i += 2) fallbackPairs.push([i, i + 1]);
+  return assign(fallbackPairs, new SeededRandom(effectiveSeed));
 }
 
 // Recalculates the 'isFree' state for all non-matched tiles on the board.

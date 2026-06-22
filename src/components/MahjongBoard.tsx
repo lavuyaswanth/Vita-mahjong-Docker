@@ -73,11 +73,6 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     particlesPoolRef.current = pool;
   }, []);
 
-  // Spawns spark particles at the grid center of matching tiles
-  useEffect(() => {
-    // Look for freshly matched tiles
-  }, [tiles]);
-
   // Particle Canvas loop
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -332,14 +327,17 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
       if (ry + 2 > maxY) maxY = ry + 2;
     }
 
-    // Bounding box in pixels + padding for 3D walls, stacking shift and shadows
-    const padPx = 32;
+    // Bounding box in pixels + a little padding for 3D walls/shadows.
+    const padPx = 14;
     const bboxW = (maxX - minX) * cellW + padPx * 2;
     const bboxH = (maxY - minY) * cellH + padPx * 2;
 
     const scaleX = containerWidth / bboxW;
-    const scaleY = containerHeight / bboxH;
-    const zoom = Math.min(Math.max(Math.min(scaleX, scaleY) * 0.97, 0.35), 2.4);
+    // Narrow boards (early levels) are limited by height and leave big side
+    // gaps; allow a little vertical overflow so tiles render noticeably bigger
+    // (the small spill is reachable via the now-clamped pan).
+    const scaleY = (containerHeight * 1.12) / bboxH;
+    const zoom = Math.min(Math.max(Math.min(scaleX, scaleY) * 1.02, 0.35), 2.6);
 
     // Re-center: the grid centers its own geometric center (15 cols, 9 rows).
     // Offset the pan so the tile bounding-box center lands at the container center.
@@ -400,6 +398,20 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
   // if so, the click that fires on release is swallowed so it can't pick a tile.
   const dragMovedRef = useRef(false);
 
+  // Keep the board from being dragged off into empty space — clamp the pan to a
+  // fraction of the container that grows with zoom (so you can still explore a
+  // zoomed-in board, but a fitted board barely moves).
+  const clampPan = (x: number, y: number, z: number = zoom): { x: number; y: number } => {
+    const c = containerRef.current;
+    if (!c) return { x, y };
+    const maxX = c.clientWidth * (0.12 + 0.32 * z);
+    const maxY = c.clientHeight * (0.12 + 0.32 * z);
+    return {
+      x: Math.max(-maxX, Math.min(maxX, x)),
+      y: Math.max(-maxY, Math.min(maxY, y))
+    };
+  };
+
   // Dragging to Pan board (accessibility for smaller displays)
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return; // Left click only
@@ -410,8 +422,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
-    const nx = e.clientX - dragStart.x;
-    const ny = e.clientY - dragStart.y;
+    const { x: nx, y: ny } = clampPan(e.clientX - dragStart.x, e.clientY - dragStart.y);
     if (Math.abs(nx - pan.x) + Math.abs(ny - pan.y) > 4) dragMovedRef.current = true;
     setPan({ x: nx, y: ny });
   };
@@ -463,7 +474,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
       const dy = e.touches[0].clientY - s.startY;
       if (Math.abs(dx) + Math.abs(dy) > 8) {
         dragMovedRef.current = true;
-        setPan({ x: s.panX + dx, y: s.panY + dy });
+        setPan(clampPan(s.panX + dx, s.panY + dy));
       }
     }
   };

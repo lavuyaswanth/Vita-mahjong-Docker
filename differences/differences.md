@@ -17,7 +17,7 @@ By systematically revising our coordinate systems, visual styles, booster models
 | **Flipping/Facedown** | Random tiles rendered covered/facedown | 100% Open, face-up tiles across all 240 levels to prevent visual fatigue and planning friction | **Aligned** |
 | **Campaign Path** | Multi-level selection maps | Unified level dropdown campaign supporting 240 distinct levels powered by deterministic seeds | **Aligned** |
 | **Classic Mode** | Stress-free pair matching, unlimited Undos | Unlimited Undo, free Hints, and gentle stalemate Shuffles in our default Solitaire mode | **Aligned** |
-| **Rush Mode (Tray)** | 7-slot collection tray | Smooth sliding tray physics with combo arpeggios, available as an optional menu game mode | **Aligned** |
+| **Holder Tray** | Multi-slot collection tray | The single core loop: a 4-slot holder tray with sliding physics and combo arpeggios; matching pairs auto-clear, and overfilling with no match ends the run | **Aligned** |
 
 ---
 
@@ -68,13 +68,11 @@ This subtle micro-animation shadow profile provides instant depth perception, gi
 
 ---
 
-## 4. Complete Open-Faced Level Plan (No Face-Down Strain)
+## 4. Fully-Visible, Guaranteed-Solvable Boards
 
-Some puzzle solitaire games hide cards face-down under stacks until they are uncovered. While this adds difficulty, it introduces severe short-term memory fatigue for senior players.
+Every tile is **face-up** at all times — even tiles nested beneath several stacks show their full face, so play is about spatial planning, never hidden-tile memory.
 
-In version **v0.0.1**, we have committed to:
-1.  **100% Face-Up Visibility:** Even when cards are nested deeply beneath 4 stacks, their face details remain fully visible and open.
-2.  **Solvable Board Synthesis:** Rather than placing cards purely randomly, our level generator simulates game play backwards (from solved state to start state) ensuring that every level is **100% guaranteed solvable** on every shuffle.
+Boards are not placed randomly: the level generator simulates play **backwards** (from a solved state to the start state), so every level is **100% guaranteed solvable** on every seed.
 
 ---
 
