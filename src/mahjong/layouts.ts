@@ -20,7 +20,7 @@ export interface TileCoords {
 
 export type LayoutName = 'Garden' | 'Pagoda' | 'Pyramids' | 'Butterfly' | 'Turtle';
 
-export interface LayoutConfig {
+interface LayoutConfig {
   name: LayoutName;
   displayName: string;
   description: string;
