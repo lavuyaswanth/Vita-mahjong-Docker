@@ -1,7 +1,7 @@
 // Zen achievement definitions — single source of truth shared by the game
 // screen (unlock toasts) and the main-menu Trophy Room.
 
-export interface AchievementDef {
+interface AchievementDef {
   id: string;
   name: string;
   desc: string;

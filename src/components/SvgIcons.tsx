@@ -1,6 +1,6 @@
 import React from 'react';
 
-export interface IconProps {
+interface IconProps {
   size?: number;
   className?: string;
   inline?: boolean;

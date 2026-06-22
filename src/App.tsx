@@ -43,10 +43,7 @@ const computeStarRating = (time: number, hintsUsed: number, shufflesUsed: number
 };
 
 // Bump this whenever the build changes so it's easy to confirm the deploy updated
-export const APP_VERSION = 'v0.0.3';
-
-const getCurrentTime = () => Date.now();
-
+const APP_VERSION = 'v0.0.3';
 
 export const App: React.FC = () => {
   // Auto-play bot flag (?bot=1) — drives the game itself for QA / simulator demos.
@@ -342,7 +339,7 @@ export const App: React.FC = () => {
 
   // Shared scoring for a cleared pair: combo streak, score, move count, sound, spark.
   const scoreMatch = (t1: TileState, t2: TileState) => {
-    const now = getCurrentTime();
+    const now = Date.now();
     const elapsed = now - lastMatchTimeRef.current;
     let newMultiplier = 1;
     if (lastMatchTimeRef.current > 0 && elapsed < 3000) {
