@@ -165,6 +165,7 @@ export const App: React.FC = () => {
 
   // Achievement Unlocking Toast State
   const [achievementToast, setAchievementToast] = useState<{ id: string; name: string; desc: string } | null>(null);
+  const achievementToastTimeoutRef = useRef<number | null>(null);
 
   const unlockAchievement = (id: string) => {
     try {
@@ -180,7 +181,10 @@ export const App: React.FC = () => {
           soundSynth.playAchievementUnlock();
           
           setAchievementToast({ id, name: badgeInfo.name, desc: badgeInfo.desc });
-          setTimeout(() => {
+          // Restart the dismiss timer so a rapid follow-up unlock (several can
+          // land on one victory) gets its full display time.
+          if (achievementToastTimeoutRef.current) clearTimeout(achievementToastTimeoutRef.current);
+          achievementToastTimeoutRef.current = window.setTimeout(() => {
             setAchievementToast(null);
           }, 5000);
         }
@@ -878,9 +882,9 @@ export const App: React.FC = () => {
             <h2 style={{ color: '#ff8a80' }}>Tray Full!</h2>
             <p>
               Your tray reached {TRAY_CAPACITY} tiles with no match.
-              {powerCounts.undo > 0
-                ? ' Use an Undo to return a tile and keep playing, or restart!'
-                : ' You are out of Undos — restart the level to try again!'}
+              {powerCounts.undo > 0 || powerCounts.magnet > 0
+                ? ' Use an Undo or Magnet to pull tiles back and keep playing, or restart!'
+                : ' You are out of rescues — restart the level to try again!'}
             </p>
             <div className="victory-stats">
               <div className="v-stat">
@@ -900,6 +904,14 @@ export const App: React.FC = () => {
                 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
               >
                 <UndoIcon size={16} inline /> Return a Tile ({powerCounts.undo})
+              </button>
+              <button
+                className="confirm-btn glassmorphism"
+                onClick={handleMagnet}
+                disabled={powerCounts.magnet <= 0 || tray.length === 0}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <MagnetIcon size={16} inline /> Magnet ({powerCounts.magnet})
               </button>
               <button className="confirm-btn glassmorphism" onClick={() => initGame(activeLayout)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <RestartIcon size={16} inline /> Restart
