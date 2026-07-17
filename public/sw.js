@@ -1,8 +1,11 @@
 /* Vita Mahjong service worker — offline play (R11).
-   Strategy: cache-first with background refresh (stale-while-revalidate).
-   After the first online load, the app shell + hashed assets are cached,
-   so the game launches and plays fully offline. */
-const CACHE = 'vita-mahjong-legends-v1';
+   Strategy:
+   - Navigations (the app shell) are NETWORK-FIRST so a new deploy is picked up
+     on the very next load, falling back to the cached shell when offline.
+   - Everything else (hashed JS/CSS/art) is cache-first with background
+     refresh — those filenames are content-hashed, so cached copies never go
+     stale. */
+const CACHE = 'vita-mahjong-legends-v2';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -29,6 +32,24 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE);
+
+      // App shell: network-first so deploys show up immediately.
+      if (req.mode === 'navigate') {
+        try {
+          const res = await fetch(req);
+          if (res && res.status === 200) cache.put(req, res.clone());
+          return res;
+        } catch {
+          const shell =
+            (await cache.match(req)) ||
+            (await cache.match('/index.html')) ||
+            (await cache.match('/'));
+          if (shell) return shell;
+          return new Response('Offline', { status: 503, statusText: 'Offline' });
+        }
+      }
+
+      // Static assets: cache-first with background refresh.
       const cached = await cache.match(req);
       const network = fetch(req)
         .then((res) => {
@@ -39,19 +60,12 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => null);
 
-      // Serve cache immediately if present; otherwise wait on the network.
       if (cached) {
         network; // fire-and-forget refresh
         return cached;
       }
       const res = await network;
       if (res) return res;
-
-      // Offline navigation fallback → cached app shell
-      if (req.mode === 'navigate') {
-        const shell = await cache.match('/index.html') || await cache.match('/');
-        if (shell) return shell;
-      }
       return new Response('Offline', { status: 503, statusText: 'Offline' });
     })()
   );
