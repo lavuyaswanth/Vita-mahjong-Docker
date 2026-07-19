@@ -12,12 +12,17 @@ import {
 interface MainMenuProps {
   onStartGame: () => void;
   onOpenSettings: () => void;
+  // A saved mid-level run to resume, if one exists
+  continueInfo?: { level: number } | null;
+  onContinue?: () => void;
   unlockedLevels: number[];
 }
 
 export const MainMenu: React.FC<MainMenuProps> = ({
   onStartGame,
   onOpenSettings,
+  continueInfo = null,
+  onContinue,
   unlockedLevels
 }) => {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -142,6 +147,19 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             </div>
           </button>
         </div>
+
+        {continueInfo && onContinue && (
+          <button
+            className="continue-game-btn"
+            onClick={() => { soundSynth.playClick(); onContinue(); }}
+          >
+            <span className="continue-icon">⏯️</span>
+            <span className="continue-text">
+              <span className="continue-title">Continue</span>
+              <span className="continue-sub">Level {continueInfo.level} in progress</span>
+            </span>
+          </button>
+        )}
 
         <p className="menu-board-hint">Tap the gear to choose your puzzle level shape</p>
       </div>
