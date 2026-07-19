@@ -260,10 +260,10 @@ export const App: React.FC = () => {
     soundSynth.configure(true, sfxVolume, ambientVolume);
   }, [highContrast, sfxVolume, ambientVolume, isAmbientEnabled]);
 
-  // Start stopwatch timer
-  const startTimer = () => {
+  // Start stopwatch timer (from 0, or from a resumed save's elapsed time)
+  const startTimer = (initialSeconds = 0) => {
     stopTimer();
-    setTimer(0);
+    setTimer(initialSeconds);
     timerRef.current = setInterval(() => {
       setTimer(t => t + 1);
     }, 1000);
@@ -278,6 +278,121 @@ export const App: React.FC = () => {
 
   // Stop the stopwatch when the app unmounts
   useEffect(() => stopTimer, []);
+
+  // ---- Save & resume: a mid-level game survives closing the app ----
+  // Mobile browsers kill background tabs freely, so the board, tray, timer and
+  // scoring are persisted after every move (and on backgrounding). The menu
+  // then offers "Continue" instead of silently discarding the run.
+  const SAVE_KEY = 'vita_saved_game';
+  type SavedTile = { x: number; y: number; z: number; id: string; type: string; value: number; matched: boolean };
+  type SavedGame = {
+    level: number;
+    layout: LayoutName;
+    dailyMode: boolean;
+    dailyRealmId: string | null;
+    savedDate: string;    // dailies resume only on the same local day
+    tiles: SavedTile[];
+    trayIds: string[];    // order matters: Undo/Magnet pull from the end
+    timer: number;
+    iq: number;
+    comboBonus: number;
+    moveCount: number;
+    hintsUsed: number;
+    shufflesUsed: number;
+  };
+  const loadSavedGame = (): SavedGame | null => {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      const s = JSON.parse(raw) as SavedGame;
+      if (!s || !Array.isArray(s.tiles) || s.tiles.length === 0 || !layouts[s.layout]) return null;
+      if (!Array.isArray(s.trayIds) || s.tiles.every(t => t.matched)) return null;
+      if (s.dailyMode && s.savedDate !== todayKey()) return null; // yesterday's daily board
+      return s;
+    } catch { return null; }
+  };
+  const clearSavedGame = () => { try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ } };
+  // Drives the menu's Continue button; refreshed when returning to the menu.
+  const [savedGame, setSavedGame] = useState<SavedGame | null>(() => loadSavedGame());
+
+  // Mirror the live timer into a ref so saving doesn't re-run every second.
+  const timerValRef = useRef(0);
+  useEffect(() => { timerValRef.current = timer; }, [timer]);
+
+  const buildSave = (): SavedGame | null => {
+    if (!isPlaying || botMode || showWinScreen || tiles.length === 0) return null;
+    if (tiles.every(t => t.matched)) return null;
+    return {
+      level: currentLevel,
+      layout: activeLayout,
+      dailyMode,
+      dailyRealmId,
+      savedDate: todayKey(),
+      tiles: tiles.map(({ x, y, z, id, type, value, matched }) => ({ x, y, z, id, type, value, matched })),
+      trayIds: tray.map(t => t.id),
+      timer: timerValRef.current,
+      iq: scoreRef.current,
+      comboBonus: comboBonusRef.current,
+      moveCount,
+      hintsUsed: hintsUsedRef.current,
+      shufflesUsed: shufflesUsedRef.current
+    };
+  };
+
+  // Persist after every board/tray change, plus on backgrounding (captures the
+  // latest timer right before a mobile browser suspends or kills the tab).
+  useEffect(() => {
+    const persist = () => {
+      const save = buildSave();
+      if (save) { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch { /* ignore */ } }
+    };
+    persist();
+    document.addEventListener('visibilitychange', persist);
+    window.addEventListener('pagehide', persist);
+    return () => {
+      document.removeEventListener('visibilitychange', persist);
+      window.removeEventListener('pagehide', persist);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tiles, tray, isPlaying, showWinScreen]);
+
+  // Rebuild full game state from a save and jump straight into play.
+  const resumeGame = (save: SavedGame) => {
+    const board = recalculateFreeState(save.tiles.map(t => ({ ...t, isFree: false })));
+    const byId = new Map(board.map(t => [t.id, t]));
+    const trayTiles = save.trayIds
+      .map(id => byId.get(id))
+      .filter((t): t is TileState => t !== undefined);
+
+    setIsPlaying(true);
+    setCurrentLevel(save.level);
+    setActiveLayout(save.layout);
+    setDailyMode(save.dailyMode);
+    setDailyRealmId(save.dailyRealmId);
+    setShowWinScreen(false);
+    // A full tray always means game over (a match would have auto-cleared)
+    setShowGameOver(trayTiles.length >= TRAY_CAPACITY);
+    setLevelReward(null);
+    setRewardClaimed(false);
+    setTiles(board);
+    setTray(trayTiles);
+    setHintedPair(null);
+    setScore(save.iq);
+    scoreRef.current = save.iq;
+    comboBonusRef.current = save.comboBonus;
+    setComboMultiplier(1);
+    setComboPopup(null);
+    setMoveCount(save.moveCount);
+    setEarnedStars(0);
+    setIsNewBest(false);
+    setBestRecord(save.dailyMode ? null : (loadRecords()[save.level] ?? null));
+    lastMatchTimeRef.current = 0;
+    hintsUsedRef.current = save.hintsUsed;
+    shufflesUsedRef.current = save.shufflesUsed;
+    setTotalTileCount(save.tiles.length);
+    startTimer(save.timer);
+    setPossibleMovesCount(findAvailableMoves(board).length);
+  };
 
   // Set up board state when starting or restarting. `daily=true` builds today's
   // shared Daily Challenge board instead of a campaign level.
@@ -459,6 +574,9 @@ export const App: React.FC = () => {
       setComboMultiplier(1);
       soundSynth.playVictory();
       haptics.win();
+      // The run is complete — nothing left to resume.
+      clearSavedGame();
+      setSavedGame(null);
       const finalIQ = scoreRef.current;
       // Extra flourish for a genius-level finish
       if (finalIQ >= 180) setTimeout(() => soundSynth.playAchievementUnlock(), 250);
@@ -761,6 +879,8 @@ export const App: React.FC = () => {
     soundSynth.playClick();
     stopTimer();
     setIsPlaying(false);
+    // Refresh the menu's Continue button with the just-persisted run
+    setSavedGame(loadSavedGame());
   };
 
   // Render stopwatch helper (MM:SS)
@@ -821,6 +941,8 @@ export const App: React.FC = () => {
         <MainMenu
           onStartGame={() => initGame(activeLayout)}
           onStartDaily={() => initGame(0, true)}
+          continueInfo={savedGame ? { level: savedGame.level, daily: savedGame.dailyMode } : null}
+          onContinue={() => { if (savedGame) resumeGame(savedGame); }}
           onOpenSettings={() => setIsSettingsOpen(true)}
           unlockedLevels={unlockedLevels}
           menuBg={currentRealm.menuBg}

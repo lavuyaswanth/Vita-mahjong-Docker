@@ -13,6 +13,9 @@ interface MainMenuProps {
   onStartGame: () => void;
   onStartDaily: () => void;
   onOpenSettings: () => void;
+  // A saved mid-level run to resume, if one exists
+  continueInfo?: { level: number; daily: boolean } | null;
+  onContinue?: () => void;
   unlockedLevels: number[];
   menuBg?: string;
   realmName?: string;
@@ -24,6 +27,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onStartGame,
   onStartDaily,
   onOpenSettings,
+  continueInfo = null,
+  onContinue,
   unlockedLevels,
   menuBg,
   realmName,
@@ -160,6 +165,21 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             </div>
           </button>
         </div>
+
+        {continueInfo && onContinue && (
+          <button
+            className="daily-challenge-btn continue-game-btn"
+            onClick={() => { soundSynth.playClick(); onContinue(); }}
+          >
+            <span className="daily-icon">⏯️</span>
+            <span className="daily-text">
+              <span className="daily-title">Continue</span>
+              <span className="daily-sub">
+                {continueInfo.daily ? "Today's Daily Challenge" : `Level ${continueInfo.level} in progress`}
+              </span>
+            </span>
+          </button>
+        )}
 
         <button
           className={`daily-challenge-btn ${dailyDoneToday ? 'done' : ''}`}
