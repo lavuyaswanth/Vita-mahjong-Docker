@@ -10,7 +10,9 @@ import menuInferno from '../assets/menu_bg_inferno.webp';
 import menuForest from '../assets/menu_bg_forest.webp';
 import menuCelestial from '../assets/menu_bg_celestial.webp';
 
-export type RealmId = 'legends' | 'frost' | 'desert' | 'seas' | 'inferno' | 'forest' | 'celestial';
+export type RealmId =
+  | 'legends' | 'frost' | 'desert' | 'seas' | 'inferno' | 'forest' | 'celestial'
+  | 'bloodmoon' | 'abyss' | 'aurora';
 
 export interface Realm {
   id: RealmId;
@@ -18,6 +20,10 @@ export interface Realm {
   menuBg: string;
   // Maps to the board particle palette already implemented in MahjongBoard
   particleTheme: 'dark' | 'ocean' | 'sunset' | 'zen';
+  // Filter-based realms have no art folder of their own: they borrow another
+  // realm's tile art and recolor it with a CSS filter keyed off
+  // `app-realm-<id>` (see the realm filters block in index.css).
+  artRealm?: RealmId;
 }
 
 export const realms: Record<RealmId, Realm> = {
@@ -27,13 +33,18 @@ export const realms: Record<RealmId, Realm> = {
   seas:      { id: 'seas',      name: 'Cursed Seas',             menuBg: menuSeas,      particleTheme: 'ocean' },
   inferno:   { id: 'inferno',   name: 'Infernal Depths',         menuBg: menuInferno,   particleTheme: 'sunset' },
   forest:    { id: 'forest',    name: 'Enchanted Forest',        menuBg: menuForest,    particleTheme: 'zen' },
-  celestial: { id: 'celestial', name: 'Celestial Realm',         menuBg: menuCelestial, particleTheme: 'dark' }
+  celestial: { id: 'celestial', name: 'Celestial Realm',         menuBg: menuCelestial, particleTheme: 'dark' },
+  bloodmoon: { id: 'bloodmoon', name: 'Blood Moon Rising',       menuBg: menuInferno,   particleTheme: 'sunset', artRealm: 'legends' },
+  abyss:     { id: 'abyss',     name: 'Sunken Abyss',            menuBg: menuSeas,      particleTheme: 'ocean',  artRealm: 'seas' },
+  aurora:    { id: 'aurora',    name: 'Aurora Veil',             menuBg: menuFrost,     particleTheme: 'zen',    artRealm: 'frost' }
 };
 
-// Campaign rotation: a new realm every 10 levels, cycling in order — so the
-// player journeys legends -> frost -> desert -> seas -> inferno -> forest ->
-// celestial -> legends ... across the 240-level campaign.
-const ROTATION: RealmId[] = ['legends', 'frost', 'desert', 'seas', 'inferno', 'forest', 'celestial'];
+// Campaign rotation: a new realm every 10 levels, cycling in order across the
+// 240-level campaign — 10 realms means a full world tour every 100 levels.
+const ROTATION: RealmId[] = [
+  'legends', 'frost', 'desert', 'seas', 'inferno',
+  'forest', 'celestial', 'bloodmoon', 'abyss', 'aurora'
+];
 const LEVELS_PER_REALM = 10;
 
 export function realmForLevel(level: number): Realm {
