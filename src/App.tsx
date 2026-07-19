@@ -12,7 +12,10 @@ import { layouts } from './mahjong/layouts';
 import type { LayoutName } from './mahjong/layouts';
 import { soundSynth } from './mahjong/soundSynth';
 import { haptics } from './mahjong/haptics';
-import { achievementsList } from './mahjong/achievements';
+import { useAchievements } from './hooks/useAchievements';
+import { useBoosters, POWER_LABELS } from './hooks/useBoosters';
+import type { PowerKey } from './hooks/useBoosters';
+import { useDailyChallenge, todayKey } from './hooks/useDailyChallenge';
 import { realmForLevel, nextRealmChange, realms } from './mahjong/realms';
 import type { RealmId } from './mahjong/realms';
 import MahjongBoard from './components/MahjongBoard';
@@ -120,54 +123,18 @@ export const App: React.FC = () => {
   const [bestRecord, setBestRecord] = useState<LevelRecord | null>(null); // for the active level
   const [isNewBest, setIsNewBest] = useState(false);
 
-  // Daily Challenge: one deterministic board per calendar day + a streak that
-  // grows on consecutive days played. The single biggest retention hook.
-  // Keys use the LOCAL date to match getDailyChallengeSeed(), so the streak
-  // day and the board itself both roll over at the player's local midnight.
-  const dateKey = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  const todayKey = () => dateKey(new Date()); // YYYY-MM-DD
-  type DailyState = { lastCompleted: string; streak: number };
-  const loadDaily = (): DailyState => {
-    try { return JSON.parse(localStorage.getItem('vita_daily') || '{"lastCompleted":"","streak":0}'); }
-    catch { return { lastCompleted: '', streak: 0 }; }
-  };
+  // Daily Challenge state lives in its hook; these two are play-session state.
   const [dailyMode, setDailyMode] = useState(false);
   const [dailyRealmId, setDailyRealmId] = useState<string | null>(null);
-  const [daily, setDaily] = useState<DailyState>(() => loadDaily());
-  const dailyDoneToday = daily.lastCompleted === todayKey();
+  const { daily, dailyDoneToday, completeToday } = useDailyChallenge();
   const hintsUsedRef = useRef(0);
   const shufflesUsedRef = useRef(0);
 
-  // Booster economy: four wooden powers with numbered counts that persist
-  // across sessions — Shuffle, Magnet (pull tiles back from tray), Hint and
-  // Undo. Winning levels restocks them via the level reward.
-  // The QA bot gets a deep stock so it can always finish a board.
-  const POWER_DEFAULTS = botMode
-    ? { shuffle: 999, magnet: 999, hint: 999, undo: 999 }
-    : { shuffle: 5, magnet: 3, hint: 5, undo: 5 };
-  const [powerCounts, setPowerCounts] = useState<{ shuffle: number; magnet: number; hint: number; undo: number }>(() => {
-    if (botMode) return { ...POWER_DEFAULTS };
-    try {
-      const stored = localStorage.getItem('vita_power_counts_v2');
-      return stored ? { ...POWER_DEFAULTS, ...JSON.parse(stored) } : { ...POWER_DEFAULTS };
-    } catch { return { ...POWER_DEFAULTS }; }
-  });
-  useEffect(() => {
-    if (botMode) return; // don't let QA runs pollute real saves
-    try { localStorage.setItem('vita_power_counts_v2', JSON.stringify(powerCounts)); } catch { /* ignore */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [powerCounts]);
+  // Booster economy (Shuffle, Magnet, Hint, Undo) — see useBoosters.
+  const { powerCounts, setPowerCounts } = useBoosters(botMode);
 
   // End-of-level reward: clearing a level grants a random power-up to carry
   // into the next level.
-  type PowerKey = 'shuffle' | 'magnet' | 'hint' | 'undo';
-  const POWER_META: Record<PowerKey, { label: string }> = {
-    shuffle: { label: 'Shuffle' },
-    magnet: { label: 'Magnet' },
-    hint: { label: 'Hint' },
-    undo: { label: 'Undo' }
-  };
   const [levelReward, setLevelReward] = useState<{ power: PowerKey; amount: number } | null>(null);
   const [rewardClaimed, setRewardClaimed] = useState(false);
 
@@ -196,36 +163,8 @@ export const App: React.FC = () => {
   // Derived unlocked levels (1 to 5) for settings board options
   const unlockedLevels = Array.from({ length: Math.min(5, maxUnlockedLevel) }).map((_, i) => i + 1);
 
-  // Achievement Unlocking Toast State
-  const [achievementToast, setAchievementToast] = useState<{ id: string; name: string; desc: string } | null>(null);
-  const achievementToastTimeoutRef = useRef<number | null>(null);
-
-  const unlockAchievement = (id: string) => {
-    try {
-      const stored = localStorage.getItem('vita_achievements');
-      const list: string[] = stored ? JSON.parse(stored) : [];
-      if (!list.includes(id)) {
-        const newList = [...list, id];
-        localStorage.setItem('vita_achievements', JSON.stringify(newList));
-        
-        const badgeInfo = achievementsList.find(a => a.id === id);
-        if (badgeInfo) {
-          // Play celebratory synthesized arpeggio
-          soundSynth.playAchievementUnlock();
-          
-          setAchievementToast({ id, name: badgeInfo.name, desc: badgeInfo.desc });
-          // Restart the dismiss timer so a rapid follow-up unlock (several can
-          // land on one victory) gets its full display time.
-          if (achievementToastTimeoutRef.current) clearTimeout(achievementToastTimeoutRef.current);
-          achievementToastTimeoutRef.current = window.setTimeout(() => {
-            setAchievementToast(null);
-          }, 5000);
-        }
-      }
-    } catch (e) {
-      console.warn("Could not save achievement:", e);
-    }
-  };
+  // Achievement unlocking + toast — see useAchievements.
+  const { achievementToast, unlockAchievement } = useAchievements();
 
   // Total tile count for progress bar (#17)
   const [totalTileCount, setTotalTileCount] = useState(0);
@@ -278,6 +217,21 @@ export const App: React.FC = () => {
 
   // Stop the stopwatch when the app unmounts
   useEffect(() => stopTimer, []);
+
+  // Pause the stopwatch while the app is hidden — background time shouldn't
+  // count against star ratings or best times (phone calls, app switches).
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden) {
+        stopTimer();
+      } else if (isPlaying && !showWinScreen && !showGameOver && timerRef.current === null) {
+        // Resume counting from the preserved elapsed value
+        timerRef.current = setInterval(() => setTimer(t => t + 1), 1000);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [isPlaying, showWinScreen, showGameOver]);
 
   // ---- Save & resume: a mid-level game survives closing the app ----
   // Mobile browsers kill background tabs freely, so the board, tray, timer and
@@ -548,7 +502,8 @@ export const App: React.FC = () => {
     }
 
     // Combo crunch: at x5+ the board shakes and the burst gets bigger.
-    if (newMultiplier >= 5) {
+    // (Skipped for players who prefer reduced motion.)
+    if (newMultiplier >= 5 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setShaking(true);
       if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
       shakeTimeoutRef.current = window.setTimeout(() => setShaking(false), 500);
@@ -592,16 +547,7 @@ export const App: React.FC = () => {
 
       // ---- Daily Challenge: update the streak, don't touch campaign progress ----
       if (dailyMode) {
-        const today = todayKey();
-        const d = loadDaily();
-        if (d.lastCompleted !== today) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const streak = d.lastCompleted === dateKey(yesterday) ? d.streak + 1 : 1;
-          const next = { lastCompleted: today, streak };
-          try { localStorage.setItem('vita_daily', JSON.stringify(next)); } catch { /* ignore */ }
-          setDaily(next);
-        }
+        completeToday();
         setBestRecord(null);
         setIsNewBest(false);
       } else {
@@ -899,6 +845,8 @@ export const App: React.FC = () => {
     ? realms[dailyRealmId as RealmId]
     : realmForLevel(currentLevel);
   const themeClass = `app-theme-${currentRealm.particleTheme} app-realm-${currentRealm.id}`;
+  // Filter-based realms borrow another realm's tile art (recolored via CSS)
+  const artRealmId = currentRealm.artRealm ?? currentRealm.id;
 
   const boardLeft = tiles.filter(t => !t.matched).length; // tiles still on the board
   const inPlay = boardLeft + tray.length;                 // not yet cleared (board + tray)
@@ -996,7 +944,7 @@ export const App: React.FC = () => {
                   <div key={i} className={`tray-slot ${t ? 'filled' : ''}`}>
                     {t && (
                       <div className="tray-tile" key={t.id}>
-                        <TileGlyph type={t.type} value={t.value} realm={currentRealm.id} />
+                        <TileGlyph type={t.type} value={t.value} realm={artRealmId} />
                       </div>
                     )}
                   </div>
@@ -1025,7 +973,7 @@ export const App: React.FC = () => {
             {tiles.length > 0 && (
               <MahjongBoard
                 tiles={tiles}
-                realm={currentRealm.id}
+                realm={artRealmId}
                 highContrast={highContrast}
                 hintedPair={hintedPair}
                 onTileClick={stableTileClick}
@@ -1239,7 +1187,7 @@ export const App: React.FC = () => {
                 {!rewardClaimed ? (
                   <>
                     <div className="reward-headline">
-                      🎁 Level reward: <strong>+{levelReward.amount} {POWER_META[levelReward.power].label}</strong>
+                      🎁 Level reward: <strong>+{levelReward.amount} {POWER_LABELS[levelReward.power]}</strong>
                     </div>
                     <div className="reward-buttons">
                       <button className="confirm-btn glassmorphism reward-claim-btn" onClick={claimReward}>
@@ -1249,7 +1197,7 @@ export const App: React.FC = () => {
                   </>
                 ) : (
                   <div className="reward-headline reward-done">
-                    ✅ Added <strong>{POWER_META[levelReward.power].label}</strong> to your boosters!
+                    ✅ Added <strong>{POWER_LABELS[levelReward.power]}</strong> to your boosters!
                   </div>
                 )}
               </div>

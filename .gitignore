@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# macOS Finder copy artifacts ("name 2.ext", "name 3.ext")
+* 2.*
+* 3.*
+* 2/
