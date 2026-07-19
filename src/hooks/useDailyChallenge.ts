@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 // Keys use the LOCAL date to match getDailyChallengeSeed(), so the streak day
 // and the daily board itself both roll over at the player's local midnight.
-export const dateKey = (d: Date) =>
+const dateKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 export const todayKey = () => dateKey(new Date()); // YYYY-MM-DD
 

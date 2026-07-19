@@ -2,8 +2,7 @@ import { useRef, useState } from 'react';
 import { achievementsList } from '../mahjong/achievements';
 import { soundSynth } from '../mahjong/soundSynth';
 
-export interface AchievementToast {
-  id: string;
+interface AchievementToast {
   name: string;
   desc: string;
 }
@@ -25,7 +24,7 @@ export function useAchievements() {
       const badgeInfo = achievementsList.find(a => a.id === id);
       if (badgeInfo) {
         soundSynth.playAchievementUnlock();
-        setAchievementToast({ id, name: badgeInfo.name, desc: badgeInfo.desc });
+        setAchievementToast({ name: badgeInfo.name, desc: badgeInfo.desc });
         if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
         toastTimeoutRef.current = window.setTimeout(() => setAchievementToast(null), 5000);
       }
