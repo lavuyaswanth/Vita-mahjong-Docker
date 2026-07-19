@@ -927,6 +927,12 @@ body {
 }
 .daily-challenge-btn:hover { transform: translateY(-2px); box-shadow: 0 9px 22px rgba(0, 0, 0, 0.5); }
 .daily-challenge-btn.done { opacity: 0.78; }
+/* Continue button: gold-tinted variant so the saved run stands out */
+.continue-game-btn {
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.32) 0%, rgba(120, 88, 20, 0.5) 100%);
+  border-color: rgba(255, 215, 0, 0.55);
+}
+.continue-game-btn .daily-sub { color: #eddba8; }
 .daily-icon { font-size: 26px; }
 .daily-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25; }
 .daily-title { font-size: 15px; font-weight: 800; letter-spacing: 0.3px; }
