@@ -2901,3 +2901,22 @@ body {
     grid-template-rows: repeat(30, 34px);
   }
 }
+
+/* ============================================================
+   REDUCED MOTION — keep gameplay feedback, drop the decoration
+   (petals, spinning plates, glow pulses, flip deal-in)
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .petal,
+  .zen-petal,
+  .relaxing-canopy,
+  .medallion-plate-outer,
+  .medallion-plate-inner,
+  .logo-glow-behind,
+  .play-btn-glow,
+  .medallion-glow {
+    animation: none !important;
+  }
+  .mahjong-tile.revealed { animation: none !important; opacity: 1; transform: translate(var(--shift-x), var(--shift-y)); }
+  .combo-popup { animation-duration: 0.01s !important; }
+}

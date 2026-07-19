@@ -218,6 +218,9 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
   // Listen for global tiles match custom events to trigger bursts
   useEffect(() => {
     const handleMatchEvent = (e: CustomEvent<{ id1: string; id2: string }>) => {
+      // Respect reduced-motion: matches still clear with sound/haptics, but no
+      // canvas spark bursts (CSS can't suppress JS-driven animation).
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const { id1, id2 } = e.detail;
       const canvas = canvasRef.current;
       const container = containerRef.current;
