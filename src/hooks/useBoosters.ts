@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 export type PowerKey = 'shuffle' | 'magnet' | 'hint' | 'undo';
-export type PowerCounts = Record<PowerKey, number>;
+type PowerCounts = Record<PowerKey, number>;
 
 export const POWER_LABELS: Record<PowerKey, string> = {
   shuffle: 'Shuffle',
