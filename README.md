@@ -53,6 +53,7 @@ This is the **Midnight (Ages 14+) edition** — a gothic "Creatures of Legend" t
 - **240-level campaign** with a difficulty ramp across five layouts and seven realms
 - **Press-and-hold peek** — hold a tile to reveal its face and what's underneath
 - **Boosters** — Shuffle, Magnet (pull tiles back from the tray), Hint, and Undo, each with a limited per-run stock
+- **Last-slot warning** — when only one tray slot is left and nothing on the board matches what's in it, a banner says so and points at the booster that can save the run
 - **IQ scoring + combos** — a score that starts at 100 and climbs toward 200 as you clear and chain matches
 - **Star ratings & best records** — 1–3 stars per level (speed + no-helpers), with per-level bests worth beating
 - **Daily Challenge + streak** — a full-variety seeded board each day that builds a daily streak
@@ -76,7 +77,7 @@ This is the **Midnight (Ages 14+) edition** — a gothic "Creatures of Legend" t
 
 | Mode | Description |
 |------|-------------|
-| **Campaign** | The main 240-level progression. Each level is a holder-tray board on one of five layouts, themed by the realm you've reached. Boosters are limited per run; clear the board to earn stars and unlock the next level. |
+| **Campaign** | The main 240-level progression. Each level is a holder-tray board on one of five layouts, themed by the realm you've reached. **PLAY** always resumes at your current level; boosters are limited per run, and clearing the board earns stars and unlocks the next level. |
 | **Daily Challenge** | A seeded puzzle unique to each calendar day, using full tile variety for a fair test. Completing it advances your day streak (a missed day resets it). |
 
 ---
@@ -283,7 +284,7 @@ The Nginx configuration includes:
 2. **Only free tiles can be taken** — A tile is "free" when:
    - No tile is stacked directly on top of it (higher Z-layer overlap)
    - It has at least one open side (no neighbor tile on its immediate left **or** right at the same layer)
-3. **Don't overfill the tray** — four unmatched tiles in the tray ends the run (spend an Undo to recover).
+3. **Don't overfill the tray** — four unmatched tiles in the tray ends the run (spend an Undo to recover). At three tiles with no match in sight, a warning banner appears so the loss never comes as a surprise.
 4. **Clear every tile to win!**
 
 ### Special Matching Rules

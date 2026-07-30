@@ -1048,13 +1048,19 @@ body {
   z-index: 40;
 }
 
-/* Dynamic grid spacing for exact stacking coordinates */
+/* Dynamic grid spacing for exact stacking coordinates.
+   --cell-w / --cell-h are the single source of truth for cell geometry: the
+   grid-template below uses them, and computeFitTransform in MahjongBoard.tsx
+   reads them back off this element via getComputedStyle. Change them here only
+   — no matching constant to update in the TypeScript. */
 .mahjong-grid {
   display: grid;
   /* Cells are half-tile units (a tile spans 2x2). Rows are taller than columns
      so each tile renders TALLER THAN WIDE, like a real mahjong tile (~4:5). */
-  grid-template-columns: repeat(30, 30px);
-  grid-template-rows: repeat(18, 38px);
+  --cell-w: 30px;
+  --cell-h: 38px;
+  grid-template-columns: repeat(30, var(--cell-w));
+  grid-template-rows: repeat(18, var(--cell-h));
   gap: 0;
   position: absolute;
   /* Centering the board inside container */
@@ -1067,8 +1073,8 @@ body {
 
 @media (max-width: 1024px) {
   .mahjong-grid {
-    grid-template-columns: repeat(30, 24px);
-    grid-template-rows: repeat(18, 30px);
+    --cell-w: 24px;
+    --cell-h: 30px;
   }
 }
 
@@ -2083,6 +2089,30 @@ body {
   white-space: nowrap;
 }
 
+/* Dead-end nudge under the progress bar — tells the player no match is
+   available instead of letting them fill the tray and lose blind. */
+.stuck-banner {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffe0b2;
+  background: rgba(120, 60, 10, 0.55);
+  border-bottom: 1px solid rgba(255, 183, 77, 0.35);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  animation: stuckPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes stuckPulse {
+  0%, 100% { background: rgba(120, 60, 10, 0.45); }
+  50%      { background: rgba(160, 82, 14, 0.7); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stuck-banner { animation: none; }
+}
+
 /* ==========================================================================
    PHASE 1 — COUNTDOWN TIMER (#4)
    ========================================================================== */
@@ -2596,14 +2626,16 @@ body {
 
 /* Portrait grid layout: transposes columns and rows dynamically */
 .mahjong-grid.portrait-grid {
-  grid-template-columns: repeat(18, 32px);
-  grid-template-rows: repeat(30, 40px);
+  --cell-w: 32px;
+  --cell-h: 40px;
+  grid-template-columns: repeat(18, var(--cell-w));
+  grid-template-rows: repeat(30, var(--cell-h));
 }
 
 @media (max-width: 1024px) {
   .mahjong-grid.portrait-grid {
-    grid-template-columns: repeat(18, 27px);
-    grid-template-rows: repeat(30, 34px);
+    --cell-w: 27px;
+    --cell-h: 34px;
   }
 }
 

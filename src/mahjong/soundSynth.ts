@@ -43,8 +43,15 @@ class SoundSynthesizer {
     }
   }
 
-  // Set general configuration
+  // Set general configuration.
+  // Gains are clamped here as well as at the call site: a NaN reaching a
+  // WebAudio gain node throws and takes down every later sound with it.
   public configure(enabled: boolean, sfxVol: number, ambVol: number) {
+    const clamp = (v: number, fallback: number) =>
+      Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : fallback;
+    sfxVol = clamp(sfxVol, 0.5);
+    ambVol = clamp(ambVol, 0.3);
+
     this.enabled = enabled;
     this.sfxVolume = sfxVol;
     this.ambientVolume = ambVol;

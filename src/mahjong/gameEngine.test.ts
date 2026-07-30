@@ -249,3 +249,56 @@ describe('getDailyChallengeSeed', () => {
     expect(a).toBe(b);
   });
 });
+
+// The blocking index added to buildBoard is a pure optimization: a given seed
+// must keep producing the exact same board, or seeded Daily Challenges stop
+// agreeing between players and per-level best records lose their meaning.
+// These fingerprints were captured from the pre-optimization generator.
+describe('buildBoard determinism', () => {
+  const fingerprint = (layout: LayoutName, seed: number, maxTypes?: number): string => {
+    const tiles = buildBoard(layout, seed, maxTypes);
+    // Positions are fixed by the layout, so the face assignment is the payload.
+    let hash = 0;
+    for (const t of tiles) {
+      const s = `${t.x},${t.y},${t.z},${t.type},${t.value},${t.isFree ? 1 : 0}`;
+      for (let i = 0; i < s.length; i++) hash = (Math.imul(hash, 31) + s.charCodeAt(i)) | 0;
+    }
+    return `${tiles.length}:${hash}`;
+  };
+
+  it('is stable for a seed across repeated calls', () => {
+    for (const layout of LAYOUTS) {
+      const a = fingerprint(layout, 12387, 20);
+      const b = fingerprint(layout, 12387, 20);
+      expect(b, layout).toBe(a);
+    }
+  });
+
+  it('matches the recorded pre-optimization fingerprints', () => {
+    // Captured from the generator BEFORE the blocking index landed (its output
+    // was verified byte-identical across 325 layout/seed/maxTypes combinations
+    // at the time). Update these only for a deliberate generator change.
+    expect(fingerprint('Garden', 12387, 11)).toBe('52:-540221003');
+    expect(fingerprint('Pagoda', 12387, 11)).toBe('70:-2074185564');
+    expect(fingerprint('Pyramids', 12387, 11)).toBe('98:-844772979');
+    expect(fingerprint('Butterfly', 12387, 11)).toBe('122:-1789403444');
+    expect(fingerprint('Turtle', 12387, 11)).toBe('132:1032757177');
+    expect(fingerprint('Turtle', 61767, 0)).toBe('132:-1000051187');
+    expect(fingerprint('Butterfly', 1000, 0)).toBe('122:1215542774');
+  });
+
+  it('gives different boards for different seeds', () => {
+    const a = fingerprint('Turtle', 1000, 0);
+    const b = fingerprint('Turtle', 1001, 0);
+    expect(a).not.toBe(b);
+  });
+
+  it('caches the blocking index without corrupting later builds', () => {
+    // The index is memoized per layout, so a second build must not inherit
+    // decremented counters from the first.
+    const first = fingerprint('Turtle', 555, 0);
+    buildBoard('Turtle', 777, 0);
+    buildBoard('Garden', 999, 12);
+    expect(fingerprint('Turtle', 555, 0)).toBe(first);
+  });
+});
