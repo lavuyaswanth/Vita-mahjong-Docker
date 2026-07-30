@@ -8,7 +8,7 @@ import {
   getDailyChallengeSeed
 } from './mahjong/gameEngine';
 import type { TileState } from './mahjong/gameEngine';
-import { layouts, LAYOUT_CYCLE, layoutForLevel, levelForLayout } from './mahjong/layouts';
+import { layouts, LAYOUT_CYCLE, layoutForLevel, levelForLayout , MAX_LEVEL } from './mahjong/layouts';
 import {
   lsGet, lsSet, lsInt, lsNumber, lsSetJson, lsNumberMap
 } from './mahjong/storage';
@@ -72,7 +72,7 @@ export const App: React.FC = () => {
   const levelParam = (() => {
     const raw = urlParams.get('level');
     const n = raw ? parseInt(raw, 10) : NaN;
-    return Number.isFinite(n) && n >= 1 && n <= 240 ? n : null;
+    return Number.isFinite(n) && n >= 1 && n <= MAX_LEVEL ? n : null;
   })();
   const autoStart = botMode || levelParam !== null || dailyParam;
 
@@ -154,12 +154,12 @@ export const App: React.FC = () => {
     soundSynth.playAchievementUnlock();
   };
 
-  // 240 Levels Progression (R4)
+  // Campaign level progression (see MAX_LEVEL)
   const [currentLevel, setCurrentLevel] = useState<number>(
-    () => levelParam ?? lsInt('vita_current_level', 1, 1, 240)
+    () => levelParam ?? lsInt('vita_current_level', 1, 1, MAX_LEVEL)
   );
   const [maxUnlockedLevel, setMaxUnlockedLevel] = useState<number>(
-    () => lsInt('vita_max_unlocked_level', 1, 1, 240)
+    () => lsInt('vita_max_unlocked_level', 1, 1, MAX_LEVEL)
   );
 
   // Derived unlocked levels (1 to 5) for settings board options
@@ -488,9 +488,9 @@ export const App: React.FC = () => {
     setBestRecord(merged);
     setIsNewBest(beat);
 
-    // Progressive Level Unlock (Up to 240 Levels, R4)
+    // Progressive level unlock
     const nextLevel = currentLevel + 1;
-    if (nextLevel <= 240 && nextLevel > maxUnlockedLevel) {
+    if (nextLevel <= MAX_LEVEL && nextLevel > maxUnlockedLevel) {
       setMaxUnlockedLevel(nextLevel);
       lsSet('vita_max_unlocked_level', String(nextLevel));
     }
@@ -823,13 +823,16 @@ export const App: React.FC = () => {
   // events, so a stray tap can't reach the board behind the overlay.
   const modalOpen = isSettingsOpen || showWinScreen || showGameOver || showTutorial;
 
-  // Separate assertive region, for the one thing that has no other channel: an
-  // achievement unlock, which is otherwise only a visual toast.
+  // Separate assertive region. Its real remaining scope is narrow: MID-PLAY
+  // achievement unlocks, which means combo_master alone.
   //
-  // End-of-run is NOT here. The victory and game-over dialogs are
-  // role="alertdialog" with aria-describedby pointing at their own summary, so
-  // opening one already announces it — through the more conventional channel.
-  // Saying nearly the same sentence here too meant hearing the result twice.
+  // Everything else is covered elsewhere. End-of-run is announced by the
+  // victory and game-over dialogs, which are role="alertdialog" with
+  // aria-describedby pointing at their own summary — repeating it here meant
+  // hearing the result twice. The achievements earned AT victory are listed
+  // inside that dialog too, because its aria-modal hides this region from
+  // screen readers for as long as it is open. So this region only ever gets
+  // heard when no dialog is up.
   const alertNarration = achievementToast
     ? `Achievement unlocked: ${achievementToast.name}. ${achievementToast.desc}`
     : '';

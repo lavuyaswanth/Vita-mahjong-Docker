@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { soundSynth } from '../mahjong/soundSynth';
 import { achievementsList } from '../mahjong/achievements';
+import { MAX_LEVEL } from '../mahjong/layouts';
 import { lsStringArray, lsSetJson } from '../mahjong/storage';
 import ModalShell from './ModalShell';
 import logoImg from '../assets/logo.webp';
@@ -167,7 +168,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <div className="play-btn-text-group">
               <span className="play-btn-primary">PLAY</span>
               <span className="play-btn-secondary">
-                {currentLevel > 1 ? `Level ${currentLevel} of 240` : 'Mahjong Solitaire'}
+                {currentLevel > 1 ? `Level ${currentLevel} of ${MAX_LEVEL}` : 'Mahjong Solitaire'}
               </span>
             </div>
           </button>
