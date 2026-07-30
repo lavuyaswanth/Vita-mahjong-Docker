@@ -1,5 +1,5 @@
 import React from 'react';
-import { layouts } from '../mahjong/layouts';
+import { layouts, MAX_LEVEL } from '../mahjong/layouts';
 import type { LayoutName } from '../mahjong/layouts';
 import { nextRealmChange } from '../mahjong/realms';
 import { POWER_LABELS } from '../hooks/useBoosters';
@@ -8,8 +8,6 @@ import { formatTime } from '../mahjong/formatTime';
 import type { LevelRecord } from '../mahjong/records';
 import ModalShell from './ModalShell';
 import { EarnedStampIcon, BackIcon } from './SvgIcons';
-
-const MAX_LEVEL = 240;
 
 // Brain-tier label for the final IQ (genius ceiling = 200)
 const iqTier = (iq: number): string => {

@@ -38,4 +38,12 @@ describe('achievement catalogue', () => {
     const ids = achievementsList.map(a => a.id);
     expect(new Set(ids).size, JSON.stringify(ids)).toBe(ids.length);
   });
+
+  it('has no duplicate names', () => {
+    // VictoryModal lists a batch of unlocks keyed by name, so two badges
+    // sharing one would collide as React keys — dropping a row that a player
+    // just earned, and only when both unlock on the same victory.
+    const names = achievementsList.map(a => a.name);
+    expect(new Set(names).size, JSON.stringify(names)).toBe(names.length);
+  });
 });
