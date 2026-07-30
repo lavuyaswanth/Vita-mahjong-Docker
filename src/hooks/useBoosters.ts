@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { lsNumberMap, lsSetJson } from '../mahjong/storage';
 
 export type PowerKey = 'shuffle' | 'magnet' | 'hint' | 'undo';
@@ -34,8 +34,16 @@ export function useBoosters(botMode: boolean) {
     return counts;
   });
 
+  // Persist on change only. The first run would write back the counts just READ
+  // from storage — a no-op that clobbers anything landing between state init and
+  // this effect flushing (a second tab, or a restore), for no benefit.
+  const hydrated = useRef(false);
   useEffect(() => {
     if (botMode) return;
+    if (!hydrated.current) {
+      hydrated.current = true;
+      return;
+    }
     lsSetJson('vita_power_counts_v2', powerCounts);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [powerCounts]);
