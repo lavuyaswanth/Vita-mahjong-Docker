@@ -1048,13 +1048,19 @@ body {
   z-index: 40;
 }
 
-/* Dynamic grid spacing for exact stacking coordinates */
+/* Dynamic grid spacing for exact stacking coordinates.
+   --cell-w / --cell-h are the single source of truth for cell geometry: the
+   grid-template below uses them, and computeFitTransform in MahjongBoard.tsx
+   reads them back off this element via getComputedStyle. Change them here only
+   — no matching constant to update in the TypeScript. */
 .mahjong-grid {
   display: grid;
   /* Cells are half-tile units (a tile spans 2x2). Rows are taller than columns
      so each tile renders TALLER THAN WIDE, like a real mahjong tile (~4:5). */
-  grid-template-columns: repeat(30, 30px);
-  grid-template-rows: repeat(18, 38px);
+  --cell-w: 30px;
+  --cell-h: 38px;
+  grid-template-columns: repeat(30, var(--cell-w));
+  grid-template-rows: repeat(18, var(--cell-h));
   gap: 0;
   position: absolute;
   /* Centering the board inside container */
@@ -1067,8 +1073,8 @@ body {
 
 @media (max-width: 1024px) {
   .mahjong-grid {
-    grid-template-columns: repeat(30, 24px);
-    grid-template-rows: repeat(18, 30px);
+    --cell-w: 24px;
+    --cell-h: 30px;
   }
 }
 
@@ -2620,14 +2626,16 @@ body {
 
 /* Portrait grid layout: transposes columns and rows dynamically */
 .mahjong-grid.portrait-grid {
-  grid-template-columns: repeat(18, 32px);
-  grid-template-rows: repeat(30, 40px);
+  --cell-w: 32px;
+  --cell-h: 40px;
+  grid-template-columns: repeat(18, var(--cell-w));
+  grid-template-rows: repeat(30, var(--cell-h));
 }
 
 @media (max-width: 1024px) {
   .mahjong-grid.portrait-grid {
-    grid-template-columns: repeat(18, 27px);
-    grid-template-rows: repeat(30, 34px);
+    --cell-w: 27px;
+    --cell-h: 34px;
   }
 }
 

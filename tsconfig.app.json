@@ -21,5 +21,9 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  /* Finder/iCloud on this Mac keeps regenerating "name 2.ext" copies inside the
+     repo. .gitignore hides them from commits, but tsc still typechecked them and
+     stale drifted copies broke the build. Keep them out of the program too. */
+  "exclude": ["src/**/* 2.*", "src/**/* 3.*"]
 }

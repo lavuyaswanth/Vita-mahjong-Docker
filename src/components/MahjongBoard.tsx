@@ -5,9 +5,12 @@ import { ZoomInIcon, ZoomOutIcon, ResetZoomIcon } from './SvgIcons';
 
 interface MahjongBoardProps {
   tiles: TileState[];
+  // Identifies the current run. Changes only when a new board is dealt (new
+  // level, restart, resume) — the signal for re-fitting the board to screen.
+  boardId: number;
   realm: string;
   highContrast: boolean;
-  hintedPair: [string, string] | null;
+  hintedPair: string[] | null;
   onTileClick: (tile: TileState) => void;
   bgTheme: string;
 }
@@ -29,6 +32,7 @@ interface Particle {
 
 export const MahjongBoard: React.FC<MahjongBoardProps> = ({
   tiles,
+  boardId,
   realm,
   highContrast,
   hintedPair,
@@ -213,7 +217,16 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
       burstRunningRef.current = false;
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
+      // Retire every in-flight particle. The loop is what sets `active = false`
+      // (at end of life), so cancelling it mid-burst would strand those slots as
+      // permanently active — and spawnBurst only reuses inactive ones. Realms
+      // change every few levels, so a few mid-burst theme switches would eat the
+      // pool and bursts would silently stop appearing.
+      const pool = particlesPoolRef.current;
+      for (let i = 0; i < pool.length; i++) pool[i].active = false;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     };
   }, [bgTheme]);
 
@@ -297,6 +310,22 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     };
   }, [bgTheme]);
 
+  // Half-tile cell size straight off the live grid element. The fallbacks are
+  // the landscape desktop values and only apply before the grid has mounted (or
+  // if the custom properties ever go missing).
+  const gridRef = useRef<HTMLDivElement>(null);
+  const readCellSize = (): { cellW: number; cellH: number } => {
+    const el = gridRef.current;
+    if (!el) return { cellW: 30, cellH: 38 };
+    const style = getComputedStyle(el);
+    const cellW = parseFloat(style.getPropertyValue('--cell-w'));
+    const cellH = parseFloat(style.getPropertyValue('--cell-h'));
+    return {
+      cellW: Number.isFinite(cellW) && cellW > 0 ? cellW : 30,
+      cellH: Number.isFinite(cellH) && cellH > 0 ? cellH : 38
+    };
+  };
+
   // Compute fit-to-screen transform by fitting the ACTUAL tile bounding box
   // (not the full 30x18 grid) so tiles render as large as possible and stay centered.
   const computeFitTransform = (): { zoom: number; panX: number; panY: number } => {
@@ -306,16 +335,11 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     const containerWidth = containerRef.current.clientWidth;
     const containerHeight = containerRef.current.clientHeight;
 
-    // Grid cell sizes must match the CSS grid-template (and its 1024px breakpoint):
-    // landscape 30x38 (24x30 small), portrait 32x40 (27x34 small). Rows taller
-    // than columns => tiles render taller than wide.
-    const isSmallScreen = window.innerWidth <= 1024;
-    let cellW = isSmallScreen ? 24 : 30;
-    let cellH = isSmallScreen ? 30 : 38;
-    if (isPortrait) {
-      cellW = isSmallScreen ? 27 : 32;
-      cellH = isSmallScreen ? 34 : 40;
-    }
+    // Cell geometry comes from the grid's own --cell-w / --cell-h, so the
+    // orientation variants and the 1024px breakpoint are defined once in
+    // index.css. Duplicating them here meant a CSS tweak silently broke board
+    // fitting with nothing to catch it.
+    const { cellW, cellH } = readCellSize();
 
     // Bounding box of all tiles in grid units (each tile spans 2 units)
     const active = tiles.filter(t => !t.matched);
@@ -360,34 +384,34 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     setPan({ x: panX, y: panY });
   };
 
-  // Auto-fit board on mount or layout change/restart
+  // The resize handler must see the current tiles/orientation, but re-registering
+  // it whenever `tiles` changes meant a listener teardown on every single tap.
+  // Point it at a ref instead and register once.
+  const applyFitRef = useRef(applyFit);
+  useEffect(() => { applyFitRef.current = applyFit; });
+
   useEffect(() => {
-    const unmatchedCount = tiles.filter(t => !t.matched).length;
-    const isNewGame = unmatchedCount === tiles.length;
-
-    let timer: number | undefined;
-    const nextPortrait = window.innerHeight > window.innerWidth;
-    const portraitTimer = setTimeout(() => {
-      setIsPortrait(nextPortrait);
-    }, 0);
-
-    if (isNewGame) {
-      timer = window.setTimeout(() => applyFit(), 60);
-    }
-
     const handleResize = () => {
       setIsPortrait(window.innerHeight > window.innerWidth);
-      applyFit();
+      applyFitRef.current();
     };
-
     window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Auto-fit when a NEW board appears (new level, restart, resume) — keyed off
+  // boardId rather than `tiles`, which also changes on every match.
+  useEffect(() => {
+    const portraitTimer = window.setTimeout(() => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    }, 0);
+    // Deferred so the grid has laid out (and --cell-w/--cell-h resolve) first.
+    const fitTimer = window.setTimeout(() => applyFitRef.current(), 60);
     return () => {
       clearTimeout(portraitTimer);
-      if (timer) clearTimeout(timer);
-      window.removeEventListener('resize', handleResize);
+      clearTimeout(fitTimer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tiles]);
+  }, [boardId]);
 
   // Zoom controls
   const MIN_ZOOM = 0.35;
@@ -536,6 +560,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
 
         {/* 3D stacked Board Grid */}
         <div
+          ref={gridRef}
           className={`mahjong-grid ${isPortrait ? 'portrait-grid' : ''}`}
           style={{
             transform: `translate(calc(-50% + ${pan.x}px), calc(-50% + ${pan.y}px)) scale(${zoom})`,
@@ -544,7 +569,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
           }}
         >
           {tiles.map(tile => {
-            const isHinted = hintedPair !== null && (tile.id === hintedPair[0] || tile.id === hintedPair[1]);
+            const isHinted = hintedPair !== null && hintedPair.includes(tile.id);
             return (
               <Tile
                 key={tile.id}
