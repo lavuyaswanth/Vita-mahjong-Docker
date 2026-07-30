@@ -15,6 +15,8 @@ import { useAchievements } from './hooks/useAchievements';
 import { useBoosters, POWER_LABELS } from './hooks/useBoosters';
 import type { PowerKey } from './hooks/useBoosters';
 import MahjongBoard from './components/MahjongBoard';
+import GameClock from './components/GameClock';
+import { formatTime } from './mahjong/formatTime';
 import { TileGlyph } from './components/Tile';
 import MainMenu from './components/MainMenu';
 import SettingsModal from './components/SettingsModal';
@@ -44,8 +46,34 @@ const computeStarRating = (time: number, hintsUsed: number, shufflesUsed: number
   return 1;
 };
 
-// Bump this whenever the build changes so it's easy to confirm the deploy updated
-const APP_VERSION = 'v0.0.3';
+// Stamped from package.json at build time (see vite.config.ts) so the badge can
+// always be trusted to tell you which build you're looking at.
+const APP_VERSION = `v${__APP_VERSION__}`;
+
+// --- localStorage helpers -------------------------------------------------
+// Storage throws outright in Safari private mode and when a browser blocks
+// site data, so every access goes through these. A corrupt or missing value
+// falls back to the default rather than propagating NaN into game state.
+const lsGet = (key: string): string | null => {
+  try { return localStorage.getItem(key); } catch { return null; }
+};
+const lsSet = (key: string, value: string): void => {
+  try { localStorage.setItem(key, value); } catch { /* storage unavailable */ }
+};
+const lsNumber = (key: string, fallback: number, min: number, max: number): number => {
+  const raw = lsGet(key);
+  if (raw === null) return fallback;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+};
+const lsInt = (key: string, fallback: number, min: number, max: number): number => {
+  const raw = lsGet(key);
+  if (raw === null) return fallback;
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, Math.trunc(n)));
+};
 
 export const App: React.FC = () => {
   // Auto-play bot flag (?bot=1) — drives the game itself for QA / simulator demos.
@@ -77,16 +105,18 @@ export const App: React.FC = () => {
   // and the auto-play bot so the board is visible immediately.
   const [showTutorial, setShowTutorial] = useState<boolean>(() => {
     if (autoStart) return false;
-    try { return localStorage.getItem('vita_tutorial_seen') !== 'true'; } catch { return true; }
+    return lsGet('vita_tutorial_seen') !== 'true';
   });
   const dismissTutorial = () => {
     soundSynth.playClick();
     setShowTutorial(false);
-    try { localStorage.setItem('vita_tutorial_seen', 'true'); } catch { /* ignore */ }
+    lsSet('vita_tutorial_seen', 'true');
   };
 
   // Game Helpers
-  const [hintedPair, setHintedPair] = useState<[string, string] | null>(null);
+  // Tile ids currently highlighted by a Hint. A list rather than a pair because
+  // a tray-clearing hint points at a single tile.
+  const [hintedPair, setHintedPair] = useState<string[] | null>(null);
   const [possibleMovesCount, setPossibleMovesCount] = useState<number>(0);
   const [showWinScreen, setShowWinScreen] = useState(false);
 
@@ -124,19 +154,12 @@ export const App: React.FC = () => {
   };
 
   // 240 Levels Progression (R4)
-  const [currentLevel, setCurrentLevel] = useState<number>(() => {
-    if (levelParam !== null) return levelParam;
-    try {
-      const stored = localStorage.getItem('vita_current_level');
-      return stored ? parseInt(stored) : 1;
-    } catch { return 1; }
-  });
-  const [maxUnlockedLevel, setMaxUnlockedLevel] = useState<number>(() => {
-    try {
-      const stored = localStorage.getItem('vita_max_unlocked_level');
-      return stored ? parseInt(stored) : 1;
-    } catch { return 1; }
-  });
+  const [currentLevel, setCurrentLevel] = useState<number>(
+    () => levelParam ?? lsInt('vita_current_level', 1, 1, 240)
+  );
+  const [maxUnlockedLevel, setMaxUnlockedLevel] = useState<number>(
+    () => lsInt('vita_max_unlocked_level', 1, 1, 240)
+  );
 
   // Derived unlocked levels (1 to 5) for settings board options
   const unlockedLevels = Array.from({ length: Math.min(5, maxUnlockedLevel) }).map((_, i) => i + 1);
@@ -148,69 +171,56 @@ export const App: React.FC = () => {
   const [totalTileCount, setTotalTileCount] = useState(0);
 
   // Settings preferences (synced to LocalStorage)
-  const [bgTheme, setBgTheme] = useState<string>(() => localStorage.getItem('vita_theme') || 'zen');
-  const [highContrast, setHighContrast] = useState<boolean>(() => {
-    return localStorage.getItem('vita_high_contrast') === 'true';
-  });
-  const [sfxVolume, setSfxVolume] = useState<number>(() => {
-    const val = localStorage.getItem('vita_sfx_vol');
-    return val !== null ? parseFloat(val) : 0.5;
-  });
-  const [ambientVolume, setAmbientVolume] = useState<number>(() => {
-    const val = localStorage.getItem('vita_ambient_vol');
-    return val !== null ? parseFloat(val) : 0.3;
-  });
-  const [isAmbientEnabled, setIsAmbientEnabled] = useState<boolean>(() => {
-    return localStorage.getItem('vita_ambient_enabled') === 'true';
-  });
+  const [bgTheme, setBgTheme] = useState<string>(() => lsGet('vita_theme') || 'zen');
+  const [highContrast, setHighContrast] = useState<boolean>(
+    () => lsGet('vita_high_contrast') === 'true'
+  );
+  // Volumes are clamped to 0–1: a corrupt value reaching soundSynth.configure
+  // would hit setValueAtTime(NaN), which throws and kills all audio.
+  const [sfxVolume, setSfxVolume] = useState<number>(
+    () => lsNumber('vita_sfx_vol', 0.5, 0, 1)
+  );
+  const [ambientVolume, setAmbientVolume] = useState<number>(
+    () => lsNumber('vita_ambient_vol', 0.3, 0, 1)
+  );
+  const [isAmbientEnabled, setIsAmbientEnabled] = useState<boolean>(
+    () => lsGet('vita_ambient_enabled') === 'true'
+  );
 
-  // Stopwatch state
-  const [timer, setTimer] = useState<number>(0);
-  const timerRef = useRef<number | null>(null);
-
-  // Sync settings to localstorage
-  useEffect(() => {
-    localStorage.setItem('vita_theme', bgTheme);
-    localStorage.setItem('vita_high_contrast', String(highContrast));
-    localStorage.setItem('vita_sfx_vol', String(sfxVolume));
-    localStorage.setItem('vita_ambient_vol', String(ambientVolume));
-    localStorage.setItem('vita_ambient_enabled', String(isAmbientEnabled));
-    soundSynth.configure(true, sfxVolume, ambientVolume);
-  }, [bgTheme, highContrast, sfxVolume, ambientVolume, isAmbientEnabled]);
-
-  // Start stopwatch timer (from 0, or from a resumed save's elapsed time)
+  // One identity for "a new board was dealt", bumped by initGame and resumeGame.
+  // It remounts <GameClock> (so it starts from the resumed elapsed time) and
+  // tells MahjongBoard when to re-fit the board to the screen.
+  const [run, setRun] = useState<{ id: number; startAt: number }>({ id: 0, startAt: 0 });
+  // <GameClock> owns the per-second state so a tick doesn't re-render the board;
+  // `elapsedRef` is the elapsed value everything else reads.
+  const elapsedRef = useRef<number>(0);
   const startTimer = (initialSeconds = 0) => {
-    stopTimer();
-    setTimer(initialSeconds);
-    timerRef.current = setInterval(() => {
-      setTimer(t => t + 1);
-    }, 1000);
+    elapsedRef.current = initialSeconds;
+    setRun(r => ({ id: r.id + 1, startAt: initialSeconds }));
   };
+  // The clock runs whenever a live run is on screen; there is no separate stop
+  // call to forget, so victory/game-over/menu all pause it by construction.
+  const clockRunning = isPlaying && !showWinScreen && !showGameOver;
+  // Frozen elapsed time for the victory modal (the clock has stopped by then).
+  const [finalTime, setFinalTime] = useState(0);
 
-  const stopTimer = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-
-  // Stop the stopwatch when the app unmounts
-  useEffect(() => stopTimer, []);
-
-  // Pause the stopwatch while the app is hidden — background time shouldn't
-  // count against star ratings or best times (phone calls, app switches).
+  // Sync settings to localstorage on change. The first run only configures
+  // audio: these values were just READ from storage, so writing them back on
+  // mount is a no-op that clobbers any write landing between state init and
+  // this effect flushing.
+  const settingsHydrated = useRef(false);
   useEffect(() => {
-    const onVisibility = () => {
-      if (document.hidden) {
-        stopTimer();
-      } else if (isPlaying && !showWinScreen && !showGameOver && timerRef.current === null) {
-        // Resume counting from the preserved elapsed value
-        timerRef.current = setInterval(() => setTimer(t => t + 1), 1000);
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, [isPlaying, showWinScreen, showGameOver]);
+    soundSynth.configure(true, sfxVolume, ambientVolume);
+    if (!settingsHydrated.current) {
+      settingsHydrated.current = true;
+      return;
+    }
+    lsSet('vita_theme', bgTheme);
+    lsSet('vita_high_contrast', String(highContrast));
+    lsSet('vita_sfx_vol', String(sfxVolume));
+    lsSet('vita_ambient_vol', String(ambientVolume));
+    lsSet('vita_ambient_enabled', String(isAmbientEnabled));
+  }, [bgTheme, highContrast, sfxVolume, ambientVolume, isAmbientEnabled]);
 
   // ---- Save & resume: a mid-level game survives closing the app ----
   // Mobile browsers kill background tabs freely, so the board, tray, timer and
@@ -229,23 +239,40 @@ export const App: React.FC = () => {
     hintsUsed: number;
     shufflesUsed: number;
   };
+  // A tile is only usable if every field the board maths reads is present and
+  // numeric. Mobile browsers can kill the tab mid-setItem, and a truncated
+  // write parses fine as JSON while leaving tiles with no x/y/z — which then
+  // crashes recalculateFreeState on resume instead of at the write.
+  const isValidSavedTile = (t: unknown): t is SavedTile => {
+    if (!t || typeof t !== 'object') return false;
+    const c = t as Record<string, unknown>;
+    return Number.isFinite(c.x) && Number.isFinite(c.y) && Number.isFinite(c.z) &&
+      typeof c.id === 'string' && c.id.length > 0 &&
+      typeof c.type === 'string' &&
+      Number.isFinite(c.value) &&
+      typeof c.matched === 'boolean';
+  };
   const loadSavedGame = (): SavedGame | null => {
     try {
-      const raw = localStorage.getItem(SAVE_KEY);
+      const raw = lsGet(SAVE_KEY);
       if (!raw) return null;
       const s = JSON.parse(raw) as SavedGame;
-      if (!s || !Array.isArray(s.tiles) || s.tiles.length === 0 || !layouts[s.layout]) return null;
-      if (!Array.isArray(s.trayIds) || s.tiles.every(t => t.matched)) return null;
+      if (!s || typeof s !== 'object') return null;
+      if (!Array.isArray(s.tiles) || s.tiles.length === 0 || !layouts[s.layout]) return null;
+      if (!s.tiles.every(isValidSavedTile)) return null;
+      if (!Array.isArray(s.trayIds) || !s.trayIds.every(id => typeof id === 'string')) return null;
+      if (s.tiles.every(t => t.matched)) return null;
+      // Scalars feed the timer, score and star rating; a bad one would silently
+      // poison this level's result.
+      if (!Number.isFinite(s.level) || !Number.isFinite(s.timer) || !Number.isFinite(s.score) ||
+          !Number.isFinite(s.moveCount) || !Number.isFinite(s.hintsUsed) ||
+          !Number.isFinite(s.shufflesUsed)) return null;
       return s;
     } catch { return null; }
   };
-  const clearSavedGame = () => { try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ } };
+  const clearSavedGame = () => { try { localStorage.removeItem(SAVE_KEY); } catch { /* storage unavailable */ } };
   // Drives the menu's Continue button; refreshed when returning to the menu.
   const [savedGame, setSavedGame] = useState<SavedGame | null>(() => loadSavedGame());
-
-  // Mirror the live timer into a ref so saving doesn't re-run every second.
-  const timerValRef = useRef(0);
-  useEffect(() => { timerValRef.current = timer; }, [timer]);
 
   const buildSave = (): SavedGame | null => {
     if (!isPlaying || botMode || showWinScreen || tiles.length === 0) return null;
@@ -255,7 +282,7 @@ export const App: React.FC = () => {
       layout: activeLayout,
       tiles: tiles.map(({ x, y, z, id, type, value, matched }) => ({ x, y, z, id, type, value, matched })),
       trayIds: tray.map(t => t.id),
-      timer: timerValRef.current,
+      timer: elapsedRef.current,
       score,
       moveCount,
       hintsUsed: hintsUsedRef.current,
@@ -263,22 +290,31 @@ export const App: React.FC = () => {
     };
   };
 
-  // Persist after every board/tray change, plus on backgrounding (captures the
-  // latest timer right before a mobile browser suspends or kills the tab).
+  const persistSave = () => {
+    const save = buildSave();
+    if (save) lsSet(SAVE_KEY, JSON.stringify(save));
+  };
+
+  // Persist after every board/tray change.
   useEffect(() => {
-    const persist = () => {
-      const save = buildSave();
-      if (save) { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch { /* ignore */ } }
-    };
-    persist();
-    document.addEventListener('visibilitychange', persist);
-    window.addEventListener('pagehide', persist);
-    return () => {
-      document.removeEventListener('visibilitychange', persist);
-      window.removeEventListener('pagehide', persist);
-    };
+    persistSave();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tiles, tray, isPlaying, showWinScreen]);
+
+  // Single app-lifecycle listener. The stopwatch pauses itself inside
+  // <GameClock> and keeps elapsedRef current on every tick, so this only has to
+  // flush the save before a mobile browser suspends or kills the tab — no
+  // ordering dependency between a timer listener and a save listener.
+  useEffect(() => {
+    const onHide = () => { if (document.hidden) persistSave(); };
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', persistSave);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', persistSave);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tiles, tray, isPlaying, showWinScreen, currentLevel, activeLayout, moveCount]);
 
   // Rebuild full game state from a save and jump straight into play.
   const resumeGame = (save: SavedGame) => {
@@ -341,7 +377,7 @@ export const App: React.FC = () => {
 
     // Save level state
     try {
-      localStorage.setItem('vita_current_level', String(levelNum));
+      lsSet('vita_current_level', String(levelNum));
     } catch (e) {
       console.warn("Could not save current level:", e);
     }
@@ -437,85 +473,82 @@ export const App: React.FC = () => {
 
   // Victory! Compute stars, persist progress, unlock achievements, show win screen.
   const triggerVictory = () => {
-    {
-      stopTimer();
-      soundSynth.playVictory();
-      haptics.win();
-      // The run is complete — nothing left to resume.
-      clearSavedGame();
-      setSavedGame(null);
+    // The clock stops on its own once showWinScreen flips; freeze the value the
+    // victory modal reports.
+    const elapsed = elapsedRef.current;
+    setFinalTime(elapsed);
+    soundSynth.playVictory();
+    haptics.win();
+    // The run is complete — nothing left to resume.
+    clearSavedGame();
+    setSavedGame(null);
 
-      // Star Rating computation (#2)
-      const stars = computeStarRating(
-        timer,
-        hintsUsedRef.current,
-        shufflesUsedRef.current,
-        totalTileCount
-      );
-      setEarnedStars(stars);
+    // Star Rating computation (#2)
+    const stars = computeStarRating(
+      elapsed,
+      hintsUsedRef.current,
+      shufflesUsedRef.current,
+      totalTileCount
+    );
+    setEarnedStars(stars);
 
-      // Save best stars per layout (#2)
-      try {
-        const stored = localStorage.getItem('vita_best_stars');
-        const bestStars: Record<string, number> = stored ? JSON.parse(stored) : {};
-        const currentBest = bestStars[activeLayout] || 0;
-        if (stars > currentBest) {
-          bestStars[activeLayout] = stars;
-          localStorage.setItem('vita_best_stars', JSON.stringify(bestStars));
-        }
-      } catch (e) {
-        console.warn("Could not save star rating:", e);
+    // Save best stars per layout (#2)
+    try {
+      const stored = lsGet('vita_best_stars');
+      const bestStars: Record<string, number> = stored ? JSON.parse(stored) : {};
+      const currentBest = bestStars[activeLayout] || 0;
+      if (stars > currentBest) {
+        bestStars[activeLayout] = stars;
+        lsSet('vita_best_stars', JSON.stringify(bestStars));
       }
+    } catch (e) {
+      console.warn("Could not save star rating:", e);
+    }
 
-      // Progressive Level Unlock (Up to 240 Levels, R4)
-      const nextLevel = currentLevel + 1;
-      if (nextLevel <= 240 && nextLevel > maxUnlockedLevel) {
-        setMaxUnlockedLevel(nextLevel);
-        try {
-          localStorage.setItem('vita_max_unlocked_level', String(nextLevel));
-        } catch (e) {
-          console.warn("Could not save max unlocked level:", e);
-        }
+    // Progressive Level Unlock (Up to 240 Levels, R4)
+    const nextLevel = currentLevel + 1;
+    if (nextLevel <= 240 && nextLevel > maxUnlockedLevel) {
+      setMaxUnlockedLevel(nextLevel);
+      lsSet('vita_max_unlocked_level', String(nextLevel));
+    }
+
+    // Roll a random power-up reward to carry into the next level.
+    const rewardPools: { power: PowerKey; min: number; max: number }[] = [
+      { power: 'shuffle', min: 2, max: 5 },
+      { power: 'magnet', min: 1, max: 2 },
+      { power: 'hint', min: 2, max: 5 },
+      { power: 'undo', min: 2, max: 5 }
+    ];
+    const pick = rewardPools[Math.floor(Math.random() * rewardPools.length)];
+    const amount = pick.min + Math.floor(Math.random() * (pick.max - pick.min + 1));
+    setLevelReward({ power: pick.power, amount });
+    setRewardClaimed(false);
+
+    setShowWinScreen(true);
+
+    // --- Zen Achievements Validation ---
+    unlockAchievement('zen_beginner');
+
+    if (elapsed <= 180) {
+      unlockAchievement('speedy_thinker');
+    }
+
+    if (hintsUsedRef.current === 0 && shufflesUsedRef.current === 0) {
+      unlockAchievement('mindful_path');
+    }
+
+    try {
+      const stored = lsGet('vita_best_stars');
+      const bestStars = stored ? JSON.parse(stored) : {};
+      const solvedLayouts = Object.keys(bestStars).filter(layout => bestStars[layout] > 0);
+      if (!solvedLayouts.includes(activeLayout)) {
+        solvedLayouts.push(activeLayout);
       }
-
-      // Roll a random power-up reward to carry into the next level.
-      const rewardPools: { power: PowerKey; min: number; max: number }[] = [
-        { power: 'shuffle', min: 2, max: 5 },
-        { power: 'magnet', min: 1, max: 2 },
-        { power: 'hint', min: 2, max: 5 },
-        { power: 'undo', min: 2, max: 5 }
-      ];
-      const pick = rewardPools[Math.floor(Math.random() * rewardPools.length)];
-      const amount = pick.min + Math.floor(Math.random() * (pick.max - pick.min + 1));
-      setLevelReward({ power: pick.power, amount });
-      setRewardClaimed(false);
-
-      setShowWinScreen(true);
-
-      // --- Zen Achievements Validation ---
-      unlockAchievement('zen_beginner');
-
-      if (timer <= 180) {
-        unlockAchievement('speedy_thinker');
+      if (solvedLayouts.length >= 5) {
+        unlockAchievement('trophy_collector');
       }
-
-      if (hintsUsedRef.current === 0 && shufflesUsedRef.current === 0) {
-        unlockAchievement('mindful_path');
-      }
-
-      try {
-        const stored = localStorage.getItem('vita_best_stars');
-        const bestStars = stored ? JSON.parse(stored) : {};
-        const solvedLayouts = Object.keys(bestStars).filter(layout => bestStars[layout] > 0);
-        if (!solvedLayouts.includes(activeLayout)) {
-          solvedLayouts.push(activeLayout);
-        }
-        if (solvedLayouts.length >= 5) {
-          unlockAchievement('trophy_collector');
-        }
-      } catch (e) {
-        console.warn("Could not check layout collector achievement:", e);
-      }
+    } catch (e) {
+      console.warn("Could not check layout collector achievement:", e);
     }
   };
 
@@ -602,7 +635,6 @@ export const App: React.FC = () => {
       if (newTray.length >= TRAY_CAPACITY) {
         soundSynth.playClick();
         haptics.lose();
-        stopTimer();
         setShowGameOver(true);
       }
     }
@@ -702,17 +734,12 @@ export const App: React.FC = () => {
 
   const handleBackToMenu = () => {
     soundSynth.playClick();
-    stopTimer();
+    // Flush first: the periodic save carries the elapsed time as of the last
+    // move, so without this Continue would rewind the clock to that point.
+    // `isPlaying` is still true here, so buildSave still produces a save.
+    persistSave();
     setIsPlaying(false);
-    // Refresh the menu's Continue button with the just-persisted run
     setSavedGame(loadSavedGame());
-  };
-
-  // Render stopwatch helper (MM:SS)
-  const formatTime = (secs: number) => {
-    const minutes = Math.floor(secs / 60);
-    const seconds = secs % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
 
@@ -773,9 +800,14 @@ export const App: React.FC = () => {
                 <span className="iq-label">IQ:</span>
                 <span className="iq-value">{score.toLocaleString()}</span>
               </span>
-              <span className="header-timer" aria-label={`Elapsed time ${formatTime(timer)}`}>
-                {formatTime(timer)}
-              </span>
+              {/* Remounted per run (key), so it starts from the resumed
+                  elapsed time without a state-resetting effect. */}
+              <GameClock
+                key={run.id}
+                running={clockRunning}
+                startAt={run.startAt}
+                elapsedRef={elapsedRef}
+              />
             </div>
 
             <button className="header-icon-btn settings-menu-btn" onClick={() => { soundSynth.playClick(); setIsSettingsOpen(true); }} title="Settings Menu" aria-label="Settings Menu">
@@ -827,6 +859,7 @@ export const App: React.FC = () => {
             {tiles.length > 0 && (
               <MahjongBoard
                 tiles={tiles}
+                boardId={run.id}
                 highContrast={highContrast}
                 hintedPair={hintedPair}
                 onTileClick={stableTileClick}
@@ -1009,7 +1042,7 @@ export const App: React.FC = () => {
             <div className="victory-stars">
               {renderStars(earnedStars)}
             </div>
-            <p>Congratulations! You cleared all tiles in {formatTime(timer)} with {moveCount} moves.</p>
+            <p>Congratulations! You cleared all tiles in {formatTime(finalTime)} with {moveCount} moves.</p>
             
             <div className="victory-stats">
               <div className="v-stat">
@@ -1018,7 +1051,7 @@ export const App: React.FC = () => {
               </div>
               <div className="v-stat">
                 <span className="v-stat-lbl">Time</span>
-                <span className="v-stat-val">{formatTime(timer)}</span>
+                <span className="v-stat-val">{formatTime(finalTime)}</span>
               </div>
               <div className="v-stat">
                 <span className="v-stat-lbl">Moves</span>

@@ -135,6 +135,71 @@ const ALL_FACES: Face[] = (() => {
   return [...seen.values()];
 })();
 
+// ---- Blocking index (buildBoard's inner loop) ----------------------------
+// The removal simulation asks "is this slot free?" for every active slot on
+// every one of the n/2 removal steps, and checkIfTileIsFree scans the whole
+// active list — O(n^3) per attempt, up to 20 attempts, on the main thread at
+// level start (~2.3M operations for a 132-tile board).
+//
+// The blocking relationships depend only on layout geometry, which never
+// changes, so derive them once per layout and keep three counters per slot.
+// Freeness then becomes a pair of integer comparisons, and removing a tile only
+// touches the handful of slots it actually blocked.
+interface BlockIndex {
+  // Counts with every slot still on the board.
+  coverCount: number[];  // slots stacked on top of this one
+  leftCount: number[];   // same-layer neighbours on its logical left
+  rightCount: number[];  // ... and right
+  // Reverse edges: removing slot k decrements the counters of these slots.
+  uncovers: number[][];
+  freesLeft: number[][];
+  freesRight: number[][];
+}
+
+const blockIndexCache = new Map<LayoutName, BlockIndex>();
+
+function getBlockIndex(layoutName: LayoutName): BlockIndex {
+  const cached = blockIndexCache.get(layoutName);
+  if (cached) return cached;
+
+  const coords = layouts[layoutName].coords;
+  const n = coords.length;
+  const idx: BlockIndex = {
+    coverCount: new Array<number>(n).fill(0),
+    leftCount: new Array<number>(n).fill(0),
+    rightCount: new Array<number>(n).fill(0),
+    uncovers: Array.from({ length: n }, () => [] as number[]),
+    freesLeft: Array.from({ length: n }, () => [] as number[]),
+    freesRight: Array.from({ length: n }, () => [] as number[])
+  };
+
+  // Mirrors checkIfTileIsFree exactly: covered = any higher layer overlapping
+  // the face; a side is blocked by a same-layer tile two units away whose
+  // perpendicular offset is under half a tile.
+  for (let i = 0; i < n; i++) {
+    const a = coords[i];
+    for (let k = 0; k < n; k++) {
+      if (k === i) continue;
+      const b = coords[k];
+      if (b.z > a.z && overlaps(a, b)) {
+        idx.coverCount[i]++;
+        idx.uncovers[k].push(i);
+      } else if (b.z === a.z && Math.abs(b.x - a.x) < 1) {
+        if (b.y === a.y - 2) {
+          idx.leftCount[i]++;
+          idx.freesLeft[k].push(i);
+        } else if (b.y === a.y + 2) {
+          idx.rightCount[i]++;
+          idx.freesRight[k].push(i);
+        }
+      }
+    }
+  }
+
+  blockIndexCache.set(layoutName, idx);
+  return idx;
+}
+
 // Build a guaranteed-solvable board using the reverse-placement algorithm.
 // 1. Repeatedly remove two "free" tiles as a pair until the layout is empty,
 //    recording the order — this depends only on geometry, so the reverse of it
@@ -180,33 +245,45 @@ export function buildBoard(layoutName: LayoutName, seed?: number, maxTypes?: num
     return recalculateFreeState(tiles);
   };
 
+  const blocks = getBlockIndex(layoutName);
+
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     // A fresh RNG stream per attempt so retries explore new removal orderings.
     const rng = new SeededRandom(effectiveSeed + attempt * 7919);
 
     // Simulate removing free pairs until the board clears (or we get stuck).
     const active = new Array<boolean>(totalSlots).fill(true);
+    const cover = blocks.coverCount.slice();
+    const left = blocks.leftCount.slice();
+    const right = blocks.rightCount.slice();
     const removalOrder: [number, number][] = [];
     let remaining = totalSlots;
 
-    while (remaining > 0) {
-      // checkIfTileIsFree expects TileCoords (with id) — attach placeholder ids.
-      const activeEntries: { coord: TileCoords; idx: number }[] = [];
-      for (let i = 0; i < totalSlots; i++) {
-        if (active[i]) activeEntries.push({ coord: { ...coords[i], id: `sim-${i}` }, idx: i });
-      }
-      const activeCoords = activeEntries.map(e => e.coord);
+    const takeOff = (k: number) => {
+      active[k] = false;
+      for (const i of blocks.uncovers[k]) cover[i]--;
+      for (const i of blocks.freesLeft[k]) left[i]--;
+      for (const i of blocks.freesRight[k]) right[i]--;
+    };
 
-      const freeIndices = activeEntries
-        .filter(e => checkIfTileIsFree(e.coord, activeCoords))
-        .map(e => e.idx);
+    while (remaining > 0) {
+      // Ascending slot order, matching the original scan, so `rng.shuffle` draws
+      // from an identically ordered list and seeded boards stay byte-identical.
+      const freeIndices: number[] = [];
+      for (let i = 0; i < totalSlots; i++) {
+        if (active[i] && cover[i] === 0 && (left[i] === 0 || right[i] === 0)) {
+          freeIndices.push(i);
+        }
+      }
 
       if (freeIndices.length < 2) break; // stuck — retry with a new ordering
 
       rng.shuffle(freeIndices);
       const [idxA, idxB] = freeIndices;
-      active[idxA] = false;
-      active[idxB] = false;
+      // Both were free against the same board state; the two removals are
+      // independent, so order between them doesn't matter.
+      takeOff(idxA);
+      takeOff(idxB);
       removalOrder.push([idxA, idxB]);
       remaining -= 2;
     }
