@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { layouts, levelForLayout , MAX_LEVEL } from '../mahjong/layouts';
+import { layouts, levelForLayout, MAX_LEVEL } from '../mahjong/layouts';
 import type { LayoutName } from '../mahjong/layouts';
 import { soundSynth } from '../mahjong/soundSynth';
 import { realmForLevel } from '../mahjong/realms';
