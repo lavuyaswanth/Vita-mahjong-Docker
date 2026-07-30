@@ -206,6 +206,10 @@ export const App: React.FC = () => {
   // now-frozen header clock, so the two can never report different seconds.
   const [finalTime, setFinalTime] = useState(0);
 
+  // Achievements earned by the run just finished, shown inside the victory
+  // dialog (see triggerVictory).
+  const [victoryUnlocks, setVictoryUnlocks] = useState<{ name: string; desc: string }[]>([]);
+
   // Sync settings to localstorage on change. The first run only configures
   // audio: these four values were just READ from storage, so writing them back
   // on mount is a no-op that clobbers any write landing between state init and
@@ -265,8 +269,17 @@ export const App: React.FC = () => {
     setDailyMode(save.dailyMode);
     setDailyRealmId(save.dailyRealmId);
     setShowWinScreen(false);
-    // A full tray always means game over (a match would have auto-cleared)
-    setShowGameOver(trayTiles.length >= TRAY_CAPACITY);
+    // A full tray always means game over (a match would have auto-cleared).
+    // The saved run stays resumable so Undo/Magnet can still rescue it.
+    const lost = trayTiles.length >= TRAY_CAPACITY;
+    setShowGameOver(lost);
+    // The header clock freezes at `finalTime` whenever a run has ended, so a
+    // resumed loss MUST carry its elapsed time across — otherwise the frozen
+    // clock reads 00:00 beside a game-over modal reporting a real run, then
+    // jumps to the true time the moment Undo unfreezes it. (`??` wouldn't help:
+    // finalTime's initial 0 isn't nullish.)
+    setFinalTime(lost ? save.timer : 0);
+    setVictoryUnlocks([]);
     setLevelReward(null);
     setRewardClaimed(false);
     setTiles(board);
@@ -335,6 +348,8 @@ export const App: React.FC = () => {
 
     setShowWinScreen(false);
     setShowGameOver(false);
+    setFinalTime(0);
+    setVictoryUnlocks([]);
     setLevelReward(null);
     setRewardClaimed(false);
     setTray([]);
@@ -533,20 +548,23 @@ export const App: React.FC = () => {
     setShowWinScreen(true);
 
     // --- Zen Achievements Validation ---
-    unlockAchievement('zen_beginner');
-
-    if (elapsed <= 180) {
-      unlockAchievement('speedy_thinker');
-    }
-
-    if (hintsUsedRef.current === 0 && shufflesUsedRef.current === 0) {
-      unlockAchievement('mindful_path');
-    }
-
-    const bestStars = lsNumberMap('vita_best_stars');
-    const solvedLayouts = Object.keys(bestStars).filter(layout => (bestStars[layout] ?? 0) > 0);
-    if (!solvedLayouts.includes(activeLayout)) solvedLayouts.push(activeLayout);
-    if (solvedLayouts.length >= 5) unlockAchievement('trophy_collector');
+    // Collected rather than fired and forgotten, for two reasons: several can
+    // unlock on one victory and the toast only shows the last, and the victory
+    // dialog is aria-modal, which hides the page-level live region from screen
+    // readers at exactly the moment these fire. The dialog reports them itself.
+    const unlocked = [
+      unlockAchievement('zen_beginner'),
+      elapsed <= 180 ? unlockAchievement('speedy_thinker') : null,
+      hintsUsedRef.current === 0 && shufflesUsedRef.current === 0
+        ? unlockAchievement('mindful_path') : null,
+      (() => {
+        const bestStars = lsNumberMap('vita_best_stars');
+        const solved = Object.keys(bestStars).filter(l => (bestStars[l] ?? 0) > 0);
+        if (!solved.includes(activeLayout)) solved.push(activeLayout);
+        return solved.length >= 5 ? unlockAchievement('trophy_collector') : null;
+      })()
+    ].filter((a): a is { name: string; desc: string } => a !== null);
+    setVictoryUnlocks(unlocked);
   };
 
   // Shuffles the remaining board tiles into new positions (consumes a Shuffle)
@@ -1110,6 +1128,7 @@ export const App: React.FC = () => {
           moveCount={moveCount}
           activeLayout={activeLayout}
           currentLevel={currentLevel}
+          unlockedAchievements={victoryUnlocks}
           levelReward={levelReward}
           rewardClaimed={rewardClaimed}
           onClaimReward={claimReward}

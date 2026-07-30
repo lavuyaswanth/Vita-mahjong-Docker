@@ -15,23 +15,35 @@ export function useAchievements() {
   const [achievementToast, setAchievementToast] = useState<AchievementToast | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
 
-  const unlockAchievement = (id: string) => {
+  /**
+   * Returns the badge if this call is what unlocked it, or null if it was
+   * already earned (or unknown).
+   *
+   * Callers need the return value because several achievements can land on a
+   * single victory, and the toast only ever shows the LAST one — so anything
+   * that wants to report the full set has to collect it here. See
+   * triggerVictory, which surfaces them inside the victory dialog.
+   */
+  const unlockAchievement = (id: string): AchievementToast | null => {
     try {
       // lsStringArray guarantees an array of strings: a stored `{}` here would
       // make `list.includes` throw and lose the unlock.
       const list = lsStringArray('vita_achievements');
-      if (list.includes(id)) return;
+      if (list.includes(id)) return null;
       lsSetJson('vita_achievements', [...list, id]);
 
       const badgeInfo = achievementsList.find(a => a.id === id);
-      if (badgeInfo) {
-        soundSynth.playAchievementUnlock();
-        setAchievementToast({ name: badgeInfo.name, desc: badgeInfo.desc });
-        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-        toastTimeoutRef.current = window.setTimeout(() => setAchievementToast(null), 5000);
-      }
+      if (!badgeInfo) return null;
+
+      soundSynth.playAchievementUnlock();
+      const badge = { name: badgeInfo.name, desc: badgeInfo.desc };
+      setAchievementToast(badge);
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      toastTimeoutRef.current = window.setTimeout(() => setAchievementToast(null), 5000);
+      return badge;
     } catch (e) {
       console.warn('Could not save achievement:', e);
+      return null;
     }
   };
 
