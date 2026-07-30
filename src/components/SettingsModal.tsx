@@ -1,5 +1,6 @@
 import React from 'react';
 import { layouts } from '../mahjong/layouts';
+import { lsNumberMap } from '../mahjong/storage';
 import type { LayoutName } from '../mahjong/layouts';
 import { soundSynth } from '../mahjong/soundSynth';
 import {
@@ -63,6 +64,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
   } = props;
   if (!isOpen) return null;
 
+  // Read once per open rather than per layout card.
+  const bestStars = lsNumberMap('vita_best_stars');
+
   const handleSfxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const vol = parseFloat(e.target.value);
     setSfxVolume(vol);
@@ -110,13 +114,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
               {Object.values(layouts).map((l, idx) => {
                 const levelNum = idx + 1;
                 const isLocked = !unlockedLevels.includes(levelNum);
-                const bestStarsData = (() => {
-                  try {
-                    const stored = localStorage.getItem('vita_best_stars');
-                    const parsed = stored ? JSON.parse(stored) : {};
-                    return parsed[l.name] || 0;
-                  } catch { return 0; }
-                })();
+                const bestStarsData = bestStars[l.name] ?? 0;
                 return (
                   <div
                     key={l.name}
@@ -129,11 +127,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                       onSelectLayout(l.name);
                       soundSynth.playClick();
                     }}
-                    title={isLocked ? `Complete Level ${levelNum - 1} to unlock` : l.description}
+                    title={isLocked
+                      ? `Complete Level ${levelNum - 1} to unlock`
+                      : `Play ${l.displayName} at Level ${currentLevel} — ${l.description}`}
+                    aria-label={isLocked
+                      ? `${l.displayName}, locked. Complete Level ${levelNum - 1} to unlock.`
+                      : `Play ${l.displayName} at Level ${currentLevel}`}
                   >
                     <div className="layout-card-badge">{l.coords.length} Tiles</div>
                     {isLocked && <div className="lock-overlay">🔒</div>}
                     <h4>{l.displayName}</h4>
+                    {/* Say where the pick lands. This edition keeps the player's
+                        current level rather than jumping to a fixed 1–5. */}
+                    {!isLocked && (
+                      <div className="layout-card-target">Plays at Level {currentLevel}</div>
+                    )}
                     {bestStarsData > 0 && (
                       <div className="layout-best-stars">
                         {Array.from({ length: 3 }).map((_, i) => (

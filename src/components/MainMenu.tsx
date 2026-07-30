@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { soundSynth } from '../mahjong/soundSynth';
 import { achievementsList } from '../mahjong/achievements';
+import { lsStringArray, lsSetJson } from '../mahjong/storage';
 import logoImg from '../assets/logo.webp';
 import {
   SettingsIcon,
@@ -27,38 +28,19 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 }) => {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
-  const [unlockedAchievements] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem('vita_achievements');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [unlockedAchievements] = useState<string[]>(() => lsStringArray('vita_achievements'));
   const [hasNewAchievements, setHasNewAchievements] = useState(() => {
-    try {
-      const storedUnlocked = localStorage.getItem('vita_achievements');
-      const unlocked: string[] = storedUnlocked ? JSON.parse(storedUnlocked) : [];
-      const storedViewed = localStorage.getItem('vita_viewed_achievements');
-      const viewed: string[] = storedViewed ? JSON.parse(storedViewed) : [];
-      return unlocked.some(id => !viewed.includes(id));
-    } catch {
-      return false;
-    }
+    const unlocked = lsStringArray('vita_achievements');
+    const viewed = lsStringArray('vita_viewed_achievements');
+    return unlocked.some(id => !viewed.includes(id));
   });
 
   const handleOpenAchievements = () => {
     soundSynth.playClick();
     setShowAchievements(true);
-    try {
-      const storedUnlocked = localStorage.getItem('vita_achievements');
-      if (storedUnlocked) {
-        localStorage.setItem('vita_viewed_achievements', storedUnlocked);
-        setHasNewAchievements(false);
-      }
-    } catch (e) {
-      console.warn("Could not save viewed achievements:", e);
-    }
+    // Mark everything currently unlocked as seen, so the "new" dot clears.
+    lsSetJson('vita_viewed_achievements', lsStringArray('vita_achievements'));
+    setHasNewAchievements(false);
   };
 
   const handlePlayClick = () => {

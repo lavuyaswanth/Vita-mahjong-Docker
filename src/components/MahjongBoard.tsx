@@ -306,15 +306,21 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
   // the landscape desktop values and only apply before the grid has mounted (or
   // if the custom properties ever go missing).
   const gridRef = useRef<HTMLDivElement>(null);
-  const readCellSize = (): { cellW: number; cellH: number } => {
+  interface GridGeometry { cellW: number; cellH: number; cols: number; rows: number }
+  const GRID_FALLBACK: GridGeometry = { cellW: 30, cellH: 38, cols: 30, rows: 18 };
+  const readGridGeometry = (): GridGeometry => {
     const el = gridRef.current;
-    if (!el) return { cellW: 30, cellH: 38 };
+    if (!el) return GRID_FALLBACK;
     const style = getComputedStyle(el);
-    const cellW = parseFloat(style.getPropertyValue('--cell-w'));
-    const cellH = parseFloat(style.getPropertyValue('--cell-h'));
+    const num = (prop: string, fallback: number): number => {
+      const v = parseFloat(style.getPropertyValue(prop));
+      return Number.isFinite(v) && v > 0 ? v : fallback;
+    };
     return {
-      cellW: Number.isFinite(cellW) && cellW > 0 ? cellW : 30,
-      cellH: Number.isFinite(cellH) && cellH > 0 ? cellH : 38
+      cellW: num('--cell-w', GRID_FALLBACK.cellW),
+      cellH: num('--cell-h', GRID_FALLBACK.cellH),
+      cols: num('--grid-cols', GRID_FALLBACK.cols),
+      rows: num('--grid-rows', GRID_FALLBACK.rows)
     };
   };
 
@@ -331,7 +337,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     // orientation variants and the 1024px breakpoint are defined once in
     // index.css. Duplicating them here meant a CSS tweak silently broke board
     // fitting with nothing to catch it.
-    const { cellW, cellH } = readCellSize();
+    const { cellW, cellH, cols, rows } = readGridGeometry();
 
     // Bounding box of all tiles in grid units (each tile spans 2 units)
     const active = tiles.filter(t => !t.matched);
@@ -359,8 +365,10 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     // Offset the pan so the tile bounding-box center lands at the container center.
     const bboxCenterX = ((minX + maxX) / 2) * cellW;
     const bboxCenterY = ((minY + maxY) / 2) * cellH;
-    const gridCenterX = (isPortrait ? 9 : 15) * cellW;
-    const gridCenterY = (isPortrait ? 15 : 9) * cellH;
+    // No orientation branch: .portrait-grid already swaps --grid-cols and
+    // --grid-rows, so reading them back gives the transposed centre for free.
+    const gridCenterX = (cols / 2) * cellW;
+    const gridCenterY = (rows / 2) * cellH;
     const panX = -(bboxCenterX - gridCenterX) * zoom;
     const panY = -(bboxCenterY - gridCenterY) * zoom;
 

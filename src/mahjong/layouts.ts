@@ -159,3 +159,20 @@ export const layouts: Record<LayoutName, LayoutConfig> = {
     coords: generateTurtle()
   }
 };
+
+// ---- Campaign layout cycle ------------------------------------------------
+// Ages 3+ deliberately uses only the two SMALLEST board shapes (Meadow 52,
+// Tower 70), so the campaign always stays small and gentle and never becomes a
+// big deep pile. Level N uses LAYOUT_CYCLE[(N - 1) % 2].
+//
+// The bigger boards still exist and are reachable from the settings board
+// picker; they are just not part of the campaign rotation. That is why this
+// edition has no levelForLayout: a board pick here keeps the player's current
+// level rather than mapping to one (see initGame).
+export const LAYOUT_CYCLE: readonly LayoutName[] = ['Garden', 'Pagoda'];
+
+/** The layout a given campaign level is played on. */
+export function layoutForLevel(level: number): LayoutName {
+  const i = ((Math.trunc(level) - 1) % LAYOUT_CYCLE.length + LAYOUT_CYCLE.length) % LAYOUT_CYCLE.length;
+  return LAYOUT_CYCLE[i]!;
+}

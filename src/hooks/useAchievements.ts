@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { achievementsList } from '../mahjong/achievements';
 import { soundSynth } from '../mahjong/soundSynth';
+import { lsStringArray, lsSetJson } from '../mahjong/storage';
 
 interface AchievementToast {
   name: string;
@@ -16,10 +17,11 @@ export function useAchievements() {
 
   const unlockAchievement = (id: string) => {
     try {
-      const stored = localStorage.getItem('vita_achievements');
-      const list: string[] = stored ? JSON.parse(stored) : [];
+      // lsStringArray guarantees an array of strings: a stored `{}` here would
+      // make `list.includes` throw and lose the unlock.
+      const list = lsStringArray('vita_achievements');
       if (list.includes(id)) return;
-      localStorage.setItem('vita_achievements', JSON.stringify([...list, id]));
+      lsSetJson('vita_achievements', [...list, id]);
 
       const badgeInfo = achievementsList.find(a => a.id === id);
       if (badgeInfo) {

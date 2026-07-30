@@ -7,19 +7,27 @@ import {
   tilesMatch
 } from './mahjong/gameEngine';
 import type { TileState } from './mahjong/gameEngine';
-import { layouts } from './mahjong/layouts';
+import { layouts, layoutForLevel } from './mahjong/layouts';
+import { lsGet, lsSet, lsInt, lsNumber, lsSetJson, lsNumberMap } from './mahjong/storage';
 import type { LayoutName } from './mahjong/layouts';
 import { soundSynth } from './mahjong/soundSynth';
 import { haptics } from './mahjong/haptics';
 import { useAchievements } from './hooks/useAchievements';
-import { useBoosters, POWER_LABELS } from './hooks/useBoosters';
+import { useBoosters } from './hooks/useBoosters';
+import { useSaveGame } from './hooks/useSaveGame';
+import type { SavedGame } from './hooks/useSaveGame';
 import type { PowerKey } from './hooks/useBoosters';
 import MahjongBoard from './components/MahjongBoard';
 import GameClock from './components/GameClock';
 import { formatTime } from './mahjong/formatTime';
 import { TileGlyph } from './components/Tile';
+import { tileDisplayName } from './mahjong/tileNames';
 import MainMenu from './components/MainMenu';
 import SettingsModal from './components/SettingsModal';
+import VictoryModal from './components/VictoryModal';
+import GameOverModal from './components/GameOverModal';
+import TutorialModal from './components/TutorialModal';
+import LiveRegion from './components/LiveRegion';
 import './App.css';
 import {
   BackIcon,
@@ -27,10 +35,7 @@ import {
   HintIcon,
   ShuffleIcon,
   MagnetIcon,
-  RestartIcon,
-  EarnedStampIcon,
-  SettingsIcon,
-  PlayIcon
+  SettingsIcon
 } from './components/SvgIcons';
 
 
@@ -49,31 +54,6 @@ const computeStarRating = (time: number, hintsUsed: number, shufflesUsed: number
 // Stamped from package.json at build time (see vite.config.ts) so the badge can
 // always be trusted to tell you which build you're looking at.
 const APP_VERSION = `v${__APP_VERSION__}`;
-
-// --- localStorage helpers -------------------------------------------------
-// Storage throws outright in Safari private mode and when a browser blocks
-// site data, so every access goes through these. A corrupt or missing value
-// falls back to the default rather than propagating NaN into game state.
-const lsGet = (key: string): string | null => {
-  try { return localStorage.getItem(key); } catch { return null; }
-};
-const lsSet = (key: string, value: string): void => {
-  try { localStorage.setItem(key, value); } catch { /* storage unavailable */ }
-};
-const lsNumber = (key: string, fallback: number, min: number, max: number): number => {
-  const raw = lsGet(key);
-  if (raw === null) return fallback;
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(max, Math.max(min, n));
-};
-const lsInt = (key: string, fallback: number, min: number, max: number): number => {
-  const raw = lsGet(key);
-  if (raw === null) return fallback;
-  const n = parseInt(raw, 10);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(max, Math.max(min, Math.trunc(n)));
-};
 
 export const App: React.FC = () => {
   // Auto-play bot flag (?bot=1) — drives the game itself for QA / simulator demos.
@@ -222,58 +202,7 @@ export const App: React.FC = () => {
     lsSet('vita_ambient_enabled', String(isAmbientEnabled));
   }, [bgTheme, highContrast, sfxVolume, ambientVolume, isAmbientEnabled]);
 
-  // ---- Save & resume: a mid-level game survives closing the app ----
-  // Mobile browsers kill background tabs freely, so the board, tray, timer and
-  // scoring are persisted after every move (and on backgrounding). The menu
-  // then offers "Continue" instead of silently discarding the run.
-  const SAVE_KEY = 'vita_saved_game';
-  type SavedTile = { x: number; y: number; z: number; id: string; type: string; value: number; matched: boolean };
-  type SavedGame = {
-    level: number;
-    layout: LayoutName;
-    tiles: SavedTile[];
-    trayIds: string[];    // order matters: Undo/Magnet pull from the end
-    timer: number;
-    score: number;
-    moveCount: number;
-    hintsUsed: number;
-    shufflesUsed: number;
-  };
-  // A tile is only usable if every field the board maths reads is present and
-  // numeric. Mobile browsers can kill the tab mid-setItem, and a truncated
-  // write parses fine as JSON while leaving tiles with no x/y/z — which then
-  // crashes recalculateFreeState on resume instead of at the write.
-  const isValidSavedTile = (t: unknown): t is SavedTile => {
-    if (!t || typeof t !== 'object') return false;
-    const c = t as Record<string, unknown>;
-    return Number.isFinite(c.x) && Number.isFinite(c.y) && Number.isFinite(c.z) &&
-      typeof c.id === 'string' && c.id.length > 0 &&
-      typeof c.type === 'string' &&
-      Number.isFinite(c.value) &&
-      typeof c.matched === 'boolean';
-  };
-  const loadSavedGame = (): SavedGame | null => {
-    try {
-      const raw = lsGet(SAVE_KEY);
-      if (!raw) return null;
-      const s = JSON.parse(raw) as SavedGame;
-      if (!s || typeof s !== 'object') return null;
-      if (!Array.isArray(s.tiles) || s.tiles.length === 0 || !layouts[s.layout]) return null;
-      if (!s.tiles.every(isValidSavedTile)) return null;
-      if (!Array.isArray(s.trayIds) || !s.trayIds.every(id => typeof id === 'string')) return null;
-      if (s.tiles.every(t => t.matched)) return null;
-      // Scalars feed the timer, score and star rating; a bad one would silently
-      // poison this level's result.
-      if (!Number.isFinite(s.level) || !Number.isFinite(s.timer) || !Number.isFinite(s.score) ||
-          !Number.isFinite(s.moveCount) || !Number.isFinite(s.hintsUsed) ||
-          !Number.isFinite(s.shufflesUsed)) return null;
-      return s;
-    } catch { return null; }
-  };
-  const clearSavedGame = () => { try { localStorage.removeItem(SAVE_KEY); } catch { /* storage unavailable */ } };
-  // Drives the menu's Continue button; refreshed when returning to the menu.
-  const [savedGame, setSavedGame] = useState<SavedGame | null>(() => loadSavedGame());
-
+  // ---- Save & resume ----  (types + validation live in useSaveGame)
   const buildSave = (): SavedGame | null => {
     if (!isPlaying || botMode || showWinScreen || tiles.length === 0) return null;
     if (tiles.every(t => t.matched)) return null;
@@ -289,32 +218,13 @@ export const App: React.FC = () => {
       shufflesUsed: shufflesUsedRef.current
     };
   };
-
-  const persistSave = () => {
-    const save = buildSave();
-    if (save) lsSet(SAVE_KEY, JSON.stringify(save));
-  };
+  const { savedGame, persistSave, clearSavedGame, refreshSavedGame } = useSaveGame(buildSave);
 
   // Persist after every board/tray change.
   useEffect(() => {
     persistSave();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tiles, tray, isPlaying, showWinScreen]);
-
-  // Single app-lifecycle listener. The stopwatch pauses itself inside
-  // <GameClock> and keeps elapsedRef current on every tick, so this only has to
-  // flush the save before a mobile browser suspends or kills the tab — no
-  // ordering dependency between a timer listener and a save listener.
-  useEffect(() => {
-    const onHide = () => { if (document.hidden) persistSave(); };
-    document.addEventListener('visibilitychange', onHide);
-    window.addEventListener('pagehide', persistSave);
-    return () => {
-      document.removeEventListener('visibilitychange', onHide);
-      window.removeEventListener('pagehide', persistSave);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tiles, tray, isPlaying, showWinScreen, currentLevel, activeLayout, moveCount]);
 
   // Rebuild full game state from a save and jump straight into play.
   const resumeGame = (save: SavedGame) => {
@@ -355,20 +265,16 @@ export const App: React.FC = () => {
 
     if (typeof target === 'number') {
       levelNum = target;
-      // Ages 3+: only the two smallest board shapes (Meadow 52, Tower 70) so the
-      // campaign always stays small and gentle — never the big deep piles.
-      const kidLayouts: LayoutName[] = ['Garden', 'Pagoda'];
-      layout = kidLayouts[(levelNum - 1) % kidLayouts.length];
+      // Ages 3+ rotates only the two smallest boards — see LAYOUT_CYCLE.
+      layout = layoutForLevel(levelNum);
     } else {
+      // Picking a board by name plays it at the level the player is ALREADY on,
+      // so it can't cost them progress. Mapping to a fixed level 1–5 instead
+      // would knock a level-87 player back to level 2 and persist it. (The big
+      // boards aren't in this edition's campaign rotation at all, so there is no
+      // "most recent level on this board" to rewind to.)
       layout = target;
-      const layoutLevels: Record<LayoutName, number> = {
-        'Garden': 1,
-        'Pagoda': 2,
-        'Pyramids': 3,
-        'Butterfly': 4,
-        'Turtle': 5
-      };
-      levelNum = layoutLevels[layout] || 1;
+      levelNum = currentLevel;
     }
 
     setIsPlaying(true);
@@ -481,7 +387,6 @@ export const App: React.FC = () => {
     haptics.win();
     // The run is complete — nothing left to resume.
     clearSavedGame();
-    setSavedGame(null);
 
     // Star Rating computation (#2)
     const stars = computeStarRating(
@@ -493,16 +398,10 @@ export const App: React.FC = () => {
     setEarnedStars(stars);
 
     // Save best stars per layout (#2)
-    try {
-      const stored = lsGet('vita_best_stars');
-      const bestStars: Record<string, number> = stored ? JSON.parse(stored) : {};
-      const currentBest = bestStars[activeLayout] || 0;
-      if (stars > currentBest) {
-        bestStars[activeLayout] = stars;
-        lsSet('vita_best_stars', JSON.stringify(bestStars));
-      }
-    } catch (e) {
-      console.warn("Could not save star rating:", e);
+    const bestStars = lsNumberMap('vita_best_stars');
+    if (stars > (bestStars[activeLayout] ?? 0)) {
+      bestStars[activeLayout] = stars;
+      lsSetJson('vita_best_stars', bestStars);
     }
 
     // Progressive Level Unlock (Up to 240 Levels, R4)
@@ -537,19 +436,10 @@ export const App: React.FC = () => {
       unlockAchievement('mindful_path');
     }
 
-    try {
-      const stored = lsGet('vita_best_stars');
-      const bestStars = stored ? JSON.parse(stored) : {};
-      const solvedLayouts = Object.keys(bestStars).filter(layout => bestStars[layout] > 0);
-      if (!solvedLayouts.includes(activeLayout)) {
-        solvedLayouts.push(activeLayout);
-      }
-      if (solvedLayouts.length >= 5) {
-        unlockAchievement('trophy_collector');
-      }
-    } catch (e) {
-      console.warn("Could not check layout collector achievement:", e);
-    }
+    const starsByLayout = lsNumberMap('vita_best_stars');
+    const solvedLayouts = Object.keys(starsByLayout).filter(l => (starsByLayout[l] ?? 0) > 0);
+    if (!solvedLayouts.includes(activeLayout)) solvedLayouts.push(activeLayout);
+    if (solvedLayouts.length >= 5) unlockAchievement('trophy_collector');
   };
 
   // Shuffles the remaining board tiles into new positions (consumes a Shuffle)
@@ -739,7 +629,7 @@ export const App: React.FC = () => {
     // `isPlaying` is still true here, so buildSave still produces a save.
     persistSave();
     setIsPlaying(false);
-    setSavedGame(loadSavedGame());
+    refreshSavedGame();
   };
 
 
@@ -758,14 +648,27 @@ export const App: React.FC = () => {
   const trayClearAvailable = tray.length > 0 &&
     tiles.some(t => t.isFree && !t.matched && tray.some(tt => tilesMatch(tt, t)));
 
-  // Star display helper
-  const renderStars = (count: number) => {
-    return Array.from({ length: 3 }).map((_, i) => (
-      <span key={i} className={`star-icon ${i < count ? 'star-earned' : 'star-empty'}`}>
-        {i < count ? '⭐' : '☆'}
-      </span>
-    ));
-  };
+  // --- Screen-reader narration -------------------------------------------
+  // Board feedback is otherwise purely visual (dimming marks blocked tiles, the
+  // tray fills silently). Derived rather than pushed from the handlers, so it
+  // cannot drift out of step with what is on screen. Polite: this changes on
+  // every tap, and assertive would cut off the previous sentence each time.
+  const boardNarration = !isPlaying ? '' : [
+    `${inPlay} of ${totalTileCount} tiles left`,
+    `tray ${tray.length} of ${TRAY_CAPACITY}`,
+    possibleMovesCount === 0 && !trayClearAvailable && boardLeft > 0
+      ? 'No matching pair on the board' : ''
+  ].filter(Boolean).join('. ');
+
+  // Separate assertive region: end-of-run and unlocks should interrupt, but they
+  // fire once rather than per tap.
+  const alertNarration = showWinScreen
+    ? `Level ${currentLevel} solved. ${earnedStars} of 3 stars, score ${score}, time ${formatTime(finalTime)}.`
+    : showGameOver
+    ? `Tray full with no match. Run over. ${clearedCount} of ${totalTileCount} tiles cleared.`
+    : achievementToast
+    ? `Achievement unlocked: ${achievementToast.name}. ${achievementToast.desc}`
+    : '';
 
   return (
     <div className={`app-root ${themeClass}`}>
@@ -774,6 +677,11 @@ export const App: React.FC = () => {
 
       {/* Build version tag (confirms the deploy updated) */}
       <div className="version-badge">{APP_VERSION}</div>
+
+      {/* Non-visual channel for gameplay state. Always mounted — a live region
+          must exist before its text changes or the first announcement is lost. */}
+      <LiveRegion message={boardNarration} />
+      <LiveRegion message={alertNarration} urgency="assertive" />
 
       {/* --- MENU LAYER --- */}
       {!isPlaying && (
@@ -823,13 +731,25 @@ export const App: React.FC = () => {
                 <span>x{comboMultiplier}</span>
               </span>
             )}
-            <div className={`tray-slots ${tray.length >= TRAY_CAPACITY ? 'tray-danger' : ''} ${tray.length === TRAY_CAPACITY - 1 ? 'tray-warn' : ''}`} aria-label="Tile tray">
+            {/* role="list" so the aria-label is actually honoured — on a bare
+                div it is ignored, and the slots had no labels at all, leaving a
+                screen-reader user unable to tell what the tray holds. */}
+            <div
+              className={`tray-slots ${tray.length >= TRAY_CAPACITY ? 'tray-danger' : ''} ${tray.length === TRAY_CAPACITY - 1 ? 'tray-warn' : ''}`}
+              role="list"
+              aria-label={`Tile tray, ${tray.length} of ${TRAY_CAPACITY} slots used`}
+            >
               {Array.from({ length: TRAY_CAPACITY }).map((_, i) => {
                 const t = tray[i];
                 return (
-                  <div key={i} className={`tray-slot ${t ? 'filled' : ''}`}>
+                  <div
+                    key={i}
+                    className={`tray-slot ${t ? 'filled' : ''}`}
+                    role="listitem"
+                    aria-label={t ? tileDisplayName(t.type, t.value) : `Empty slot ${i + 1}`}
+                  >
                     {t && (
-                      <div className="tray-tile" key={t.id}>
+                      <div className="tray-tile" key={t.id} aria-hidden="true">
                         <TileGlyph type={t.type} value={t.value} />
                       </div>
                     )}
@@ -980,141 +900,42 @@ export const App: React.FC = () => {
 
 
 
-      {/* --- TRAY FULL / GAME OVER MODAL (Rush mode) --- */}
+      {/* --- TRAY FULL / GAME OVER MODAL --- */}
       {showGameOver && (
-        <div className="modal-overlay animate-fade-in">
-          <div className="modal-container glassmorphism stalemate-modal text-center animate-scale-up">
-            <h2 style={{ color: '#ff8a80' }}>Tray Full!</h2>
-            <p>
-              Your tray reached {TRAY_CAPACITY} tiles with no match.
-              {powerCounts.undo > 0 || powerCounts.magnet > 0
-                ? ' Use an Undo or Magnet to pull tiles back and keep playing, or restart!'
-                : ' You are out of rescues — restart the level to try again!'}
-            </p>
-            <div className="victory-stats">
-              <div className="v-stat">
-                <span className="v-stat-lbl">Score</span>
-                <span className="v-stat-val">{score.toLocaleString()}</span>
-              </div>
-              <div className="v-stat">
-                <span className="v-stat-lbl">Tiles Cleared</span>
-                <span className="v-stat-val">{clearedCount} / {totalTileCount}</span>
-              </div>
-            </div>
-            <div className="stalemate-buttons">
-              <button
-                className="confirm-btn glassmorphism"
-                onClick={handleUndo}
-                disabled={powerCounts.undo <= 0 || tray.length === 0}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <UndoIcon size={16} inline /> Return a Tile ({powerCounts.undo})
-              </button>
-              <button
-                className="confirm-btn glassmorphism"
-                onClick={handleMagnet}
-                disabled={powerCounts.magnet <= 0 || tray.length === 0}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <MagnetIcon size={16} inline /> Magnet ({powerCounts.magnet})
-              </button>
-              <button className="confirm-btn glassmorphism" onClick={() => initGame(activeLayout)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <RestartIcon size={16} inline /> Restart
-              </button>
-              <button className="cancel-btn glassmorphism" onClick={handleBackToMenu} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <BackIcon size={16} inline /> Main Menu
-              </button>
-            </div>
-          </div>
-        </div>
+        <GameOverModal
+          trayCapacity={TRAY_CAPACITY}
+          score={score}
+          clearedCount={clearedCount}
+          totalTileCount={totalTileCount}
+          powerCounts={powerCounts}
+          canReturnTile={tray.length > 0}
+          onUndo={handleUndo}
+          onMagnet={handleMagnet}
+          onRestart={() => initGame(currentLevel)}
+          onBackToMenu={handleBackToMenu}
+        />
       )}
 
       {/* --- VICTORY SCREEN OVERLAY --- */}
       {showWinScreen && (
-        <div className="modal-overlay victory-overlay animate-fade-in">
-          <div className="modal-container glassmorphism victory-modal text-center animate-scale-up">
-            <div className="victory-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto' }}>
-              <EarnedStampIcon size={64} />
-            </div>
-            <h2>Puzzle Solved!</h2>
-
-            {/* Star Rating Display (#2) */}
-            <div className="victory-stars">
-              {renderStars(earnedStars)}
-            </div>
-            <p>Congratulations! You cleared all tiles in {formatTime(finalTime)} with {moveCount} moves.</p>
-            
-            <div className="victory-stats">
-              <div className="v-stat">
-                <span className="v-stat-lbl">Final Score</span>
-                <span className="v-stat-val">{score.toLocaleString()}</span>
-              </div>
-              <div className="v-stat">
-                <span className="v-stat-lbl">Time</span>
-                <span className="v-stat-val">{formatTime(finalTime)}</span>
-              </div>
-              <div className="v-stat">
-                <span className="v-stat-lbl">Moves</span>
-                <span className="v-stat-val">{moveCount}</span>
-              </div>
-              <div className="v-stat">
-                <span className="v-stat-lbl">Layout</span>
-                <span className="v-stat-val">{layouts[activeLayout].displayName}</span>
-              </div>
-            </div>
-
-            {/* Random power-up reward for clearing the level */}
-            {levelReward && (
-              <div className={`reward-card ${rewardClaimed ? 'claimed' : ''}`}>
-                {!rewardClaimed ? (
-                  <>
-                    <div className="reward-headline">
-                      🎁 Level reward: <strong>+{levelReward.amount} {POWER_LABELS[levelReward.power]}</strong>
-                    </div>
-                    <div className="reward-buttons">
-                      <button className="confirm-btn glassmorphism reward-claim-btn" onClick={claimReward}>
-                        Claim +{levelReward.amount}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="reward-headline reward-done">
-                    ✅ Added <strong>{POWER_LABELS[levelReward.power]}</strong> to your boosters!
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="victory-buttons">
-              {currentLevel < 240 && (
-                <button 
-                  className="confirm-btn glassmorphism" 
-                  onClick={() => initGame(currentLevel + 1)} 
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '6px', 
-                    justifyContent: 'center', 
-                    background: 'linear-gradient(to bottom, #d4af37 0%, #a8841a 100%)', 
-                    color: '#1a0f09', 
-                    borderColor: '#ffd700',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Next Level ➡️
-                </button>
-              )}
-              <button className="cancel-btn glassmorphism" onClick={handleBackToMenu} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-                <BackIcon size={16} inline /> Main Menu
-              </button>
-            </div>
-          </div>
-        </div>
+        <VictoryModal
+          score={score}
+          earnedStars={earnedStars}
+          finalTime={finalTime}
+          moveCount={moveCount}
+          activeLayout={activeLayout}
+          currentLevel={currentLevel}
+          levelReward={levelReward}
+          rewardClaimed={rewardClaimed}
+          onClaimReward={claimReward}
+          onNextLevel={() => initGame(currentLevel + 1)}
+          onBackToMenu={handleBackToMenu}
+        />
       )}
 
       {/* Achievement Unlocked Floating Toast */}
       {achievementToast && (
-        <div className="achievement-toast">
+        <div className="achievement-toast" aria-hidden="true">
           <span className="toast-icon">🏆</span>
           <div className="toast-body">
             <span className="toast-header">Achievement Unlocked!</span>
@@ -1124,53 +945,11 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* First-run tutorial — content depends on the active mode */}
+      {/* First-run tutorial */}
       {isPlaying && showTutorial && !showWinScreen && !showGameOver && (
-        <div className="modal-overlay animate-fade-in" onClick={dismissTutorial}>
-          <div className="modal-container glassmorphism tutorial-modal animate-scale-up" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>👋 How to Play</h2>
-            </div>
-            <div className="modal-content">
-              <div className="rules-grid">
-                <div className="rule-item">
-                  <span className="rule-num">1</span>
-                  <div>
-                    <h4>Tap a bright tile</h4>
-                    <p>Only <strong>bright, free</strong> tiles can be picked. A tile is free when nothing rests on top of it and at least one side (left or right) is open. Dimmed tiles are blocked.</p>
-                  </div>
-                </div>
-                <div className="rule-item">
-                  <span className="rule-num">2</span>
-                  <div>
-                    <h4>It goes to your tray</h4>
-                    <p>Tapped tiles slide into the tray at the top. You have <strong>{TRAY_CAPACITY} slots</strong>.</p>
-                  </div>
-                </div>
-                <div className="rule-item">
-                  <span className="rule-num">3</span>
-                  <div>
-                    <h4>Pairs clear automatically</h4>
-                    <p>When two of the <strong>same tile</strong> meet in the tray, they vanish and score points. Clear the whole board to win!</p>
-                  </div>
-                </div>
-                <div className="rule-item">
-                  <span className="rule-num">4</span>
-                  <div>
-                    <h4>Don't fill the tray!</h4>
-                    <p>If all {TRAY_CAPACITY} slots fill with no match, it's game over. Stuck? Use <strong>Shuffle</strong>, <strong>Hint</strong>, or <strong>Undo</strong>.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="confirm-btn glassmorphism" onClick={dismissTutorial}>
-                <PlayIcon size={16} inline /> Let's Play!
-              </button>
-            </div>
-          </div>
-        </div>
+        <TutorialModal trayCapacity={TRAY_CAPACITY} onDismiss={dismissTutorial} />
       )}
+
     </div>
   );
 };

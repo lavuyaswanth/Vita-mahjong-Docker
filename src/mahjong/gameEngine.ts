@@ -304,13 +304,107 @@ export function buildBoard(layoutName: LayoutName, seed?: number, maxTypes?: num
   return assign(fallbackPairs, new SeededRandom(effectiveSeed));
 }
 
+// ---- Neighbour index (recalculateFreeState's inner loop) -------------------
+// This runs on every tap, and several handlers call it back-to-back with
+// findAvailableMoves. Done naively it is O(n^2): checkIfTileIsFree makes three
+// full passes over ~130 active tiles, for each of ~130 tiles.
+//
+// Geometry is fixed for a given board, so cache each tile's blockers by ARRAY
+// POSITION and then only look at those. A tile is covered by at most a handful
+// of others and has at most one neighbour per side, so this is O(n) in practice.
+//
+// Unlike buildBoard there is no LayoutName to key on here — recalculateFreeState
+// only ever sees tiles. So key on the geometry itself, and keep the coordinates
+// alongside the entry to VERIFY on every hit: a hash collision would otherwise
+// hand back an index for a different board and silently mis-compute freeness.
+interface NeighbourIndex {
+  coords: Int32Array;   // flat [x,y,z, x,y,z, ...] in tile-array order
+  covers: number[][];   // positions stacked above position i
+  left: number[][];     // same-layer blockers on i's logical left
+  right: number[][];    // ... and right
+}
+
+const neighbourIndexCache = new Map<string, NeighbourIndex>();
+const NEIGHBOUR_CACHE_LIMIT = 32;
+
+const flattenCoords = (tiles: TileState[]): Int32Array => {
+  const flat = new Int32Array(tiles.length * 3);
+  for (let i = 0; i < tiles.length; i++) {
+    flat[i * 3] = tiles[i].x;
+    flat[i * 3 + 1] = tiles[i].y;
+    flat[i * 3 + 2] = tiles[i].z;
+  }
+  return flat;
+};
+
+const coordsEqual = (a: Int32Array, b: Int32Array): boolean => {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+};
+
+function getNeighbourIndex(tiles: TileState[]): NeighbourIndex {
+  const flat = flattenCoords(tiles);
+
+  // FNV-1a over the coordinates. Only a cache key — correctness comes from the
+  // coordsEqual check below, not from this being collision-free.
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < flat.length; i++) {
+    hash ^= flat[i]! + 0x9e3779b9;
+    hash = Math.imul(hash, 0x01000193);
+  }
+  const key = `${tiles.length}:${hash >>> 0}`;
+
+  const cached = neighbourIndexCache.get(key);
+  if (cached && coordsEqual(cached.coords, flat)) return cached;
+
+  const n = tiles.length;
+  const idx: NeighbourIndex = {
+    coords: flat,
+    covers: Array.from({ length: n }, () => [] as number[]),
+    left: Array.from({ length: n }, () => [] as number[]),
+    right: Array.from({ length: n }, () => [] as number[])
+  };
+
+  // Mirrors checkIfTileIsFree exactly.
+  for (let i = 0; i < n; i++) {
+    const a = tiles[i];
+    for (let k = 0; k < n; k++) {
+      if (k === i) continue;
+      const b = tiles[k];
+      if (b.z > a.z && overlaps(a, b)) {
+        idx.covers[i]!.push(k);
+      } else if (b.z === a.z && Math.abs(b.x - a.x) < 1) {
+        if (b.y === a.y - 2) idx.left[i]!.push(k);
+        else if (b.y === a.y + 2) idx.right[i]!.push(k);
+      }
+    }
+  }
+
+  // Bounded so a long session across many boards can't grow this without limit.
+  if (neighbourIndexCache.size >= NEIGHBOUR_CACHE_LIMIT) {
+    const oldest = neighbourIndexCache.keys().next();
+    if (!oldest.done) neighbourIndexCache.delete(oldest.value);
+  }
+  neighbourIndexCache.set(key, idx);
+  return idx;
+}
+
 // Recalculates the 'isFree' state for all non-matched tiles on the board.
 // Pure: returns a new array, cloning only the tiles whose state changed, so
 // unchanged tiles keep their identity (lets React.memo skip re-rendering them).
 export function recalculateFreeState(tiles: TileState[]): TileState[] {
-  const activeTiles = tiles.filter(t => !t.matched);
-  return tiles.map(tile => {
-    const isFree = tile.matched ? false : checkIfTileIsFree(tile, activeTiles);
+  if (tiles.length === 0) return tiles;
+  const idx = getNeighbourIndex(tiles);
+  const anyActive = (positions: number[]): boolean => {
+    for (const p of positions) if (!tiles[p]!.matched) return true;
+    return false;
+  };
+
+  return tiles.map((tile, i) => {
+    const isFree = tile.matched
+      ? false
+      : !anyActive(idx.covers[i]!) && (!anyActive(idx.left[i]!) || !anyActive(idx.right[i]!));
     if (isFree === tile.isFree) return tile;
     return { ...tile, isFree };
   });

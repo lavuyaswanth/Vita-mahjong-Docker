@@ -116,6 +116,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* An <ol> for screen readers ("4 items"), but the steps carry their own
+     numbered badges, so suppress the native markers and indent. */
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 /* Build version tag — bottom-left, always visible */
@@ -1014,8 +1019,10 @@ body {
      so each tile renders TALLER THAN WIDE, like a real mahjong tile (~4:5). */
   --cell-w: 30px;
   --cell-h: 38px;
-  grid-template-columns: repeat(30, var(--cell-w));
-  grid-template-rows: repeat(18, var(--cell-h));
+  --grid-cols: 30;
+  --grid-rows: 18;
+  grid-template-columns: repeat(var(--grid-cols), var(--cell-w));
+  grid-template-rows: repeat(var(--grid-rows), var(--cell-h));
   gap: 0;
   position: absolute;
   /* Centering the board inside container */
@@ -2054,6 +2061,32 @@ body {
   50% { transform: translate(-50%, -55%) scale(1.08); }
 }
 
+/* Visually hidden but available to screen readers. Not display:none and not
+   visibility:hidden — either would remove the node from the accessibility tree
+   and silence the live regions entirely. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Which level a board card will open. */
+.layout-card-target {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--accent-gold, #c9a84c);
+  opacity: 0.9;
+  margin: 2px 0 4px;
+}
+
 .layout-best-stars {
   display: flex;
   justify-content: center;
@@ -2460,10 +2493,13 @@ body {
 
 /* Portrait grid layout: transposes columns and rows dynamically */
 .mahjong-grid.portrait-grid {
+  /* Portrait transposes the grid: 18 wide x 30 tall. */
   --cell-w: 32px;
   --cell-h: 40px;
-  grid-template-columns: repeat(18, var(--cell-w));
-  grid-template-rows: repeat(30, var(--cell-h));
+  --grid-cols: 18;
+  --grid-rows: 30;
+  grid-template-columns: repeat(var(--grid-cols), var(--cell-w));
+  grid-template-rows: repeat(var(--grid-rows), var(--cell-h));
 }
 
 @media (max-width: 1024px) {

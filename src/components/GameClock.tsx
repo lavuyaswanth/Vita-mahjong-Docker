@@ -10,6 +10,11 @@ interface GameClockProps {
   // Kept in step with every tick so the rest of the app can read the elapsed
   // time (saves, star ratings, best records) without re-rendering per second.
   elapsedRef: React.RefObject<number>;
+  // Once the run has ended, the exact elapsed value the rest of the UI reports.
+  // A pending tick can be mid-flush when the winning tap lands, leaving `secs`
+  // one ahead of the value the victory modal and star rating were computed from;
+  // rendering this instead makes the two agree by construction.
+  freezeAt?: number | null;
 }
 
 /**
@@ -17,8 +22,15 @@ interface GameClockProps {
  * only re-renders this <span>. Held in App, each tick reconciled the whole
  * tree — including the ~130-element tile map — every single second.
  */
-const GameClock: React.FC<GameClockProps> = ({ running, startAt, elapsedRef }) => {
+const GameClock: React.FC<GameClockProps> = ({ running, startAt, elapsedRef, freezeAt = null }) => {
   const [secs, setSecs] = useState(startAt);
+
+  // Publish the tick to the shared ref from an effect, NOT from inside the
+  // setSecs updater. React 19 StrictMode double-invokes updaters on purpose, so
+  // an updater must stay a pure function of its argument — assigning in there
+  // happens to be idempotent today, but stops being safe the moment the write
+  // is anything other than a plain overwrite.
+  useEffect(() => { elapsedRef.current = secs; }, [secs, elapsedRef]);
 
   useEffect(() => {
     if (!running) return;
@@ -30,21 +42,18 @@ const GameClock: React.FC<GameClockProps> = ({ running, startAt, elapsedRef }) =
     document.addEventListener('visibilitychange', onVisibility);
     const id = setInterval(() => {
       if (hidden) return;
-      setSecs(s => {
-        const next = s + 1;
-        elapsedRef.current = next;
-        return next;
-      });
+      setSecs(s => s + 1);
     }, 1000);
     return () => {
       clearInterval(id);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [running, elapsedRef]);
+  }, [running]);
 
+  const shown = freezeAt ?? secs;
   return (
-    <span className="header-timer" aria-label={`Elapsed time ${formatTime(secs)}`}>
-      {formatTime(secs)}
+    <span className="header-timer" aria-label={`Elapsed time ${formatTime(shown)}`}>
+      {formatTime(shown)}
     </span>
   );
 };
