@@ -781,8 +781,9 @@ body {
 /* Center stats row: Level | Score | Matches */
 
 
-/* Centered "IQ" score readout (reference parity) */
-.header-iq-row {
+/* Centered score readout. Points, not an IQ — that scheme belongs to the
+   Midnight edition, where the score starts at 100 and is capped at 200. */
+.header-score-row {
   flex: 1;
   display: flex;
   align-items: center;
@@ -805,7 +806,7 @@ body {
   .header-timer { font-size: 13px; }
 }
 
-.iq-display {
+.score-display {
   display: inline-flex;
   align-items: baseline;
   gap: 8px;
@@ -814,20 +815,20 @@ body {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.55);
 }
 
-.iq-label {
+.score-label {
   font-size: 22px;
   color: #ffd86b;
 }
 
-.iq-value {
+.score-value {
   font-size: 26px;
   color: #fff7e0;
   min-width: 1ch;
 }
 
 @media (max-width: 1024px) {
-  .iq-label { font-size: 19px; }
-  .iq-value { font-size: 23px; }
+  .score-label { font-size: 19px; }
+  .score-value { font-size: 23px; }
 }
 
 

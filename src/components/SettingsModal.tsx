@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { layouts } from '../mahjong/layouts';
+import { layouts, layoutForLevel } from '../mahjong/layouts';
 import { lsNumberMap } from '../mahjong/storage';
 import ModalShell from './ModalShell';
 import type { LayoutName } from '../mahjong/layouts';
@@ -206,11 +206,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
               >
                 {Array.from({ length: maxUnlockedLevel }).map((_, i) => {
                   const lvlNum = i + 1;
-                  const layoutsList = ['Garden', 'Pagoda', 'Pyramids', 'Butterfly', 'Turtle'];
-                  const layoutName = layoutsList[(lvlNum - 1) % layoutsList.length];
+                  // layoutForLevel, not a local copy of the cycle. The copy here
+                  // listed five boards and indexed % 5, but this edition rotates
+                  // only two (% 2) — so every level from 3 up advertised a board
+                  // the game would not open: "Level 3 (Pyramids)" dealt Meadow.
+                  // displayName so it matches the cards above ("🍃 Meadow"),
+                  // rather than the internal name.
+                  const layout = layouts[layoutForLevel(lvlNum)];
                   return (
                     <option key={lvlNum} value={lvlNum}>
-                      Level {lvlNum} ({layoutName})
+                      Level {lvlNum} ({layout.displayName})
                     </option>
                   );
                 })}

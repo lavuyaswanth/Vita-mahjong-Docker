@@ -736,10 +736,14 @@ export const App: React.FC = () => {
               <BackIcon size={20} />
             </button>
 
-            <div className="header-iq-row">
-              <span className="iq-display" aria-label={`IQ score ${score}`}>
-                <span className="iq-label">IQ:</span>
-                <span className="iq-value">{score.toLocaleString()}</span>
+            <div className="header-score-row">
+              {/* Points, not an IQ: this edition's score starts at 0 and
+                  accumulates. Both modals already said "Score"; only the header
+                  still carried the Midnight edition's IQ scheme, so a screen
+                  reader announced "IQ score 4,300" for something that isn't one. */}
+              <span className="score-display" aria-label={`Score ${score}`}>
+                <span className="score-label">Score:</span>
+                <span className="score-value">{score.toLocaleString()}</span>
               </span>
               {/* Remounted per run (key), so it starts from the resumed
                   elapsed time without a state-resetting effect. */}
@@ -748,6 +752,7 @@ export const App: React.FC = () => {
                 running={clockRunning}
                 startAt={run.startAt}
                 elapsedRef={elapsedRef}
+                freezeAt={showWinScreen || showGameOver ? finalTime : null}
               />
             </div>
 
@@ -918,16 +923,22 @@ export const App: React.FC = () => {
         setIsAmbientEnabled={setIsAmbientEnabled}
         activeLayout={activeLayout}
         unlockedLevels={unlockedLevels}
+        // Picking a board or a level starts it right away and closes the modal —
+        // otherwise a new board is dealt behind the open panel, and because the
+        // gameplay wrapper is `inert` while a modal is up the player can neither
+        // see nor touch it until they close Settings. (The old `if (isPlaying)`
+        // guard also meant picking a board from the MENU did nothing at all.)
+        // initGame(LayoutName) plays it at the player's current level, so this
+        // cannot cost campaign progress.
         onSelectLayout={(layout) => {
-          setActiveLayout(layout);
-          if (isPlaying) {
-            initGame(layout);
-          }
+          initGame(layout);
+          setIsSettingsOpen(false);
         }}
         currentLevel={currentLevel}
         maxUnlockedLevel={maxUnlockedLevel}
         onSelectLevel={(lvl) => {
           initGame(lvl);
+          setIsSettingsOpen(false);
         }}
       />
 
