@@ -27,7 +27,6 @@ import type { LevelRecord } from './mahjong/records';
 import type { RealmId } from './mahjong/realms';
 import MahjongBoard from './components/MahjongBoard';
 import GameClock from './components/GameClock';
-import { formatTime } from './mahjong/formatTime';
 import { TileGlyph } from './components/Tile';
 import { tileDisplayName } from './mahjong/tileNames';
 import MainMenu from './components/MainMenu';
@@ -782,25 +781,38 @@ export const App: React.FC = () => {
     boardLeft > 0 && !showWinScreen && !showGameOver;
 
   // --- Screen-reader narration -------------------------------------------
-  // Board feedback is otherwise purely visual (dimming marks blocked tiles,
-  // the tray fills silently). Derived rather than pushed from the handlers, so
-  // it cannot drift out of step with what is on screen. Polite: this changes on
-  // every tap, and assertive would cut off the previous sentence each time.
+  // Board feedback is otherwise purely visual (dimming marks blocked tiles, the
+  // tray fills silently). Derived rather than pushed from the handlers, so it
+  // cannot drift out of step with what is on screen. Polite, because it changes
+  // as you play and assertive would cut off the previous sentence each time.
+  //
+  // Deliberately NOT the tile count: that changes on every single tap, so
+  // including it made the region re-announce constantly to deliver the one
+  // number a player is least likely to be tracking. Tray state and the two
+  // dead-end warnings are the parts that actually affect the next decision, and
+  // they only change when something meaningful happened. The running count is
+  // still on screen in the progress bar.
   const boardNarration = !isPlaying ? '' : [
-    `${inPlay} of ${totalTileCount} tiles left`,
-    `tray ${tray.length} of ${TRAY_CAPACITY}`,
+    `Tray ${tray.length} of ${TRAY_CAPACITY}`,
     lastSlotDanger ? 'Warning: last tray slot and no match on the board' : '',
     possibleMovesCount === 0 && !lastSlotDanger && boardLeft > 0 ? 'No matching pair on the board' : ''
   ].filter(Boolean).join('. ');
 
-  // Separate assertive region: end-of-run and unlocks should interrupt, but
-  // they fire once rather than per tap.
-  const alertNarration = showWinScreen
-    ? `${dailyMode ? 'Daily challenge cleared' : `Level ${currentLevel} solved`}. ` +
-      `${earnedStars} of 3 stars, IQ ${score}, time ${formatTime(finalTime)}.`
-    : showGameOver
-    ? `Tray full with no match. Run over. ${clearedCount} of ${totalTileCount} tiles cleared.`
-    : achievementToast
+  // Any modal owning the screen. The board holds up to ~130 tabbable tiles, so
+  // `aria-modal` on the dialog is only half the job: without `inert` here a
+  // keyboard user tabs straight out of the dialog onto tiles that the screen
+  // reader is simultaneously refusing to describe. inert also blocks pointer
+  // events, so a stray tap can't reach the board behind the overlay.
+  const modalOpen = isSettingsOpen || showWinScreen || showGameOver || showTutorial;
+
+  // Separate assertive region, for the one thing that has no other channel: an
+  // achievement unlock, which is otherwise only a visual toast.
+  //
+  // End-of-run is NOT here. The victory and game-over dialogs are
+  // role="alertdialog" with aria-describedby pointing at their own summary, so
+  // opening one already announces it — through the more conventional channel.
+  // Saying nearly the same sentence here too meant hearing the result twice.
+  const alertNarration = achievementToast
     ? `Achievement unlocked: ${achievementToast.name}. ${achievementToast.desc}`
     : '';
 
@@ -834,12 +846,15 @@ export const App: React.FC = () => {
           realmName={currentRealm.name}
           dailyStreak={daily.streak}
           dailyDoneToday={dailyDoneToday}
+          // Settings lives here, not in the menu, so the menu can't know to go
+          // inert for it on its own.
+          backgroundInert={isSettingsOpen}
         />
       )}
 
       {/* --- SOLITAIRE GAMEBOARD LAYER --- */}
       {isPlaying && (
-        <div className="gameplay-wrapper">
+        <div className="gameplay-wrapper" inert={modalOpen}>
           {/* Premium Dark Jade Felt Status Header */}
           <header className="game-header">
             <button className="header-icon-btn back-menu-btn" onClick={handleBackToMenu} title="Main Menu" aria-label="Back to main menu">

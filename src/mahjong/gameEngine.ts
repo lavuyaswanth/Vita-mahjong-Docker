@@ -441,23 +441,45 @@ export function shuffleActiveTiles(tiles: TileState[]): TileState[] {
   }));
 
   const rng = new SeededRandom(Math.random() * 999999);
-  let result = working;
 
-  // Shuffle until we find a combination with at least one possible move (or limit to 30 attempts)
+  // Freeness depends only on coordinates and `matched` — a shuffle moves FACES
+  // between positions and touches neither. So it is computed once here rather
+  // than re-derived on each of up to 30 retries, where every call recomputed the
+  // identical answer.
+  const freeState = recalculateFreeState(working);
+  const freeUnmatched: TileState[] = [];
+  freeState.forEach((t, i) => {
+    if (t.isFree && !t.matched) freeUnmatched.push(working[i]!);
+  });
+
+  // Shuffle until at least one pair is playable (or give up after 30 attempts).
   for (let attempts = 0; attempts < 30; attempts++) {
     rng.shuffle(values);
 
     // Apply values to the unmatched positions (mutating our local clones only)
     unmatched.forEach((t, idx) => {
-      t.type = values[idx].type;
-      t.value = values[idx].value;
+      t.type = values[idx]!.type;
+      t.value = values[idx]!.value;
     });
 
-    result = recalculateFreeState(working);
-    if (findAvailableMoves(result).length > 0) break;
+    // Same test as findAvailableMoves, over the free set computed above: is any
+    // face duplicated among the free tiles?
+    const seen = new Set<string>();
+    let playable = false;
+    for (const t of freeUnmatched) {
+      const key = `${t.type}_${t.value}`;
+      if (seen.has(key)) { playable = true; break; }
+      seen.add(key);
+    }
+    if (playable) break;
   }
 
-  return result;
+  // Publish the free flags onto the returned board. Built here rather than
+  // reusing `freeState`, whose clones were made before the faces were shuffled.
+  return working.map((t, i) => {
+    const isFree = freeState[i]!.isFree;
+    return isFree === t.isFree ? t : { ...t, isFree };
+  });
 }
 
 // Deterministic seed for a calendar date (YYYYMMDD) — used by the Daily
