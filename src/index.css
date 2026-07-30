@@ -116,6 +116,27 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* An <ol> for screen readers ("4 items"), but the steps carry their own
+     numbered badges, so suppress the native markers and indent. */
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Visually hidden but available to screen readers. Not display:none and not
+   visibility:hidden — either would remove the node from the accessibility tree
+   and silence the live regions entirely. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Build version tag — bottom-left, always visible */

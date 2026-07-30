@@ -10,23 +10,32 @@ import {
 import type { TileState } from './mahjong/gameEngine';
 import { layouts, LAYOUT_CYCLE, layoutForLevel, levelForLayout } from './mahjong/layouts';
 import {
-  lsGet, lsSet, lsRemove, lsInt, lsNumber, lsParse, lsSetJson, lsNumberMap, isFiniteNumber
+  lsGet, lsSet, lsInt, lsNumber, lsSetJson, lsNumberMap
 } from './mahjong/storage';
 import type { LayoutName } from './mahjong/layouts';
 import { soundSynth } from './mahjong/soundSynth';
 import { haptics } from './mahjong/haptics';
 import { useAchievements } from './hooks/useAchievements';
-import { useBoosters, POWER_LABELS } from './hooks/useBoosters';
+import { useBoosters } from './hooks/useBoosters';
 import type { PowerKey } from './hooks/useBoosters';
 import { useDailyChallenge, todayKey } from './hooks/useDailyChallenge';
-import { realmForLevel, nextRealmChange, realms } from './mahjong/realms';
+import { useSaveGame } from './hooks/useSaveGame';
+import type { SavedGame } from './hooks/useSaveGame';
+import { realmForLevel, realms } from './mahjong/realms';
+import { recordFor, mergeRecord } from './mahjong/records';
+import type { LevelRecord } from './mahjong/records';
 import type { RealmId } from './mahjong/realms';
 import MahjongBoard from './components/MahjongBoard';
 import GameClock from './components/GameClock';
 import { formatTime } from './mahjong/formatTime';
 import { TileGlyph } from './components/Tile';
+import { tileDisplayName } from './mahjong/tileNames';
 import MainMenu from './components/MainMenu';
 import SettingsModal from './components/SettingsModal';
+import VictoryModal from './components/VictoryModal';
+import GameOverModal from './components/GameOverModal';
+import TutorialModal from './components/TutorialModal';
+import LiveRegion from './components/LiveRegion';
 import './App.css';
 import {
   BackIcon,
@@ -34,10 +43,7 @@ import {
   HintIcon,
   ShuffleIcon,
   MagnetIcon,
-  RestartIcon,
-  EarnedStampIcon,
-  SettingsIcon,
-  PlayIcon
+  SettingsIcon
 } from './components/SvgIcons';
 
 
@@ -123,23 +129,7 @@ export const App: React.FC = () => {
   // Star Rating (#2)
   const [earnedStars, setEarnedStars] = useState(0);
 
-  // Per-level best records (IQ / time / stars) — the reason to replay a board.
-  type LevelRecord = { iq: number; time: number; stars: number };
-  const loadRecords = (): Record<string, LevelRecord> =>
-    lsParse<Record<string, LevelRecord>>('vita_records', v => {
-      if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
-      const out: Record<string, LevelRecord> = {};
-      for (const [level, rec] of Object.entries(v as Record<string, unknown>)) {
-        if (!rec || typeof rec !== 'object') continue;
-        const r = rec as Record<string, unknown>;
-        // Drop a partial record rather than let NaN into the "beat your best"
-        // comparison, where it would silently never register a new best.
-        if (isFiniteNumber(r.iq) && isFiniteNumber(r.time) && isFiniteNumber(r.stars)) {
-          out[level] = { iq: r.iq, time: r.time, stars: r.stars };
-        }
-      }
-      return out;
-    }, {});
+  // Per-level best records live in mahjong/records.ts.
   const [bestRecord, setBestRecord] = useState<LevelRecord | null>(null); // for the active level
   const [isNewBest, setIsNewBest] = useState(false);
 
@@ -234,83 +224,7 @@ export const App: React.FC = () => {
     lsSet('vita_ambient_enabled', String(isAmbientEnabled));
   }, [highContrast, sfxVolume, ambientVolume, isAmbientEnabled]);
 
-  // ---- Save & resume: a mid-level game survives closing the app ----
-  // Mobile browsers kill background tabs freely, so the board, tray, timer and
-  // scoring are persisted after every move (and on backgrounding). The menu
-  // then offers "Continue" instead of silently discarding the run.
-  const SAVE_KEY = 'vita_saved_game';
-  type SavedTile = { x: number; y: number; z: number; id: string; type: string; value: number; matched: boolean };
-  type SavedGame = {
-    level: number;
-    layout: LayoutName;
-    dailyMode: boolean;
-    dailyRealmId: string | null;
-    savedDate: string;    // dailies resume only on the same local day
-    tiles: SavedTile[];
-    trayIds: string[];    // order matters: Undo/Magnet pull from the end
-    timer: number;
-    iq: number;
-    comboBonus: number;
-    moveCount: number;
-    hintsUsed: number;
-    shufflesUsed: number;
-  };
-  // A tile is only usable if every field the board maths reads is present and
-  // numeric. Mobile browsers can kill the tab mid-setItem, and a truncated
-  // write parses fine as JSON while leaving tiles with no x/y/z — which then
-  // crashes recalculateFreeState on resume instead of at the write.
-  const isValidSavedTile = (t: unknown): t is SavedTile => {
-    if (!t || typeof t !== 'object') return false;
-    const c = t as Record<string, unknown>;
-    return Number.isFinite(c.x) && Number.isFinite(c.y) && Number.isFinite(c.z) &&
-      typeof c.id === 'string' && c.id.length > 0 &&
-      typeof c.type === 'string' &&
-      Number.isFinite(c.value) &&
-      typeof c.matched === 'boolean';
-  };
-  // Narrowed from `unknown`, so the returned type is EARNED by these checks
-  // rather than asserted with a cast the compiler can't verify.
-  const narrowSavedGame = (value: unknown): SavedGame | null => {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-    const s = value as Record<string, unknown>;
-
-    if (typeof s.layout !== 'string' || !(s.layout in layouts)) return null;
-    if (!Array.isArray(s.tiles) || s.tiles.length === 0) return null;
-    if (!s.tiles.every(isValidSavedTile)) return null;
-    if (s.tiles.every(t => t.matched)) return null;
-    if (!Array.isArray(s.trayIds) || !s.trayIds.every((id): id is string => typeof id === 'string')) return null;
-    // Scalars feed the timer, IQ and star rating; a bad one would silently
-    // poison the record for this level.
-    if (!isFiniteNumber(s.level) || !isFiniteNumber(s.timer) || !isFiniteNumber(s.iq) ||
-        !isFiniteNumber(s.comboBonus) || !isFiniteNumber(s.moveCount) ||
-        !isFiniteNumber(s.hintsUsed) || !isFiniteNumber(s.shufflesUsed)) return null;
-    if (typeof s.dailyMode !== 'boolean') return null;
-    if (typeof s.savedDate !== 'string') return null;
-    if (s.dailyRealmId !== null && typeof s.dailyRealmId !== 'string') return null;
-    if (s.dailyMode && s.savedDate !== todayKey()) return null; // yesterday's daily board
-
-    return {
-      level: s.level,
-      layout: s.layout as LayoutName,
-      dailyMode: s.dailyMode,
-      dailyRealmId: s.dailyRealmId,
-      savedDate: s.savedDate,
-      tiles: s.tiles,
-      trayIds: s.trayIds,
-      timer: s.timer,
-      iq: s.iq,
-      comboBonus: s.comboBonus,
-      moveCount: s.moveCount,
-      hintsUsed: s.hintsUsed,
-      shufflesUsed: s.shufflesUsed
-    };
-  };
-  const loadSavedGame = (): SavedGame | null =>
-    lsParse<SavedGame | null>(SAVE_KEY, narrowSavedGame, null);
-  const clearSavedGame = () => lsRemove(SAVE_KEY);
-  // Drives the menu's Continue button; refreshed when returning to the menu.
-  const [savedGame, setSavedGame] = useState<SavedGame | null>(() => loadSavedGame());
-
+  // ---- Save & resume ----  (types + validation live in useSaveGame)
   const buildSave = (): SavedGame | null => {
     if (!isPlaying || botMode || showWinScreen || tiles.length === 0) return null;
     if (tiles.every(t => t.matched)) return null;
@@ -330,32 +244,13 @@ export const App: React.FC = () => {
       shufflesUsed: shufflesUsedRef.current
     };
   };
-
-  const persistSave = () => {
-    const save = buildSave();
-    if (save) lsSetJson(SAVE_KEY, save);
-  };
+  const { savedGame, persistSave, clearSavedGame, refreshSavedGame } = useSaveGame(buildSave);
 
   // Persist after every board/tray change.
   useEffect(() => {
     persistSave();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tiles, tray, isPlaying, showWinScreen]);
-
-  // Single app-lifecycle listener. The stopwatch pauses itself inside
-  // <GameClock> and keeps elapsedRef current on every tick, so this only has to
-  // flush the save before a mobile browser suspends or kills the tab — no
-  // ordering dependency between a timer listener and a save listener.
-  useEffect(() => {
-    const onHide = () => { if (document.hidden) persistSave(); };
-    document.addEventListener('visibilitychange', onHide);
-    window.addEventListener('pagehide', persistSave);
-    return () => {
-      document.removeEventListener('visibilitychange', onHide);
-      window.removeEventListener('pagehide', persistSave);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tiles, tray, isPlaying, showWinScreen, currentLevel, activeLayout, dailyMode, moveCount]);
 
   // Rebuild full game state from a save and jump straight into play.
   const resumeGame = (save: SavedGame) => {
@@ -386,7 +281,7 @@ export const App: React.FC = () => {
     setMoveCount(save.moveCount);
     setEarnedStars(0);
     setIsNewBest(false);
-    setBestRecord(save.dailyMode ? null : (loadRecords()[save.level] ?? null));
+    setBestRecord(save.dailyMode ? null : recordFor(save.level));
     lastMatchTimeRef.current = 0;
     hintsUsedRef.current = save.hintsUsed;
     shufflesUsedRef.current = save.shufflesUsed;
@@ -453,7 +348,7 @@ export const App: React.FC = () => {
     setMoveCount(0);
     setEarnedStars(0);
     setIsNewBest(false);
-    setBestRecord(daily ? null : (loadRecords()[levelNum] ?? null));
+    setBestRecord(daily ? null : recordFor(levelNum));
     lastMatchTimeRef.current = 0;
     hintsUsedRef.current = 0;
     shufflesUsedRef.current = 0;
@@ -571,19 +466,11 @@ export const App: React.FC = () => {
       lsSetJson('vita_best_stars', bestStars);
     }
 
-    // Per-level best record (IQ ↑, time ↓, stars ↑). Drives the "beat your
-    // best" replay loop. `finalIQ` is the final IQ for this run.
-    const prevBest = loadRecords()[currentLevel] ?? null;
-    const beat = !prevBest || finalIQ > prevBest.iq || stars > prevBest.stars ||
-      (finalIQ === prevBest.iq && elapsed < prevBest.time);
-    const merged: LevelRecord = {
-      iq: Math.max(finalIQ, prevBest?.iq ?? 0),
-      stars: Math.max(stars, prevBest?.stars ?? 0),
-      time: prevBest ? Math.min(elapsed, prevBest.time) : elapsed
-    };
-    const recs = loadRecords();
-    recs[currentLevel] = merged;
-    lsSetJson('vita_records', recs);
+    // Per-level best record (IQ ↑, time ↓, stars ↑) — drives the "beat your
+    // best" replay loop.
+    const { merged, isNewBest: beat } = mergeRecord(currentLevel, {
+      iq: finalIQ, stars, time: elapsed
+    });
     setBestRecord(merged);
     setIsNewBest(beat);
 
@@ -608,7 +495,6 @@ export const App: React.FC = () => {
     haptics.win();
     // The run is complete — nothing left to resume.
     clearSavedGame();
-    setSavedGame(null);
     const finalIQ = scoreRef.current;
     // Extra flourish for a genius-level finish
     if (finalIQ >= 180) setTimeout(() => soundSynth.playAchievementUnlock(), 250);
@@ -863,7 +749,7 @@ export const App: React.FC = () => {
     // `isPlaying` is still true here, so buildSave still produces a save.
     persistSave();
     setIsPlaying(false);
-    setSavedGame(loadSavedGame());
+    refreshSavedGame();
   };
 
 
@@ -895,23 +781,28 @@ export const App: React.FC = () => {
   const lastSlotDanger = tray.length === TRAY_CAPACITY - 1 && !trayClearAvailable &&
     boardLeft > 0 && !showWinScreen && !showGameOver;
 
-  // Star display helper
-  // Brain-tier label for the final IQ (genius ceiling = 200)
-  const iqTier = (iq: number): string => {
-    if (iq >= 200) return '🧠 Genius';
-    if (iq >= 180) return '🧠 Brilliant';
-    if (iq >= 160) return '✨ Sharp';
-    if (iq >= 130) return '👍 Clever';
-    return '🌱 Warming Up';
-  };
+  // --- Screen-reader narration -------------------------------------------
+  // Board feedback is otherwise purely visual (dimming marks blocked tiles,
+  // the tray fills silently). Derived rather than pushed from the handlers, so
+  // it cannot drift out of step with what is on screen. Polite: this changes on
+  // every tap, and assertive would cut off the previous sentence each time.
+  const boardNarration = !isPlaying ? '' : [
+    `${inPlay} of ${totalTileCount} tiles left`,
+    `tray ${tray.length} of ${TRAY_CAPACITY}`,
+    lastSlotDanger ? 'Warning: last tray slot and no match on the board' : '',
+    possibleMovesCount === 0 && !lastSlotDanger && boardLeft > 0 ? 'No matching pair on the board' : ''
+  ].filter(Boolean).join('. ');
 
-  const renderStars = (count: number) => {
-    return Array.from({ length: 3 }).map((_, i) => (
-      <span key={i} className={`star-icon ${i < count ? 'star-earned' : 'star-empty'}`}>
-        {i < count ? '⭐' : '☆'}
-      </span>
-    ));
-  };
+  // Separate assertive region: end-of-run and unlocks should interrupt, but
+  // they fire once rather than per tap.
+  const alertNarration = showWinScreen
+    ? `${dailyMode ? 'Daily challenge cleared' : `Level ${currentLevel} solved`}. ` +
+      `${earnedStars} of 3 stars, IQ ${score}, time ${formatTime(finalTime)}.`
+    : showGameOver
+    ? `Tray full with no match. Run over. ${clearedCount} of ${totalTileCount} tiles cleared.`
+    : achievementToast
+    ? `Achievement unlocked: ${achievementToast.name}. ${achievementToast.desc}`
+    : '';
 
   return (
     <div className={`app-root ${themeClass}`}>
@@ -920,6 +811,11 @@ export const App: React.FC = () => {
 
       {/* Build version tag (confirms the deploy updated) */}
       <div className="version-badge">{APP_VERSION}</div>
+
+      {/* Non-visual channel for gameplay state. Always mounted — a live region
+          must exist before its text changes or the first announcement is lost. */}
+      <LiveRegion message={boardNarration} />
+      <LiveRegion message={alertNarration} urgency="assertive" />
 
       {/* --- MENU LAYER --- */}
       {!isPlaying && (
@@ -984,13 +880,25 @@ export const App: React.FC = () => {
                 <span>x{comboMultiplier}</span>
               </span>
             )}
-            <div className={`tray-slots ${tray.length >= TRAY_CAPACITY ? 'tray-danger' : ''} ${tray.length === TRAY_CAPACITY - 1 ? 'tray-warn' : ''}`} aria-label="Tile tray">
+            {/* role="list" so the aria-label is actually honoured — on a bare
+                div it is ignored, and the slots had no labels at all, leaving a
+                screen-reader user unable to tell what the tray holds. */}
+            <div
+              className={`tray-slots ${tray.length >= TRAY_CAPACITY ? 'tray-danger' : ''} ${tray.length === TRAY_CAPACITY - 1 ? 'tray-warn' : ''}`}
+              role="list"
+              aria-label={`Tile tray, ${tray.length} of ${TRAY_CAPACITY} slots used`}
+            >
               {Array.from({ length: TRAY_CAPACITY }).map((_, i) => {
                 const t = tray[i];
                 return (
-                  <div key={i} className={`tray-slot ${t ? 'filled' : ''}`}>
+                  <div
+                    key={i}
+                    className={`tray-slot ${t ? 'filled' : ''}`}
+                    role="listitem"
+                    aria-label={t ? tileDisplayName(t.type, t.value) : `Empty slot ${i + 1}`}
+                  >
                     {t && (
-                      <div className="tray-tile" key={t.id}>
+                      <div className="tray-tile" key={t.id} aria-hidden="true">
                         <TileGlyph type={t.type} value={t.value} realm={artRealmId} />
                       </div>
                     )}
@@ -1013,7 +921,7 @@ export const App: React.FC = () => {
           {/* Last-slot warning: the next tap loses unless the board is changed.
               Say so instead of letting the player walk into "Tray Full". */}
           {lastSlotDanger && (
-            <div className="stuck-banner" role="status">
+            <div className="stuck-banner" aria-hidden="true">
               ⚠️ Last tray slot and no match on the board —{' '}
               {powerCounts.shuffle > 0
                 ? 'Shuffle to rearrange it.'
@@ -1158,162 +1066,46 @@ export const App: React.FC = () => {
 
 
 
-      {/* --- TRAY FULL / GAME OVER MODAL (Rush mode) --- */}
+      {/* --- TRAY FULL / GAME OVER MODAL --- */}
       {showGameOver && (
-        <div className="modal-overlay animate-fade-in">
-          <div className="modal-container glassmorphism stalemate-modal text-center animate-scale-up">
-            <h2 style={{ color: '#ff8a80' }}>Tray Full!</h2>
-            <p>
-              Your tray reached {TRAY_CAPACITY} tiles with no match.
-              {powerCounts.undo > 0 || powerCounts.magnet > 0
-                ? ' Use an Undo or Magnet to pull tiles back and keep playing, or restart!'
-                : ' You are out of rescues — restart the level to try again!'}
-            </p>
-            <div className="victory-stats">
-              <div className="v-stat">
-                <span className="v-stat-lbl">IQ</span>
-                <span className="v-stat-val">{score.toLocaleString()}</span>
-              </div>
-              <div className="v-stat">
-                <span className="v-stat-lbl">Tiles Cleared</span>
-                <span className="v-stat-val">{clearedCount} / {totalTileCount}</span>
-              </div>
-            </div>
-            <div className="stalemate-buttons">
-              <button
-                className="confirm-btn glassmorphism"
-                onClick={handleUndo}
-                disabled={powerCounts.undo <= 0 || tray.length === 0}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <UndoIcon size={16} inline /> Return a Tile ({powerCounts.undo})
-              </button>
-              <button
-                className="confirm-btn glassmorphism"
-                onClick={handleMagnet}
-                disabled={powerCounts.magnet <= 0 || tray.length === 0}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <MagnetIcon size={16} inline /> Magnet ({powerCounts.magnet})
-              </button>
-              {/* Restart THIS level — not activeLayout, which maps back to levels 1–5 */}
-              <button className="confirm-btn glassmorphism" onClick={() => initGame(currentLevel)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <RestartIcon size={16} inline /> Restart
-              </button>
-              <button className="cancel-btn glassmorphism" onClick={handleBackToMenu} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <BackIcon size={16} inline /> Main Menu
-              </button>
-            </div>
-          </div>
-        </div>
+        <GameOverModal
+          trayCapacity={TRAY_CAPACITY}
+          score={score}
+          clearedCount={clearedCount}
+          totalTileCount={totalTileCount}
+          powerCounts={powerCounts}
+          canReturnTile={tray.length > 0}
+          onUndo={handleUndo}
+          onMagnet={handleMagnet}
+          onRestart={() => initGame(currentLevel)}
+          onBackToMenu={handleBackToMenu}
+        />
       )}
 
       {/* --- VICTORY SCREEN OVERLAY --- */}
       {showWinScreen && (
-        <div className="modal-overlay victory-overlay animate-fade-in">
-          <div className={`modal-container glassmorphism victory-modal text-center animate-scale-up ${score >= 200 ? 'genius-win' : ''}`}>
-            <div className="victory-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto' }}>
-              <EarnedStampIcon size={64} />
-            </div>
-            <h2>{dailyMode ? 'Daily Cleared!' : 'Puzzle Solved!'}</h2>
-
-            {/* Star Rating Display (#2) */}
-            <div className="victory-stars">
-              {renderStars(earnedStars)}
-            </div>
-            <div className="victory-iq-tier">{iqTier(score)} · IQ {score}</div>
-            {dailyMode
-              ? <div className="victory-best new-best">🔥 {daily.streak}-day streak!</div>
-              : isNewBest
-              ? <div className="victory-best new-best">🌟 New Best! IQ {bestRecord?.iq} · {formatTime(bestRecord?.time ?? finalTime)}</div>
-              : bestRecord && <div className="victory-best">Best: IQ {bestRecord.iq} · {formatTime(bestRecord.time)}</div>}
-            <p>Congratulations! You cleared all tiles in {formatTime(finalTime)} with {moveCount} moves.</p>
-            
-            <div className="victory-stats">
-              <div className="v-stat">
-                <span className="v-stat-lbl">Final IQ</span>
-                <span className="v-stat-val">{score.toLocaleString()}</span>
-              </div>
-              <div className="v-stat">
-                <span className="v-stat-lbl">Time</span>
-                <span className="v-stat-val">{formatTime(finalTime)}</span>
-              </div>
-              <div className="v-stat">
-                <span className="v-stat-lbl">Moves</span>
-                <span className="v-stat-val">{moveCount}</span>
-              </div>
-              <div className="v-stat">
-                <span className="v-stat-lbl">Layout</span>
-                <span className="v-stat-val">{layouts[activeLayout].displayName}</span>
-              </div>
-            </div>
-
-            {/* Random power-up reward for clearing the level */}
-            {levelReward && (
-              <div className={`reward-card ${rewardClaimed ? 'claimed' : ''}`}>
-                {!rewardClaimed ? (
-                  <>
-                    <div className="reward-headline">
-                      🎁 Level reward: <strong>+{levelReward.amount} {POWER_LABELS[levelReward.power]}</strong>
-                    </div>
-                    <div className="reward-buttons">
-                      <button className="confirm-btn glassmorphism reward-claim-btn" onClick={claimReward}>
-                        Claim +{levelReward.amount}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="reward-headline reward-done">
-                    ✅ Added <strong>{POWER_LABELS[levelReward.power]}</strong> to your boosters!
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Dangle the next realm to pull the player onward (campaign only) */}
-            {!dailyMode && currentLevel < 240 && (() => {
-              const nxt = nextRealmChange(currentLevel);
-              const soon = nxt.atLevel - currentLevel;
-              return (
-                <div className="realm-teaser">
-                  🔓 <strong>{nxt.realm.name}</strong> {soon <= 1 ? 'unlocks next!' : `awaits at Level ${nxt.atLevel}`}
-                </div>
-              );
-            })()}
-            {dailyMode && (
-              <div className="realm-teaser">🗓️ Come back tomorrow to keep your streak alive!</div>
-            )}
-
-            <div className="victory-buttons">
-              {!dailyMode && currentLevel < 240 && (
-                <button
-                  className="confirm-btn glassmorphism"
-                  onClick={() => initGame(currentLevel + 1)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    justifyContent: 'center',
-                    background: 'linear-gradient(to bottom, #d4af37 0%, #a8841a 100%)',
-                    color: '#1a0f09',
-                    borderColor: '#ffd700',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Next Level ➡️
-                </button>
-              )}
-              <button className="cancel-btn glassmorphism" onClick={handleBackToMenu} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-                <BackIcon size={16} inline /> Main Menu
-              </button>
-            </div>
-          </div>
-        </div>
+        <VictoryModal
+          dailyMode={dailyMode}
+          dailyStreak={daily.streak}
+          score={score}
+          earnedStars={earnedStars}
+          isNewBest={isNewBest}
+          bestRecord={bestRecord}
+          finalTime={finalTime}
+          moveCount={moveCount}
+          activeLayout={activeLayout}
+          currentLevel={currentLevel}
+          levelReward={levelReward}
+          rewardClaimed={rewardClaimed}
+          onClaimReward={claimReward}
+          onNextLevel={() => initGame(currentLevel + 1)}
+          onBackToMenu={handleBackToMenu}
+        />
       )}
 
       {/* Achievement Unlocked Floating Toast */}
       {achievementToast && (
-        <div className="achievement-toast">
+        <div className="achievement-toast" aria-hidden="true">
           <span className="toast-icon">🏆</span>
           <div className="toast-body">
             <span className="toast-header">Achievement Unlocked!</span>
@@ -1323,53 +1115,11 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* First-run tutorial — content depends on the active mode */}
+      {/* First-run tutorial */}
       {isPlaying && showTutorial && !showWinScreen && !showGameOver && (
-        <div className="modal-overlay animate-fade-in" onClick={dismissTutorial}>
-          <div className="modal-container glassmorphism tutorial-modal animate-scale-up" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>👋 How to Play</h2>
-            </div>
-            <div className="modal-content">
-              <div className="rules-grid">
-                <div className="rule-item">
-                  <span className="rule-num">1</span>
-                  <div>
-                    <h4>Tap a bright tile</h4>
-                    <p>Only <strong>bright, free</strong> tiles can be picked. A tile is free when nothing rests on top of it and at least one side (left or right) is open. Dimmed tiles are blocked.</p>
-                  </div>
-                </div>
-                <div className="rule-item">
-                  <span className="rule-num">2</span>
-                  <div>
-                    <h4>It goes to your tray</h4>
-                    <p>Tapped tiles slide into the tray at the top. You have <strong>{TRAY_CAPACITY} slots</strong>.</p>
-                  </div>
-                </div>
-                <div className="rule-item">
-                  <span className="rule-num">3</span>
-                  <div>
-                    <h4>Pairs clear automatically</h4>
-                    <p>When two of the <strong>same tile</strong> meet in the tray, they vanish and score points. Clear the whole board to win!</p>
-                  </div>
-                </div>
-                <div className="rule-item">
-                  <span className="rule-num">4</span>
-                  <div>
-                    <h4>Don't fill the tray!</h4>
-                    <p>If all {TRAY_CAPACITY} slots fill with no match, it's game over. Stuck? Use <strong>Shuffle</strong>, <strong>Hint</strong>, or <strong>Undo</strong>.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="confirm-btn glassmorphism" onClick={dismissTutorial}>
-                <PlayIcon size={16} inline /> Let's Play!
-              </button>
-            </div>
-          </div>
-        </div>
+        <TutorialModal trayCapacity={TRAY_CAPACITY} onDismiss={dismissTutorial} />
       )}
+
     </div>
   );
 };
