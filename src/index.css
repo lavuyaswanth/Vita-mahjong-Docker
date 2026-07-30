@@ -2121,7 +2121,6 @@ body {
   border: 0;
 }
 
-/* Which level a board card will open. */
 /* Achievements earned by the run, listed inside the victory dialog so they are
    both visible over the overlay and inside its aria-describedby text. */
 .victory-achievements {
@@ -2139,6 +2138,7 @@ body {
   color: var(--accent-gold, #c9a84c);
 }
 
+/* Which level a board card will open. */
 .layout-card-target {
   display: block;   /* a <span> inside the card button */
   font-size: 11.5px;

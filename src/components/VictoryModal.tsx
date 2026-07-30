@@ -1,13 +1,11 @@
 import React from 'react';
-import { layouts } from '../mahjong/layouts';
+import { layouts, MAX_LEVEL } from '../mahjong/layouts';
 import type { LayoutName } from '../mahjong/layouts';
 import { POWER_LABELS } from '../hooks/useBoosters';
 import type { PowerKey } from '../hooks/useBoosters';
 import { formatTime } from '../mahjong/formatTime';
 import { EarnedStampIcon, BackIcon } from './SvgIcons';
 import ModalShell from './ModalShell';
-
-const MAX_LEVEL = 240;
 
 interface VictoryModalProps {
   score: number;

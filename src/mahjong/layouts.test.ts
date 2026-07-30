@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LAYOUT_CYCLE, layoutForLevel, layouts } from './layouts';
+import { LAYOUT_CYCLE, layoutForLevel, layouts, MAX_LEVEL } from './layouts';
 
 // Ages 3+ rotates only the two smallest boards, so this edition's contract is
 // deliberately narrower than the Midnight edition's five-board cycle. There is
@@ -22,17 +22,26 @@ describe('LAYOUT_CYCLE (ages 3+)', () => {
 });
 
 describe('layoutForLevel', () => {
-  it('alternates the two boards across the whole campaign', () => {
-    for (let lvl = 1; lvl <= 240; lvl++) {
-      expect(layoutForLevel(lvl)).toBe(LAYOUT_CYCLE[(lvl - 1) % LAYOUT_CYCLE.length]);
+  // A table, not `LAYOUT_CYCLE[(lvl - 1) % LAYOUT_CYCLE.length]` — restating the
+  // implementation passes just as happily when both sides are wrong the same
+  // way, which is precisely the bug this guards (the settings dropdown kept its
+  // own copy of the cycle and mislabelled every level from 3 up).
+  it.each([
+    [1, 'Garden'], [2, 'Pagoda'], [3, 'Garden'], [4, 'Pagoda'],
+    [5, 'Garden'], [6, 'Pagoda'], [7, 'Garden'], [8, 'Pagoda'],
+    [99, 'Garden'], [100, 'Pagoda'], [239, 'Garden'], [240, 'Pagoda']
+  ])('level %i is played on %s', (level, expected) => {
+    expect(layoutForLevel(level)).toBe(expected);
+  });
+
+  it('alternates without ever repeating twice in a row', () => {
+    for (let lvl = 2; lvl <= MAX_LEVEL; lvl++) {
+      expect(layoutForLevel(lvl), `level ${lvl}`).not.toBe(layoutForLevel(lvl - 1));
     }
-    expect(layoutForLevel(1)).toBe('Garden');
-    expect(layoutForLevel(2)).toBe('Pagoda');
-    expect(layoutForLevel(3)).toBe('Garden');
   });
 
   it('never returns a big board', () => {
-    for (let lvl = 1; lvl <= 240; lvl++) {
+    for (let lvl = 1; lvl <= MAX_LEVEL; lvl++) {
       expect(LAYOUT_CYCLE).toContain(layoutForLevel(lvl));
     }
   });

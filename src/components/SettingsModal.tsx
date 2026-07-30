@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { layouts, layoutForLevel } from '../mahjong/layouts';
+import { layouts, layoutForLevel, MAX_LEVEL } from '../mahjong/layouts';
 import { lsNumberMap } from '../mahjong/storage';
 import ModalShell from './ModalShell';
 import type { LayoutName } from '../mahjong/layouts';
@@ -221,7 +221,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                 })}
               </select>
               <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>
-                Highest Unlocked: <strong>Level {maxUnlockedLevel} / 240</strong>
+                Highest Unlocked: <strong>Level {maxUnlockedLevel} / {MAX_LEVEL}</strong>
               </span>
             </div>
           </div>

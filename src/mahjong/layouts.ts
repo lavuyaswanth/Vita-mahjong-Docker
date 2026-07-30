@@ -160,6 +160,17 @@ export const layouts: Record<LayoutName, LayoutConfig> = {
   }
 };
 
+// ---- Campaign shape --------------------------------------------------------
+
+/**
+ * Levels in the campaign. The single home for this bound: it gates the level
+ * unlock, the "Next Level" button, the ?level= deep link, and the clamp applied
+ * to anything read out of storage. It was previously a bare 240 repeated in
+ * five places, which is how a saved game's `level` ended up as the one field
+ * escaping the range check every other path applies.
+ */
+export const MAX_LEVEL = 240;
+
 // ---- Campaign layout cycle ------------------------------------------------
 // Ages 3+ deliberately uses only the two SMALLEST board shapes (Meadow 52,
 // Tower 70), so the campaign always stays small and gentle and never becomes a

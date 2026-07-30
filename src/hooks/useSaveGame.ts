@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { layouts } from '../mahjong/layouts';
+import { layouts, MAX_LEVEL } from '../mahjong/layouts';
 import type { LayoutName } from '../mahjong/layouts';
 import { lsParse, lsRemove, lsSetJson, isFiniteNumber } from '../mahjong/storage';
 
@@ -50,9 +50,16 @@ const narrowSavedGame = (value: unknown): SavedGame | null => {
   if (!Array.isArray(s.trayIds) || !s.trayIds.every((id): id is string => typeof id === 'string')) return null;
   // Scalars feed the timer, score and star rating; a bad one would silently
   // poison this level's result.
-  if (!isFiniteNumber(s.level) || !isFiniteNumber(s.timer) || !isFiniteNumber(s.score) ||
+  if (!isFiniteNumber(s.timer) || !isFiniteNumber(s.score) ||
       !isFiniteNumber(s.moveCount) || !isFiniteNumber(s.hintsUsed) ||
       !isFiniteNumber(s.shufflesUsed)) return null;
+  // `level` is RANGE-checked, not merely finite: every other path clamps it
+  // (lsInt('vita_current_level', 1, 1, MAX_LEVEL)), so a hand-edited save was
+  // the one way an out-of-range level could reach setCurrentLevel — and from
+  // there "Next Level", and back into storage via lsSet. Reject rather than
+  // clamp: a level outside the campaign means the save is not one we wrote.
+  if (!isFiniteNumber(s.level) || s.level < 1 || s.level > MAX_LEVEL ||
+      !Number.isInteger(s.level)) return null;
 
   return {
     level: s.level,
