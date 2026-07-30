@@ -310,19 +310,28 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     };
   }, [bgTheme]);
 
-  // Half-tile cell size straight off the live grid element. The fallbacks are
-  // the landscape desktop values and only apply before the grid has mounted (or
-  // if the custom properties ever go missing).
+  // Board geometry straight off the live grid element: half-tile cell size AND
+  // the grid's column/row counts. All four come from --cell-w/--cell-h/
+  // --grid-cols/--grid-rows in index.css, which also build its grid-template, so
+  // there is exactly one place to change the board's dimensions. The fallbacks
+  // are the landscape desktop values and only apply before the grid has mounted
+  // (or if a custom property ever goes missing).
   const gridRef = useRef<HTMLDivElement>(null);
-  const readCellSize = (): { cellW: number; cellH: number } => {
+  interface GridGeometry { cellW: number; cellH: number; cols: number; rows: number }
+  const GRID_FALLBACK: GridGeometry = { cellW: 30, cellH: 38, cols: 30, rows: 18 };
+  const readGridGeometry = (): GridGeometry => {
     const el = gridRef.current;
-    if (!el) return { cellW: 30, cellH: 38 };
+    if (!el) return GRID_FALLBACK;
     const style = getComputedStyle(el);
-    const cellW = parseFloat(style.getPropertyValue('--cell-w'));
-    const cellH = parseFloat(style.getPropertyValue('--cell-h'));
+    const num = (prop: string, fallback: number): number => {
+      const v = parseFloat(style.getPropertyValue(prop));
+      return Number.isFinite(v) && v > 0 ? v : fallback;
+    };
     return {
-      cellW: Number.isFinite(cellW) && cellW > 0 ? cellW : 30,
-      cellH: Number.isFinite(cellH) && cellH > 0 ? cellH : 38
+      cellW: num('--cell-w', GRID_FALLBACK.cellW),
+      cellH: num('--cell-h', GRID_FALLBACK.cellH),
+      cols: num('--grid-cols', GRID_FALLBACK.cols),
+      rows: num('--grid-rows', GRID_FALLBACK.rows)
     };
   };
 
@@ -335,11 +344,11 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     const containerWidth = containerRef.current.clientWidth;
     const containerHeight = containerRef.current.clientHeight;
 
-    // Cell geometry comes from the grid's own --cell-w / --cell-h, so the
-    // orientation variants and the 1024px breakpoint are defined once in
-    // index.css. Duplicating them here meant a CSS tweak silently broke board
-    // fitting with nothing to catch it.
-    const { cellW, cellH } = readCellSize();
+    // Geometry comes from the grid's own custom properties, so the orientation
+    // variants and the 1024px breakpoint are defined once in index.css.
+    // Duplicating them here meant a CSS tweak silently broke board fitting with
+    // nothing to catch it.
+    const { cellW, cellH, cols, rows } = readGridGeometry();
 
     // Bounding box of all tiles in grid units (each tile spans 2 units)
     const active = tiles.filter(t => !t.matched);
@@ -366,12 +375,14 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     const scaleY = (containerHeight * 1.12) / bboxH;
     const zoom = Math.min(Math.max(Math.min(scaleX, scaleY) * 1.02, 0.35), 2.6);
 
-    // Re-center: the grid centers its own geometric center (15 cols, 9 rows).
-    // Offset the pan so the tile bounding-box center lands at the container center.
+    // Re-center: the grid centers its own geometric center. Offset the pan so
+    // the tile bounding-box center lands at the container center instead.
+    // No orientation branch here — .portrait-grid already swaps --grid-cols and
+    // --grid-rows, so reading them back gives the transposed centre for free.
     const bboxCenterX = ((minX + maxX) / 2) * cellW;
     const bboxCenterY = ((minY + maxY) / 2) * cellH;
-    const gridCenterX = (isPortrait ? 9 : 15) * cellW;
-    const gridCenterY = (isPortrait ? 15 : 9) * cellH;
+    const gridCenterX = (cols / 2) * cellW;
+    const gridCenterY = (rows / 2) * cellH;
     const panX = -(bboxCenterX - gridCenterX) * zoom;
     const panY = -(bboxCenterY - gridCenterY) * zoom;
 

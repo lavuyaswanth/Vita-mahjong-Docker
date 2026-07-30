@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { lsParse, lsSetJson, isFiniteNumber } from '../mahjong/storage';
 
 // Keys use the LOCAL date to match getDailyChallengeSeed(), so the streak day
 // and the daily board itself both roll over at the player's local midnight.
@@ -11,10 +12,16 @@ type DailyState = { lastCompleted: string; streak: number };
 // Daily Challenge streak: one deterministic board per calendar day, with a
 // streak that grows on consecutive days played.
 export function useDailyChallenge() {
-  const load = (): DailyState => {
-    try { return JSON.parse(localStorage.getItem('vita_daily') || '{"lastCompleted":"","streak":0}'); }
-    catch { return { lastCompleted: '', streak: 0 }; }
-  };
+  // A corrupt streak matters: a string would make `d.streak + 1` concatenate
+  // ("0" -> "01") and the displayed streak would go nonsensical rather than
+  // just wrong.
+  const load = (): DailyState => lsParse<DailyState>('vita_daily', v => {
+    if (!v || typeof v !== 'object') return null;
+    const d = v as Record<string, unknown>;
+    if (typeof d.lastCompleted !== 'string') return null;
+    if (!isFiniteNumber(d.streak) || d.streak < 0) return null;
+    return { lastCompleted: d.lastCompleted, streak: Math.floor(d.streak) };
+  }, { lastCompleted: '', streak: 0 });
   const [daily, setDaily] = useState<DailyState>(() => load());
   const dailyDoneToday = daily.lastCompleted === todayKey();
 
@@ -27,7 +34,7 @@ export function useDailyChallenge() {
     yesterday.setDate(yesterday.getDate() - 1);
     const streak = d.lastCompleted === dateKey(yesterday) ? d.streak + 1 : 1;
     const next = { lastCompleted: today, streak };
-    try { localStorage.setItem('vita_daily', JSON.stringify(next)); } catch { /* ignore */ }
+    lsSetJson('vita_daily', next);
     setDaily(next);
   };
 
