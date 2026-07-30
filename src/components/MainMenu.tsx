@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { soundSynth } from '../mahjong/soundSynth';
 import { achievementsList } from '../mahjong/achievements';
 import { lsStringArray, lsSetJson } from '../mahjong/storage';
+import ModalShell from './ModalShell';
 import logoImg from '../assets/logo.webp';
 import {
   SettingsIcon,
@@ -25,6 +26,13 @@ interface MainMenuProps {
   realmName?: string;
   dailyStreak?: number;
   dailyDoneToday?: boolean;
+  /**
+   * True when a dialog OUTSIDE this component owns the screen (the settings
+   * modal lives in App). The menu can't be wrapped in an inert element by its
+   * parent, because its own modals render inside it — so the flag comes in and
+   * is ORed with the local state.
+   */
+  backgroundInert?: boolean;
 }
 
 export const MainMenu: React.FC<MainMenuProps> = ({
@@ -38,7 +46,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   menuBg,
   realmName,
   dailyStreak = 0,
-  dailyDoneToday = false
+  dailyDoneToday = false,
+  backgroundInert = false
 }) => {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
@@ -62,9 +71,19 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     onStartGame();
   };
 
+  // The two modals below render as SIBLINGS of the menu, not children, so the
+  // menu itself can be marked inert while one is open. `.modal-overlay` is
+  // position:fixed with its own z-index, so moving it out changes nothing
+  // visually.
+  const modalOpen = showHowToPlay || showAchievements || backgroundInert;
+
   return (
+    <>
     <div
       className="main-menu-container"
+      // Takes the menu's buttons out of the tab order and out of pointer
+      // reach while a modal owns the screen — the other half of aria-modal.
+      inert={modalOpen}
       style={menuBg ? {
         background: `linear-gradient(180deg, rgba(10, 6, 20, 0.45) 0%, rgba(7, 3, 16, 0.72) 100%), url('${menuBg}') center center / cover no-repeat`
       } : undefined}
@@ -185,13 +204,18 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
         <p className="menu-board-hint">Tap the gear to choose your puzzle level shape</p>
       </div>
+    </div>
 
       {/* How To Play Modal */}
       {showHowToPlay && (
-        <div className="modal-overlay" onClick={() => setShowHowToPlay(false)}>
-          <div className="modal-container glassmorphism how-to-play-modal" onClick={e => e.stopPropagation()}>
+        <ModalShell
+          role="dialog"
+          labelledBy="howto-title"
+          onDismiss={() => setShowHowToPlay(false)}
+          className="how-to-play-modal"
+        >
             <div className="modal-header">
-              <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 id="howto-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <HelpIcon size={24} inline /> How to Play Mahjong Solitaire
               </h2>
               <button className="modal-close-btn" onClick={() => setShowHowToPlay(false)} aria-label="Close modal">
@@ -235,16 +259,19 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 I Understand
               </button>
             </div>
-          </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* Zen Trophy Room Achievements Modal */}
       {showAchievements && (
-        <div className="modal-overlay" onClick={() => setShowAchievements(false)}>
-          <div className="modal-container glassmorphism achievements-modal" onClick={e => e.stopPropagation()}>
+        <ModalShell
+          role="dialog"
+          labelledBy="trophies-title"
+          onDismiss={() => setShowAchievements(false)}
+          className="achievements-modal"
+        >
             <div className="modal-header">
-              <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 id="trophies-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 🏆 Trophy Room & Badges
               </h2>
               <button className="modal-close-btn" onClick={() => setShowAchievements(false)} aria-label="Close modal">
@@ -281,10 +308,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 Return to Menu
               </button>
             </div>
-          </div>
-        </div>
+        </ModalShell>
       )}
-    </div>
+    </>
   );
 };
 
