@@ -5,6 +5,7 @@ import { POWER_LABELS } from '../hooks/useBoosters';
 import type { PowerKey } from '../hooks/useBoosters';
 import { formatTime } from '../mahjong/formatTime';
 import { EarnedStampIcon, BackIcon } from './SvgIcons';
+import ModalShell from './ModalShell';
 
 const MAX_LEVEL = 240;
 
@@ -36,14 +37,15 @@ const VictoryModal: React.FC<VictoryModalProps> = ({
   onNextLevel,
   onBackToMenu
 }) => (
-  <div className="modal-overlay victory-overlay animate-fade-in">
-    <div
-      className="modal-container glassmorphism victory-modal text-center animate-scale-up"
-      role="alertdialog"
-      aria-modal="true"
-      aria-labelledby="victory-title"
-      aria-describedby="victory-summary"
-    >
+  // No onDismiss: the board behind is cleared, so dismissing would leave the
+  // player looking at a finished board. They have to pick an action.
+  <ModalShell
+    role="alertdialog"
+    labelledBy="victory-title"
+    describedBy="victory-summary"
+    overlayClassName="victory-overlay animate-fade-in"
+    className="victory-modal text-center animate-scale-up"
+  >
       <div className="victory-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto' }}>
         <EarnedStampIcon size={64} />
       </div>
@@ -109,6 +111,7 @@ const VictoryModal: React.FC<VictoryModalProps> = ({
           <button
             className="confirm-btn glassmorphism"
             onClick={onNextLevel}
+            data-autofocus
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -127,8 +130,7 @@ const VictoryModal: React.FC<VictoryModalProps> = ({
           <BackIcon size={16} inline /> Main Menu
         </button>
       </div>
-    </div>
-  </div>
+  </ModalShell>
 );
 
 export default VictoryModal;

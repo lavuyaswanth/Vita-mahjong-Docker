@@ -1,6 +1,7 @@
 import React from 'react';
 import { layouts } from '../mahjong/layouts';
 import { lsNumberMap } from '../mahjong/storage';
+import ModalShell from './ModalShell';
 import type { LayoutName } from '../mahjong/layouts';
 import { soundSynth } from '../mahjong/soundSynth';
 import {
@@ -92,17 +93,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container glassmorphism" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="modal-header">
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <SettingsIcon size={24} inline /> Game Settings & Layouts
-          </h2>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close settings" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CloseIcon size={18} />
-          </button>
-        </div>
+    <ModalShell role="dialog" labelledBy="settings-title" onDismiss={onClose}>
+      {/* Header */}
+      <div className="modal-header">
+        <h2 id="settings-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <SettingsIcon size={24} inline /> Game Settings & Layouts
+        </h2>
+        <button className="modal-close-btn" onClick={onClose} aria-label="Close settings" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CloseIcon size={18} />
+        </button>
+      </div>
 
         <div className="modal-content">
           {/* Section 1: Level Layout Selector */}
@@ -116,9 +116,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                 const isLocked = !unlockedLevels.includes(levelNum);
                 const bestStarsData = bestStars[l.name] ?? 0;
                 return (
-                  <div
+                  // A real <button>, not a div: these are the primary control in
+                  // this dialog, and the dialog now traps focus — as unfocusable
+                  // divs they were unreachable by keyboard, and an aria-label on
+                  // a generic div is ignored by most screen readers anyway.
+                  // aria-disabled rather than disabled, so a locked card stays
+                  // focusable and can still explain why it's locked.
+                  <button
                     key={l.name}
+                    type="button"
                     className={`layout-card ${activeLayout === l.name ? 'active' : ''} ${isLocked ? 'layout-locked' : ''}`}
+                    aria-disabled={isLocked || undefined}
                     onClick={() => {
                       if (isLocked) {
                         soundSynth.playClick();
@@ -134,23 +142,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                       ? `${l.displayName}, locked. Complete Level ${levelNum - 1} to unlock.`
                       : `Play ${l.displayName} at Level ${currentLevel}`}
                   >
-                    <div className="layout-card-badge">{l.coords.length} Tiles</div>
-                    {isLocked && <div className="lock-overlay">🔒</div>}
-                    <h4>{l.displayName}</h4>
+                    {/* Spans, not div/h4/p: <button> takes phrasing content
+                        only, so flow elements inside it are invalid HTML (and an
+                        <h4> in a button isn't exposed as a heading anyway). The
+                        CSS gives them display:block. */}
+                    <span className="layout-card-badge">{l.coords.length} Tiles</span>
+                    {isLocked && <span className="lock-overlay">🔒</span>}
+                    <span className="layout-card-title">{l.displayName}</span>
                     {/* Say where the pick lands. This edition keeps the player's
                         current level rather than jumping to a fixed 1–5. */}
                     {!isLocked && (
-                      <div className="layout-card-target">Plays at Level {currentLevel}</div>
+                      <span className="layout-card-target">Plays at Level {currentLevel}</span>
                     )}
                     {bestStarsData > 0 && (
-                      <div className="layout-best-stars">
+                      <span className="layout-best-stars">
                         {Array.from({ length: 3 }).map((_, i) => (
                           <span key={i} style={{ opacity: i < bestStarsData ? 1 : 0.25 }}>⭐</span>
                         ))}
-                      </div>
+                      </span>
                     )}
-                    <p>{isLocked ? `Complete Level ${levelNum - 1} to unlock` : l.description}</p>
-                  </div>
+                    <span className="layout-card-desc">{isLocked ? `Complete Level ${levelNum - 1} to unlock` : l.description}</span>
+                  </button>
                 );
               })}
             </div>
@@ -295,14 +307,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="modal-footer">
-          <button className="confirm-btn glassmorphism" onClick={onClose}>
-            Play Game
-          </button>
-        </div>
+      {/* Footer */}
+      <div className="modal-footer">
+        <button className="confirm-btn glassmorphism" onClick={onClose}>
+          Play Game
+        </button>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

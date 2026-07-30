@@ -123,6 +123,28 @@ body {
   padding: 0;
 }
 
+/* Keyboard focus ring.
+   The modals trap focus (see useModalDialog), which is only an improvement if
+   the player can SEE where focus currently is — otherwise Tab moves an
+   invisible cursor around a dialog it can't leave. There was no focus style at
+   all before, and the UA default outline is close to invisible against these
+   dark glassmorphism panels.
+   :focus-visible rather than :focus, so a mouse click on a tile or button does
+   not leave a ring behind. */
+:focus-visible {
+  outline: 3px solid #ffd700;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Tiles are custom-drawn 3D blocks; a rectangular outline sits awkwardly over
+   the stack, so they get a glow that follows the tile face instead. */
+.mahjong-tile:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px #ffd700, 0 0 14px 4px rgba(255, 215, 0, 0.55);
+  z-index: 300;
+}
+
 /* Build version tag — bottom-left, always visible */
 .version-badge {
   position: fixed;
@@ -1314,6 +1336,16 @@ body {
   text-align: center;
   transition: all 0.2s ease;
   position: relative;
+  /* These cards are <button> elements so they are keyboard-reachable inside the
+     settings dialog's focus trap. Buttons do not inherit font or colour from
+     their parent, so reset both — without this the card titles fall back to the
+     UA button font and `buttontext` colour.
+     Deliberately NO width: 100% — a grid item with width:auto already stretches
+     to its cell, and there is no global border-box here, so an explicit 100%
+     would add the padding and border on top and overflow the column. */
+  font: inherit;
+  color: inherit;
+  box-sizing: border-box;
 }
 
 .layout-card:hover {
@@ -1337,12 +1369,17 @@ body {
   display: inline-block;
 }
 
-.layout-card h4 {
+/* Card internals are <span> (a <button> may only contain phrasing content), so
+   they need display:block to stack the way the old h4/p/div did. */
+.layout-card-title {
+  display: block;
   font-size: 13px;
+  font-weight: 600;
   margin: 0 0 4px 0;
 }
 
-.layout-card p {
+.layout-card-desc {
+  display: block;
   font-size: 10px;
   color: var(--text-secondary);
   margin: 0;
@@ -2079,6 +2116,7 @@ body {
 
 /* Which level a board card will open. */
 .layout-card-target {
+  display: block;   /* a <span> inside the card button */
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.02em;

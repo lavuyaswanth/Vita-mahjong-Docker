@@ -25,7 +25,11 @@ interface LiveRegionProps {
 const LiveRegion: React.FC<LiveRegionProps> = ({ message, urgency = 'polite' }) => (
   <div
     className="sr-only"
-    role="status"
+    // `role="status"` carries an implicit aria-live="polite", so pairing it with
+    // aria-live="assertive" is a contradiction that different screen readers
+    // resolve differently. Use the role whose implicit politeness already
+    // matches: status for polite, alert for assertive.
+    role={urgency === 'assertive' ? 'alert' : 'status'}
     aria-live={urgency}
     aria-atomic="true"
   >
