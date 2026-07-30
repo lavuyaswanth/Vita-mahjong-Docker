@@ -8,7 +8,7 @@ import {
   getDailyChallengeSeed
 } from './mahjong/gameEngine';
 import type { TileState } from './mahjong/gameEngine';
-import { layouts, LAYOUT_CYCLE, layoutForLevel, levelForLayout , MAX_LEVEL } from './mahjong/layouts';
+import { layouts, LAYOUT_CYCLE, layoutForLevel, levelForLayout, MAX_LEVEL } from './mahjong/layouts';
 import {
   lsGet, lsSet, lsInt, lsNumber, lsSetJson, lsNumberMap
 } from './mahjong/storage';
