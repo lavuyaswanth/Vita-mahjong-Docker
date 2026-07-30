@@ -1049,18 +1049,21 @@ body {
 }
 
 /* Dynamic grid spacing for exact stacking coordinates.
-   --cell-w / --cell-h are the single source of truth for cell geometry: the
-   grid-template below uses them, and computeFitTransform in MahjongBoard.tsx
-   reads them back off this element via getComputedStyle. Change them here only
-   — no matching constant to update in the TypeScript. */
+   --cell-w / --cell-h / --grid-cols / --grid-rows are the single source of
+   truth for board geometry: the grid-template below is built from them, and
+   computeFitTransform in MahjongBoard.tsx reads all four back off this element
+   via getComputedStyle. Change them here only — there is no matching constant
+   to update in the TypeScript. */
 .mahjong-grid {
   display: grid;
   /* Cells are half-tile units (a tile spans 2x2). Rows are taller than columns
      so each tile renders TALLER THAN WIDE, like a real mahjong tile (~4:5). */
   --cell-w: 30px;
   --cell-h: 38px;
-  grid-template-columns: repeat(30, var(--cell-w));
-  grid-template-rows: repeat(18, var(--cell-h));
+  --grid-cols: 30;
+  --grid-rows: 18;
+  grid-template-columns: repeat(var(--grid-cols), var(--cell-w));
+  grid-template-rows: repeat(var(--grid-rows), var(--cell-h));
   gap: 0;
   position: absolute;
   /* Centering the board inside container */
@@ -2231,6 +2234,17 @@ body {
   margin: 4px 0;
 }
 
+/* Which level a board card will open — it rewinds to the most recent level on
+   that layout, so this is rarely 1–5 and needs saying out loud. */
+.layout-card-target {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--accent-gold, #c9a84c);
+  opacity: 0.9;
+  margin: 2px 0 4px;
+}
+
 /* ==========================================================================
    PHASE 1 — TIMED RUSH MENU CARD
    ========================================================================== */
@@ -2626,10 +2640,13 @@ body {
 
 /* Portrait grid layout: transposes columns and rows dynamically */
 .mahjong-grid.portrait-grid {
+  /* Portrait transposes the grid: 18 wide x 30 tall. */
   --cell-w: 32px;
   --cell-h: 40px;
-  grid-template-columns: repeat(18, var(--cell-w));
-  grid-template-rows: repeat(30, var(--cell-h));
+  --grid-cols: 18;
+  --grid-rows: 30;
+  grid-template-columns: repeat(var(--grid-cols), var(--cell-w));
+  grid-template-rows: repeat(var(--grid-rows), var(--cell-h));
 }
 
 @media (max-width: 1024px) {

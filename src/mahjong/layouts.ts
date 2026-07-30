@@ -159,3 +159,36 @@ export const layouts: Record<LayoutName, LayoutConfig> = {
     coords: generateTurtle()
   }
 };
+
+// ---- Campaign layout cycle ------------------------------------------------
+// The campaign walks these five boards in order, repeating every 5 levels, so
+// level N always uses LAYOUT_CYCLE[(N - 1) % 5]. Both directions of that mapping
+// live here: the game uses them to build a board, and the settings board picker
+// uses them to say which level a card will actually start. Keeping the maths in
+// one place is what stops the picker from promising a level the game won't open.
+export const LAYOUT_CYCLE: readonly LayoutName[] = ['Garden', 'Pagoda', 'Pyramids', 'Butterfly', 'Turtle'];
+
+/** The layout a given campaign level is played on. */
+export function layoutForLevel(level: number): LayoutName {
+  const i = ((Math.trunc(level) - 1) % LAYOUT_CYCLE.length + LAYOUT_CYCLE.length) % LAYOUT_CYCLE.length;
+  return LAYOUT_CYCLE[i]!;
+}
+
+/**
+ * The level a board-name pick should open, given where the player currently is.
+ *
+ * Walks BACK to the most recent level using that layout, so choosing a board
+ * keeps the campaign difficulty you've earned and can never skip you forward.
+ * (Mapping to a fixed level 1–5 instead would knock a level-87 player down to
+ * level 2 — and persist it.) Below level 1 there is nothing to walk back to, so
+ * it clamps up to that layout's first level.
+ */
+export function levelForLayout(layout: LayoutName, currentLevel: number): number {
+  const cycle = LAYOUT_CYCLE.length;
+  const offset = LAYOUT_CYCLE.indexOf(layout);
+  if (offset < 0) return 1;
+  const from = Math.max(1, Math.trunc(currentLevel));
+  const stepsBack = (((from - 1 - offset) % cycle) + cycle) % cycle;
+  const level = from - stepsBack;
+  return level < 1 ? level + cycle : level;
+}

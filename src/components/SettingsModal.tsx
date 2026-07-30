@@ -1,8 +1,9 @@
 import React from 'react';
-import { layouts } from '../mahjong/layouts';
+import { layouts, levelForLayout } from '../mahjong/layouts';
 import type { LayoutName } from '../mahjong/layouts';
 import { soundSynth } from '../mahjong/soundSynth';
 import { realmForLevel } from '../mahjong/realms';
+import { lsNumberMap } from '../mahjong/storage';
 import {
   SettingsIcon,
   LayoutIcon,
@@ -51,6 +52,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
   } = props;
   if (!isOpen) return null;
 
+  // Read once per open rather than per layout card.
+  const bestStars = lsNumberMap('vita_best_stars');
+
   const handleSfxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const vol = parseFloat(e.target.value);
     setSfxVolume(vol);
@@ -98,13 +102,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
               {Object.values(layouts).map((l, idx) => {
                 const levelNum = idx + 1;
                 const isLocked = !unlockedLevels.includes(levelNum);
-                const bestStarsData = (() => {
-                  try {
-                    const stored = localStorage.getItem('vita_best_stars');
-                    const parsed = stored ? JSON.parse(stored) : {};
-                    return parsed[l.name] || 0;
-                  } catch { return 0; }
-                })();
+                const bestStarsData = bestStars[l.name] ?? 0;
+                // Where this card actually starts — the same function initGame
+                // uses, so the label can't promise a level the game won't open.
+                const targetLevel = levelForLayout(l.name, currentLevel);
                 return (
                   <div
                     key={l.name}
@@ -117,11 +118,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                       onSelectLayout(l.name);
                       soundSynth.playClick();
                     }}
-                    title={isLocked ? `Complete Level ${levelNum - 1} to unlock` : l.description}
+                    title={isLocked
+                      ? `Complete Level ${levelNum - 1} to unlock`
+                      : `Play ${l.displayName} at Level ${targetLevel} — ${l.description}`}
+                    aria-label={isLocked
+                      ? `${l.displayName}, locked. Complete Level ${levelNum - 1} to unlock.`
+                      : `Play ${l.displayName} at Level ${targetLevel}`}
                   >
                     <div className="layout-card-badge">{l.coords.length} Tiles</div>
                     {isLocked && <div className="lock-overlay">🔒</div>}
                     <h4>{l.displayName}</h4>
+                    {/* Say where the pick lands: it rewinds to the most recent
+                        level on this board, which is rarely levels 1–5. */}
+                    {!isLocked && (
+                      <div className="layout-card-target">
+                        {targetLevel === currentLevel ? 'Current level' : `Starts Level ${targetLevel}`}
+                      </div>
+                    )}
                     {bestStarsData > 0 && (
                       <div className="layout-best-stars">
                         {Array.from({ length: 3 }).map((_, i) => (

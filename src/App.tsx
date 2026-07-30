@@ -8,7 +8,10 @@ import {
   getDailyChallengeSeed
 } from './mahjong/gameEngine';
 import type { TileState } from './mahjong/gameEngine';
-import { layouts } from './mahjong/layouts';
+import { layouts, LAYOUT_CYCLE, layoutForLevel, levelForLayout } from './mahjong/layouts';
+import {
+  lsGet, lsSet, lsRemove, lsInt, lsNumber, lsParse, lsSetJson, lsNumberMap, isFiniteNumber
+} from './mahjong/storage';
 import type { LayoutName } from './mahjong/layouts';
 import { soundSynth } from './mahjong/soundSynth';
 import { haptics } from './mahjong/haptics';
@@ -53,31 +56,6 @@ const computeStarRating = (time: number, hintsUsed: number, shufflesUsed: number
 // Stamped from package.json at build time (see vite.config.ts) so the badge can
 // always be trusted to tell you which build you're looking at.
 const APP_VERSION = `v${__APP_VERSION__}-legends`;
-
-// --- localStorage helpers -------------------------------------------------
-// Storage throws outright in Safari private mode and when a browser blocks
-// site data, so every access goes through these. A corrupt or missing value
-// falls back to the default rather than propagating NaN into game state.
-const lsGet = (key: string): string | null => {
-  try { return localStorage.getItem(key); } catch { return null; }
-};
-const lsSet = (key: string, value: string): void => {
-  try { localStorage.setItem(key, value); } catch { /* storage unavailable */ }
-};
-const lsNumber = (key: string, fallback: number, min: number, max: number): number => {
-  const raw = lsGet(key);
-  if (raw === null) return fallback;
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(max, Math.max(min, n));
-};
-const lsInt = (key: string, fallback: number, min: number, max: number): number => {
-  const raw = lsGet(key);
-  if (raw === null) return fallback;
-  const n = parseInt(raw, 10);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(max, Math.max(min, Math.trunc(n)));
-};
 
 export const App: React.FC = () => {
   // Auto-play bot flag (?bot=1) — drives the game itself for QA / simulator demos.
@@ -147,9 +125,21 @@ export const App: React.FC = () => {
 
   // Per-level best records (IQ / time / stars) — the reason to replay a board.
   type LevelRecord = { iq: number; time: number; stars: number };
-  const loadRecords = (): Record<string, LevelRecord> => {
-    try { return JSON.parse(lsGet('vita_records') || '{}'); } catch { return {}; }
-  };
+  const loadRecords = (): Record<string, LevelRecord> =>
+    lsParse<Record<string, LevelRecord>>('vita_records', v => {
+      if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+      const out: Record<string, LevelRecord> = {};
+      for (const [level, rec] of Object.entries(v as Record<string, unknown>)) {
+        if (!rec || typeof rec !== 'object') continue;
+        const r = rec as Record<string, unknown>;
+        // Drop a partial record rather than let NaN into the "beat your best"
+        // comparison, where it would silently never register a new best.
+        if (isFiniteNumber(r.iq) && isFiniteNumber(r.time) && isFiniteNumber(r.stars)) {
+          out[level] = { iq: r.iq, time: r.time, stars: r.stars };
+        }
+      }
+      return out;
+    }, {});
   const [bestRecord, setBestRecord] = useState<LevelRecord | null>(null); // for the active level
   const [isNewBest, setIsNewBest] = useState(false);
 
@@ -223,7 +213,8 @@ export const App: React.FC = () => {
   // The clock runs whenever a live run is on screen; there is no separate stop
   // call to forget, so victory/game-over/menu all pause it by construction.
   const clockRunning = isPlaying && !showWinScreen && !showGameOver;
-  // Frozen elapsed time for the victory modal (the clock has stopped by then).
+  // Elapsed time at the moment the run ended, for the victory modal AND the
+  // now-frozen header clock, so the two can never report different seconds.
   const [finalTime, setFinalTime] = useState(0);
 
   // Sync settings to localstorage on change. The first run only configures
@@ -277,27 +268,46 @@ export const App: React.FC = () => {
       Number.isFinite(c.value) &&
       typeof c.matched === 'boolean';
   };
-  const loadSavedGame = (): SavedGame | null => {
-    try {
-      const raw = lsGet(SAVE_KEY);
-      if (!raw) return null;
-      const s = JSON.parse(raw) as SavedGame;
-      if (!s || typeof s !== 'object') return null;
-      if (!Array.isArray(s.tiles) || s.tiles.length === 0 || !layouts[s.layout]) return null;
-      if (!s.tiles.every(isValidSavedTile)) return null;
-      if (!Array.isArray(s.trayIds) || !s.trayIds.every(id => typeof id === 'string')) return null;
-      if (s.tiles.every(t => t.matched)) return null;
-      // Scalars feed the timer, IQ and star rating; a bad one would silently
-      // poison the record for this level.
-      if (!Number.isFinite(s.level) || !Number.isFinite(s.timer) || !Number.isFinite(s.iq) ||
-          !Number.isFinite(s.comboBonus) || !Number.isFinite(s.moveCount) ||
-          !Number.isFinite(s.hintsUsed) || !Number.isFinite(s.shufflesUsed)) return null;
-      if (typeof s.dailyMode !== 'boolean') return null;
-      if (s.dailyMode && s.savedDate !== todayKey()) return null; // yesterday's daily board
-      return s;
-    } catch { return null; }
+  // Narrowed from `unknown`, so the returned type is EARNED by these checks
+  // rather than asserted with a cast the compiler can't verify.
+  const narrowSavedGame = (value: unknown): SavedGame | null => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const s = value as Record<string, unknown>;
+
+    if (typeof s.layout !== 'string' || !(s.layout in layouts)) return null;
+    if (!Array.isArray(s.tiles) || s.tiles.length === 0) return null;
+    if (!s.tiles.every(isValidSavedTile)) return null;
+    if (s.tiles.every(t => t.matched)) return null;
+    if (!Array.isArray(s.trayIds) || !s.trayIds.every((id): id is string => typeof id === 'string')) return null;
+    // Scalars feed the timer, IQ and star rating; a bad one would silently
+    // poison the record for this level.
+    if (!isFiniteNumber(s.level) || !isFiniteNumber(s.timer) || !isFiniteNumber(s.iq) ||
+        !isFiniteNumber(s.comboBonus) || !isFiniteNumber(s.moveCount) ||
+        !isFiniteNumber(s.hintsUsed) || !isFiniteNumber(s.shufflesUsed)) return null;
+    if (typeof s.dailyMode !== 'boolean') return null;
+    if (typeof s.savedDate !== 'string') return null;
+    if (s.dailyRealmId !== null && typeof s.dailyRealmId !== 'string') return null;
+    if (s.dailyMode && s.savedDate !== todayKey()) return null; // yesterday's daily board
+
+    return {
+      level: s.level,
+      layout: s.layout as LayoutName,
+      dailyMode: s.dailyMode,
+      dailyRealmId: s.dailyRealmId,
+      savedDate: s.savedDate,
+      tiles: s.tiles,
+      trayIds: s.trayIds,
+      timer: s.timer,
+      iq: s.iq,
+      comboBonus: s.comboBonus,
+      moveCount: s.moveCount,
+      hintsUsed: s.hintsUsed,
+      shufflesUsed: s.shufflesUsed
+    };
   };
-  const clearSavedGame = () => { try { localStorage.removeItem(SAVE_KEY); } catch { /* storage unavailable */ } };
+  const loadSavedGame = (): SavedGame | null =>
+    lsParse<SavedGame | null>(SAVE_KEY, narrowSavedGame, null);
+  const clearSavedGame = () => lsRemove(SAVE_KEY);
   // Drives the menu's Continue button; refreshed when returning to the menu.
   const [savedGame, setSavedGame] = useState<SavedGame | null>(() => loadSavedGame());
 
@@ -323,7 +333,7 @@ export const App: React.FC = () => {
 
   const persistSave = () => {
     const save = buildSave();
-    if (save) lsSet(SAVE_KEY, JSON.stringify(save));
+    if (save) lsSetJson(SAVE_KEY, save);
   };
 
   // Persist after every board/tray change.
@@ -387,7 +397,6 @@ export const App: React.FC = () => {
 
   // Set up board state when starting or restarting. `daily=true` builds today's
   // shared Daily Challenge board instead of a campaign level.
-  const layoutsList: LayoutName[] = ['Garden', 'Pagoda', 'Pyramids', 'Butterfly', 'Turtle'];
   const initGame = (target: number | LayoutName, daily = false) => {
     let levelNum: number;
     let layout: LayoutName;
@@ -396,7 +405,7 @@ export const App: React.FC = () => {
 
     if (daily) {
       const dseed = getDailyChallengeSeed(new Date());
-      layout = layoutsList[dseed % layoutsList.length];
+      layout = LAYOUT_CYCLE[dseed % LAYOUT_CYCLE.length]!;
       levelNum = currentLevel;            // campaign progress untouched
       seed = dseed;
       maxTypes = 0;                        // daily uses full variety (a fair test)
@@ -408,20 +417,13 @@ export const App: React.FC = () => {
       setDailyRealmId(null);
       if (typeof target === 'number') {
         levelNum = target;
-        layout = layoutsList[(levelNum - 1) % layoutsList.length];
+        layout = layoutForLevel(levelNum);
       } else {
-        // Picking a board by name: layouts cycle every 5 levels, so walk BACK to
-        // the most recent level that uses this layout. Going back keeps the
-        // campaign difficulty you've earned and can't be used to skip ahead;
-        // mapping to a fixed level 1–5 instead would knock a level-87 player
-        // down to level 2 and persist it, wiping their progress.
+        // Picking a board by name rewinds to the most recent level on it — see
+        // levelForLayout. The settings picker labels its cards with the same
+        // function, so what it advertises is what opens.
         layout = target;
-        const cycle = layoutsList.length;
-        // Levels using this layout are those ≡ offset+1 (mod cycle).
-        const offset = layoutsList.indexOf(layout);
-        const stepsBack = (((currentLevel - 1 - offset) % cycle) + cycle) % cycle;
-        levelNum = currentLevel - stepsBack;
-        if (levelNum < 1) levelNum += cycle; // below level 1: take the first one instead
+        levelNum = levelForLayout(target, currentLevel);
       }
       seed = levelNum * 12345 + 42;
       // Difficulty ramp: few distinct tile faces early, full variety by ~level 30.
@@ -563,16 +565,10 @@ export const App: React.FC = () => {
   // Campaign-only bookkeeping: best stars per layout, the per-level record, and
   // the next-level unlock. Dailies deliberately skip all of this.
   const recordCampaignResult = (stars: number, finalIQ: number, elapsed: number) => {
-    try {
-      const stored = lsGet('vita_best_stars');
-      const bestStars: Record<string, number> = stored ? JSON.parse(stored) : {};
-      const currentBest = bestStars[activeLayout] || 0;
-      if (stars > currentBest) {
-        bestStars[activeLayout] = stars;
-        lsSet('vita_best_stars', JSON.stringify(bestStars));
-      }
-    } catch (e) {
-      console.warn("Could not save star rating:", e);
+    const bestStars = lsNumberMap('vita_best_stars');
+    if (stars > (bestStars[activeLayout] ?? 0)) {
+      bestStars[activeLayout] = stars;
+      lsSetJson('vita_best_stars', bestStars);
     }
 
     // Per-level best record (IQ ↑, time ↓, stars ↑). Drives the "beat your
@@ -585,11 +581,9 @@ export const App: React.FC = () => {
       stars: Math.max(stars, prevBest?.stars ?? 0),
       time: prevBest ? Math.min(elapsed, prevBest.time) : elapsed
     };
-    try {
-      const recs = loadRecords();
-      recs[currentLevel] = merged;
-      lsSet('vita_records', JSON.stringify(recs));
-    } catch { /* ignore */ }
+    const recs = loadRecords();
+    recs[currentLevel] = merged;
+    lsSetJson('vita_records', recs);
     setBestRecord(merged);
     setIsNewBest(beat);
 
@@ -664,19 +658,10 @@ export const App: React.FC = () => {
       unlockAchievement('mindful_path');
     }
 
-    try {
-      const stored = lsGet('vita_best_stars');
-      const bestStars = stored ? JSON.parse(stored) : {};
-      const solvedLayouts = Object.keys(bestStars).filter(layout => bestStars[layout] > 0);
-      if (!solvedLayouts.includes(activeLayout)) {
-        solvedLayouts.push(activeLayout);
-      }
-      if (solvedLayouts.length >= 5) {
-        unlockAchievement('trophy_collector');
-      }
-    } catch (e) {
-      console.warn("Could not check layout collector achievement:", e);
-    }
+    const bestStars = lsNumberMap('vita_best_stars');
+    const solvedLayouts = Object.keys(bestStars).filter(layout => (bestStars[layout] ?? 0) > 0);
+    if (!solvedLayouts.includes(activeLayout)) solvedLayouts.push(activeLayout);
+    if (solvedLayouts.length >= 5) unlockAchievement('trophy_collector');
   };
 
   // Shuffles the remaining board tiles into new positions (consumes a Shuffle)
@@ -765,6 +750,7 @@ export const App: React.FC = () => {
         haptics.lose();
         if (comboPopupTimeoutRef.current) clearTimeout(comboPopupTimeoutRef.current);
         setComboPopup(null);
+        setFinalTime(elapsedRef.current);
         setShowGameOver(true);
       }
     }
@@ -976,6 +962,7 @@ export const App: React.FC = () => {
                 running={clockRunning}
                 startAt={run.startAt}
                 elapsedRef={elapsedRef}
+                freezeAt={showWinScreen || showGameOver ? finalTime : null}
               />
               {bestRecord && (
                 <span className="header-best" aria-label={`Best IQ ${bestRecord.iq}`}>
