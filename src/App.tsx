@@ -7,7 +7,7 @@ import {
   tilesMatch
 } from './mahjong/gameEngine';
 import type { TileState } from './mahjong/gameEngine';
-import { layouts, layoutForLevel , MAX_LEVEL } from './mahjong/layouts';
+import { layouts, layoutForLevel, MAX_LEVEL } from './mahjong/layouts';
 import { lsGet, lsSet, lsInt, lsNumber, lsSetJson, lsNumberMap } from './mahjong/storage';
 import type { LayoutName } from './mahjong/layouts';
 import { soundSynth } from './mahjong/soundSynth';
