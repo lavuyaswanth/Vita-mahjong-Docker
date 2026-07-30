@@ -373,11 +373,18 @@ export const App: React.FC = () => {
         levelNum = target;
         layout = layoutsList[(levelNum - 1) % layoutsList.length];
       } else {
+        // Picking a board by name: layouts cycle every 5 levels, so walk BACK to
+        // the most recent level that uses this layout. Going back keeps the
+        // campaign difficulty you've earned and can't be used to skip ahead;
+        // mapping to a fixed level 1–5 instead would knock a level-87 player
+        // down to level 2 and persist it, wiping their progress.
         layout = target;
-        const layoutLevels: Record<LayoutName, number> = {
-          'Garden': 1, 'Pagoda': 2, 'Pyramids': 3, 'Butterfly': 4, 'Turtle': 5
-        };
-        levelNum = layoutLevels[layout] || 1;
+        const cycle = layoutsList.length;
+        // Levels using this layout are those ≡ offset+1 (mod cycle).
+        const offset = layoutsList.indexOf(layout);
+        const stepsBack = (((currentLevel - 1 - offset) % cycle) + cycle) % cycle;
+        levelNum = currentLevel - stepsBack;
+        if (levelNum < 1) levelNum += cycle; // below level 1: take the first one instead
       }
       seed = levelNum * 12345 + 42;
       // Difficulty ramp: few distinct tile faces early, full variety by ~level 30.
@@ -761,6 +768,14 @@ export const App: React.FC = () => {
       if (clearer) { handleTileClick(clearer); return; }
       const moves = findAvailableMoves(active);
       if (moves.length > 0) { handleTileClick(moves[0][0]); return; }
+      // Dig: with only one free tile there can never be a board-to-board pair,
+      // so a human parks it to uncover what's underneath. Without this the bot
+      // shuffles forever (shuffleActiveTiles can't create a pair from one free
+      // tile either). Keep two slots spare so digging can't lose the run.
+      if (freeTiles.length > 0 && tray.length < TRAY_CAPACITY - 2) {
+        handleTileClick(freeTiles[0]);
+        return;
+      }
       handleShuffle();
     }, 0);
 
@@ -858,6 +873,13 @@ export const App: React.FC = () => {
   const trayClearAvailable = tray.length > 0 &&
     tiles.some(t => t.isFree && !t.matched && tray.some(tt => tilesMatch(tt, t)));
 
+  // One slot left and no tile on the board matches anything in the tray: the
+  // next tap fills the tray and ends the run. (Two matching FREE board tiles
+  // don't save you here — taking the first one already fills the last slot.)
+  // Parking with no board match is normal play, so we only warn at this point.
+  const lastSlotDanger = tray.length === TRAY_CAPACITY - 1 && !trayClearAvailable &&
+    boardLeft > 0 && !showWinScreen && !showGameOver;
+
   // Star display helper
   // Brain-tier label for the final IQ (genius ceiling = 200)
   const iqTier = (iq: number): string => {
@@ -887,7 +909,11 @@ export const App: React.FC = () => {
       {/* --- MENU LAYER --- */}
       {!isPlaying && (
         <MainMenu
-          onStartGame={() => initGame(activeLayout)}
+          // PLAY resumes the campaign where the player left off. (Passing a
+          // LayoutName here instead would restart at that layout's level 1–5 AND
+          // overwrite vita_current_level, wiping campaign progress.)
+          onStartGame={() => initGame(currentLevel)}
+          currentLevel={currentLevel}
           onStartDaily={() => initGame(0, true)}
           continueInfo={savedGame ? { level: savedGame.level, daily: savedGame.dailyMode } : null}
           onContinue={() => { if (savedGame) resumeGame(savedGame); }}
@@ -958,8 +984,23 @@ export const App: React.FC = () => {
           {/* Progress bar (#17) */}
           <div className="progress-bar-container">
             <div className="progress-bar-fill" style={{ width: `${progressPercent}%` }}></div>
-            <span className="progress-bar-text">{inPlay} / {totalTileCount} left · {currentRealm.name} · {layouts[activeLayout].displayName}</span>
+            <span className="progress-bar-text">
+              {dailyMode ? 'Daily' : `Level ${currentLevel}`} · {inPlay} / {totalTileCount} left · {currentRealm.name} · {layouts[activeLayout].displayName}
+            </span>
           </div>
+
+          {/* Last-slot warning: the next tap loses unless the board is changed.
+              Say so instead of letting the player walk into "Tray Full". */}
+          {lastSlotDanger && (
+            <div className="stuck-banner" role="status">
+              ⚠️ Last tray slot and no match on the board —{' '}
+              {powerCounts.shuffle > 0
+                ? 'Shuffle to rearrange it.'
+                : powerCounts.undo > 0 || powerCounts.magnet > 0
+                ? 'use Undo or Magnet to return a tile.'
+                : 'no boosters left — the next tile ends the run.'}
+            </div>
+          )}
 
           {/* Combo popup floating text — scales up as the streak climbs */}
           {comboPopup && (
@@ -1077,16 +1118,19 @@ export const App: React.FC = () => {
         setIsAmbientEnabled={setIsAmbientEnabled}
         activeLayout={activeLayout}
         unlockedLevels={unlockedLevels}
+        // Picking a board or a level starts it right away and closes the modal —
+        // otherwise the settings panel stays open on top of the new board.
+        // initGame(LayoutName) rewinds to the nearest earlier level on that
+        // layout, so this can't cost the player campaign progress.
         onSelectLayout={(layout) => {
-          setActiveLayout(layout);
-          if (isPlaying) {
-            initGame(layout);
-          }
+          initGame(layout);
+          setIsSettingsOpen(false);
         }}
         currentLevel={currentLevel}
         maxUnlockedLevel={maxUnlockedLevel}
         onSelectLevel={(lvl) => {
           initGame(lvl);
+          setIsSettingsOpen(false);
         }}
       />
 
@@ -1130,7 +1174,8 @@ export const App: React.FC = () => {
               >
                 <MagnetIcon size={16} inline /> Magnet ({powerCounts.magnet})
               </button>
-              <button className="confirm-btn glassmorphism" onClick={() => initGame(activeLayout)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {/* Restart THIS level — not activeLayout, which maps back to levels 1–5 */}
+              <button className="confirm-btn glassmorphism" onClick={() => initGame(currentLevel)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <RestartIcon size={16} inline /> Restart
               </button>
               <button className="cancel-btn glassmorphism" onClick={handleBackToMenu} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

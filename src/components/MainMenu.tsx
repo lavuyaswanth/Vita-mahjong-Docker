@@ -11,6 +11,9 @@ import {
 
 interface MainMenuProps {
   onStartGame: () => void;
+  // Campaign level PLAY will start — shown on the button so it's clear where
+  // you're picking up.
+  currentLevel: number;
   onStartDaily: () => void;
   onOpenSettings: () => void;
   // A saved mid-level run to resume, if one exists
@@ -25,6 +28,7 @@ interface MainMenuProps {
 
 export const MainMenu: React.FC<MainMenuProps> = ({
   onStartGame,
+  currentLevel,
   onStartDaily,
   onOpenSettings,
   continueInfo = null,
@@ -153,7 +157,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           <button
             className="medallion-play-btn"
             onClick={handlePlayClick}
-            aria-label="Start Mahjong Solitaire"
+            aria-label={`Start Mahjong Solitaire at level ${currentLevel}`}
           >
             <span className="play-btn-glow"></span>
             <div className="play-btn-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -161,7 +165,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             </div>
             <div className="play-btn-text-group">
               <span className="play-btn-primary">PLAY</span>
-              <span className="play-btn-secondary">Mahjong Solitaire</span>
+              <span className="play-btn-secondary">
+                {currentLevel > 1 ? `Level ${currentLevel} of 240` : 'Mahjong Solitaire'}
+              </span>
             </div>
           </button>
         </div>
