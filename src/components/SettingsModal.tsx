@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { layouts } from '../mahjong/layouts';
 import { lsNumberMap } from '../mahjong/storage';
 import ModalShell from './ModalShell';
@@ -63,10 +63,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
     maxUnlockedLevel,
     onSelectLevel
   } = props;
-  if (!isOpen) return null;
 
-  // Read once per open rather than per layout card.
-  const bestStars = lsNumberMap('vita_best_stars');
+  // Read once per OPEN, not per render. Sitting in the render body it re-read
+  // and re-parsed localStorage on every render while the dialog was up — once
+  // per frame of a volume-slider drag. Declared above the early return because
+  // hooks can't run conditionally; `isOpen` is the cache key, so reopening the
+  // dialog picks up stars earned since it was last closed.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const bestStars = useMemo(() => lsNumberMap('vita_best_stars'), [isOpen]);
+
+  if (!isOpen) return null;
 
   const handleSfxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const vol = parseFloat(e.target.value);

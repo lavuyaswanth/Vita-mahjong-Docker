@@ -893,7 +893,7 @@ const TileInner: React.FC<TileProps> = ({
         style={{
           gridColumn: `${x + 1} / span 2`,
           gridRow: `${y + 1} / span 2`,
-          zIndex: 250,
+          '--tile-z': '250',
           '--shift-x': `${shiftX}px`,
           '--shift-y': `${shiftY}px`,
           '--wall': `${wallDepth}px`,
@@ -924,7 +924,13 @@ const TileInner: React.FC<TileProps> = ({
     gridColumn: `${x + 1} / span 2`,
     gridRow: `${y + 1} / span 2`,
     transform: `translate(${shiftX}px, ${shiftY}px)`,
-    zIndex: 10 + z * 5,
+    // Stack elevation travels as a CUSTOM PROPERTY, not an inline z-index. An
+    // inline declaration beats every stylesheet rule regardless of specificity,
+    // so `.mahjong-tile:focus-visible { z-index }` could never lift a focused
+    // tile above its neighbours — the glow drew but stayed at the tile's own
+    // level and later same-layer tiles painted over its edge. As a variable,
+    // the stylesheet keeps control of the actual z-index.
+    '--tile-z': `${10 + z * 5}`,
     '--shift-x': `${shiftX}px`,
     '--shift-y': `${shiftY}px`,
     '--wall': `${wallDepth}px`,

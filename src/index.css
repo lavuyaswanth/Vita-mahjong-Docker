@@ -142,7 +142,9 @@ body {
 .mahjong-tile:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px #ffd700, 0 0 14px 4px rgba(255, 215, 0, 0.55);
-  z-index: 300;
+  /* !important to beat `.mahjong-tile.free:hover`, which is itself !important —
+   * otherwise pointing at the focused tile would drop it back down mid-glow. */
+  z-index: 320 !important;
 }
 
 /* Build version tag — bottom-left, always visible */
@@ -1068,6 +1070,10 @@ body {
 
 .mahjong-tile {
   position: relative;
+  /* Stack elevation comes from --tile-z, set inline per tile (see Tile.tsx).
+     Keeping the z-index in the stylesheet is what lets :focus-visible below
+     override it — an inline z-index would win against any rule. */
+  z-index: var(--tile-z, 10);
   /* Size comes from the 2x2 grid area it spans, so the tile aspect ratio is
      defined in one place (the grid-template cells) per orientation. */
   width: 100%;
@@ -2115,6 +2121,23 @@ body {
 }
 
 /* Which level a board card will open. */
+/* Achievements earned by the run, listed inside the victory dialog so they are
+   both visible over the overlay and inside its aria-describedby text. */
+.victory-achievements {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.victory-achievements li {
+  font-size: 12.5px;
+  line-height: 135%;
+  color: var(--accent-gold, #c9a84c);
+}
+
 .layout-card-target {
   display: block;   /* a <span> inside the card button */
   font-size: 11.5px;

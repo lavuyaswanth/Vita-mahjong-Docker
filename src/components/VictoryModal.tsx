@@ -17,6 +17,15 @@ interface VictoryModalProps {
   moveCount: number;
   activeLayout: LayoutName;
   currentLevel: number;
+  /**
+   * Achievements earned by this run. Rendered HERE rather than left to the
+   * page-level live region: they unlock in the same commit that opens this
+   * dialog, and `aria-modal="true"` hides everything outside it from a screen
+   * reader — so the region that used to announce them is masked at exactly the
+   * moment they fire. The toast has the same problem visually, and only ever
+   * shows the last of a batch.
+   */
+  unlockedAchievements?: { name: string; desc: string }[];
   levelReward: { power: PowerKey; amount: number } | null;
   rewardClaimed: boolean;
   onClaimReward: () => void;
@@ -31,6 +40,7 @@ const VictoryModal: React.FC<VictoryModalProps> = ({
   moveCount,
   activeLayout,
   currentLevel,
+  unlockedAchievements = [],
   levelReward,
   rewardClaimed,
   onClaimReward,
@@ -60,10 +70,23 @@ const VictoryModal: React.FC<VictoryModalProps> = ({
         ))}
       </div>
 
-      <p id="victory-summary">
-        Congratulations! You cleared all tiles in {formatTime(finalTime)} with {moveCount} moves,
-        scoring {score} and earning {earnedStars} of 3 stars.
-      </p>
+      {/* aria-describedby points at this whole block, so the achievements are
+          part of what gets read when the dialog opens. */}
+      <div id="victory-summary">
+        <p>
+          Congratulations! You cleared all tiles in {formatTime(finalTime)} with {moveCount} moves,
+          scoring {score} and earning {earnedStars} of 3 stars.
+        </p>
+        {unlockedAchievements.length > 0 && (
+          <ul className="victory-achievements">
+            {unlockedAchievements.map(a => (
+              <li key={a.name}>
+                🏆 Achievement unlocked: <strong>{a.name}</strong> — {a.desc}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <div className="victory-stats">
         <div className="v-stat">
