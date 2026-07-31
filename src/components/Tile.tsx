@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import type { TileState } from '../mahjong/gameEngine';
-import { tileDisplayName } from '../mahjong/tileNames';
+import type { TileState } from '../skyjong/gameEngine';
+import { tileDisplayName } from '../skyjong/tileNames';
 
 interface TileProps {
   tile: TileState;
@@ -64,7 +64,7 @@ const TileInner: React.FC<TileProps> = ({
   if (matched) {
     return (
       <div
-        className="mahjong-tile matched"
+        className="skyjong-tile matched"
         data-tile-id={tile.id}
         style={{
           gridColumn: `${x + 1} / span 2`,
@@ -87,7 +87,7 @@ const TileInner: React.FC<TileProps> = ({
 
   // Classes for active tiles ('revealed' drives the deal-in flip animation)
   const classes = [
-    'mahjong-tile',
+    'skyjong-tile',
     `layer-${z}`,
     isHinted ? 'hinted' : '',
     !isFree ? 'blocked' : 'free',
@@ -102,7 +102,7 @@ const TileInner: React.FC<TileProps> = ({
     transform: `translate(${shiftX}px, ${shiftY}px)`,
     // Stack elevation travels as a CUSTOM PROPERTY, not an inline z-index. An
     // inline declaration beats every stylesheet rule regardless of specificity,
-    // so `.mahjong-tile:focus-visible { z-index }` could never lift a focused
+    // so `.skyjong-tile:focus-visible { z-index }` could never lift a focused
     // tile above its neighbours — the glow drew but stayed at the tile's own
     // level and later same-layer tiles painted over its edge. As a variable,
     // the stylesheet keeps control of the actual z-index.

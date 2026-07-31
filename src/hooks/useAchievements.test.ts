@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { achievementsList } from '../mahjong/achievements';
+import { achievementsList } from '../skyjong/achievements';
 
 // useAchievements is a React hook and there is no renderer in devDependencies,
 // so its unlock/return behaviour is covered by the browser checks rather than

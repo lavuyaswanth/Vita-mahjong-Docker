@@ -20,7 +20,7 @@ afterEach(() => { vi.unstubAllGlobals(); });
 
 describe('loadRecords', () => {
   it('drops partial or corrupt entries instead of repairing them', () => {
-    store.set('vita_records', JSON.stringify({
+    store.set('skyjong_records', JSON.stringify({
       '1': { iq: 150, time: 90, stars: 3 },
       '2': { iq: 120, time: 200 },              // missing stars
       '3': { iq: 'x', time: 10, stars: 1 },     // non-numeric iq
@@ -35,9 +35,9 @@ describe('loadRecords', () => {
 
   it('returns {} for absent and malformed storage', () => {
     expect(loadRecords()).toEqual({});
-    store.set('vita_records', '{{{');
+    store.set('skyjong_records', '{{{');
     expect(loadRecords()).toEqual({});
-    store.set('vita_records', '[]');
+    store.set('skyjong_records', '[]');
     expect(loadRecords()).toEqual({});
   });
 });
@@ -85,7 +85,7 @@ describe('mergeRecord', () => {
   });
 
   it('a corrupt existing record does not block a new best being recorded', () => {
-    store.set('vita_records', JSON.stringify({ '5': { iq: 'bad' } }));
+    store.set('skyjong_records', JSON.stringify({ '5': { iq: 'bad' } }));
     const { isNewBest, merged } = mergeRecord(5, { iq: 140, time: 60, stars: 2 });
     expect(isNewBest).toBe(true);
     expect(merged).toEqual({ iq: 140, time: 60, stars: 2 });

@@ -11,7 +11,7 @@ await p1.evaluateOnNewDocument(() => {
   window.requestAnimationFrame = (cb) => { window.__raf++; return orig(cb); };
 });
 await p1.goto('http://localhost:5173/?level=1', { waitUntil: 'networkidle2' });
-await p1.waitForSelector('.mahjong-tile', { timeout: 10000 });
+await p1.waitForSelector('.skyjong-tile', { timeout: 10000 });
 await sleep(800);
 await p1.evaluate(() => { window.__raf = 0; });   // reset after initial layout settles
 await sleep(2000);
@@ -39,7 +39,7 @@ const p2 = await browser.newPage();
 let consoleErr = 0;
 p2.on('console', m => { if (m.type() === 'error') { consoleErr++; console.log('CONSOLE-ERR:', m.text()); } });
 await p2.goto('http://localhost:5173/?bot=1&level=1', { waitUntil: 'networkidle2' });
-await p2.waitForSelector('.mahjong-tile', { timeout: 10000 });
+await p2.waitForSelector('.skyjong-tile', { timeout: 10000 });
 let won = false;
 const deadline = Date.now() + 120000;
 while (Date.now() < deadline) { if (await p2.$('.victory-modal')) { won = true; break; } await sleep(1000); }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { lsParse, lsSetJson, isFiniteNumber } from '../mahjong/storage';
+import { lsParse, lsSetJson, isFiniteNumber } from '../skyjong/storage';
 
 // Keys use the LOCAL date to match getDailyChallengeSeed(), so the streak day
 // and the daily board itself both roll over at the player's local midnight.
@@ -15,7 +15,7 @@ export function useDailyChallenge() {
   // A corrupt streak matters: a string would make `d.streak + 1` concatenate
   // ("0" -> "01") and the displayed streak would go nonsensical rather than
   // just wrong.
-  const load = (): DailyState => lsParse<DailyState>('vita_daily', v => {
+  const load = (): DailyState => lsParse<DailyState>('skyjong_daily', v => {
     if (!v || typeof v !== 'object') return null;
     const d = v as Record<string, unknown>;
     if (typeof d.lastCompleted !== 'string') return null;
@@ -34,7 +34,7 @@ export function useDailyChallenge() {
     yesterday.setDate(yesterday.getDate() - 1);
     const streak = d.lastCompleted === dateKey(yesterday) ? d.streak + 1 : 1;
     const next = { lastCompleted: today, streak };
-    lsSetJson('vita_daily', next);
+    lsSetJson('skyjong_daily', next);
     setDaily(next);
   };
 

@@ -1,4 +1,4 @@
-# Vita Mahjong — QA Run Results
+# Skyjong — QA Run Results
 
 **Branch:** `age-14plus` (Midnight / Gothic Legends, `v0.2.0-legends`)
 **Date:** 2026-06-14
@@ -34,7 +34,7 @@
 | TC-166 Daily streak shown | PASS | "🔥 1-day streak!" |
 | TC-064 Determinism (level 50 ×2) | PASS | identical 132-tile sets |
 | TC-105/106/107/121 Level param clamp (0/241/abc/999999) | PASS | renders, no crash, clean console |
-| TC-030 / TC-200 Settings persist | PASS | `vita_high_contrast` survives reload |
+| TC-030 / TC-200 Settings persist | PASS | `skyjong_high_contrast` survives reload |
 | TC-190 Tray slot count | PASS | **4** slots (matches `TRAY_CAPACITY`) |
 | TC-014 Settings modal opens | PASS | modal rendered |
 | *-console (all bot levels) | PASS | clean console throughout |
@@ -50,7 +50,7 @@
 - Menu at 320px and desktop landscape captured without layout breakage.
 
 ## Notes / minor findings (no blockers)
-1. **TC-063 false-negative in the batch run.** Level 240 timed out once during the 5-level sequential batch (system load), but two isolated re-runs solved it cleanly at 76s / 78s with a smooth tile-by-tile clear and no console errors. Not a game defect — the harness per-level timeout was raised and the level is confirmed solvable. (An early probe also misreported a stall because matched tiles intentionally stay in the DOM — `MahjongBoard.tsx:528` / comment at `:214` — so counting `[data-tile-id]` is not a progress signal; count `.mahjong-tile:not(.matched)` instead.)
+1. **TC-063 false-negative in the batch run.** Level 240 timed out once during the 5-level sequential batch (system load), but two isolated re-runs solved it cleanly at 76s / 78s with a smooth tile-by-tile clear and no console errors. Not a game defect — the harness per-level timeout was raised and the level is confirmed solvable. (An early probe also misreported a stall because matched tiles intentionally stay in the DOM — `SkyjongBoard.tsx:528` / comment at `:214` — so counting `[data-tile-id]` is not a progress signal; count `.skyjong-tile:not(.matched)` instead.)
 2. **P3 — High-contrast labels truncate.** On small tiles the high-contrast name tags clip ("Nights…", "Hourgl…") and crowd. Legible but tight; consider shorter tags or a tooltip on small viewports.
 3. **P3 — Star vs. IQ tension.** A board can show "Genius · IQ 200 / New Best" with only **1 of 3 stars** (stars track speed + no-helpers; IQ tracks completion + combos). Internally consistent but can read as contradictory to a player.
 

@@ -18,7 +18,7 @@ export interface Realm {
   id: RealmId;
   name: string;
   menuBg: string;
-  // Maps to the board particle palette already implemented in MahjongBoard
+  // Maps to the board particle palette already implemented in SkyjongBoard
   particleTheme: 'dark' | 'ocean' | 'sunset' | 'zen';
   // Filter-based realms have no art folder of their own: they borrow another
   // realm's tile art and recolor it with a CSS filter keyed off

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   lsGet, lsSet, lsRemove, lsNumber, lsInt, lsParse, lsSetJson,
-  lsStringArray, lsNumberMap, isFiniteNumber
+  lsStringArray, lsNumberMap, isFiniteNumber, migrateLegacyStorage
 } from './storage';
 
 // A minimal in-memory localStorage, since these helpers exist precisely to
@@ -16,7 +16,10 @@ const installStorage = (impl?: Partial<Storage>) => {
     key: (i: number) => [...store.keys()][i] ?? null,
     get length() { return store.size; }
   };
-  vi.stubGlobal('localStorage', { ...base, ...impl });
+  // Object.assign onto `base`, NOT `{ ...base }`: spreading evaluates the
+  // `length` getter once and freezes it at 0, which silently made the migration
+  // loop iterate zero times and "pass" nothing.
+  vi.stubGlobal('localStorage', impl ? Object.assign(Object.create(base), impl) : base);
   return store;
 };
 
@@ -144,5 +147,75 @@ describe('isFiniteNumber', () => {
     for (const bad of [NaN, Infinity, -Infinity, '1', null, undefined, {}, []]) {
       expect(isFiniteNumber(bad)).toBe(false);
     }
+  });
+});
+
+describe('legacy vita_* migration', () => {
+  // The rename from Vita Mahjong to Skyjong changed every storage key's prefix.
+  // Without this, an existing player reopens the app reset to level 1 with no
+  // achievements, no records and no saved game.
+  const seedLegacy = (entries: Record<string, string>) => {
+    for (const [k, v] of Object.entries(entries)) lsSet(k, v);
+  };
+
+  it('copies every legacy key onto the new prefix', () => {
+    seedLegacy({
+      vita_current_level: '87',
+      vita_max_unlocked_level: '120',
+      vita_achievements: '["zen_beginner","speedy_thinker"]',
+      vita_records: '{"87":{"iq":190,"time":95,"stars":3}}',
+      vita_daily: '{"lastCompleted":"2026-07-29","streak":4}',
+      vita_sfx_vol: '0.8'
+    });
+    migrateLegacyStorage();
+    expect(lsGet('skyjong_current_level')).toBe('87');
+    expect(lsGet('skyjong_max_unlocked_level')).toBe('120');
+    expect(lsGet('skyjong_achievements')).toBe('["zen_beginner","speedy_thinker"]');
+    expect(lsGet('skyjong_records')).toBe('{"87":{"iq":190,"time":95,"stars":3}}');
+    expect(lsGet('skyjong_daily')).toBe('{"lastCompleted":"2026-07-29","streak":4}');
+    expect(lsGet('skyjong_sfx_vol')).toBe('0.8');
+  });
+
+  it('migrates keys it was never told about', () => {
+    // Enumerating the prefix, not a hardcoded list, is what makes a key added
+    // later (or one only one edition has) safe.
+    seedLegacy({ vita_some_future_key: 'kept' });
+    migrateLegacyStorage();
+    expect(lsGet('skyjong_some_future_key')).toBe('kept');
+  });
+
+  it('leaves the legacy copy in place so a rollback still finds its data', () => {
+    seedLegacy({ vita_current_level: '42' });
+    migrateLegacyStorage();
+    expect(lsGet('vita_current_level')).toBe('42');
+  });
+
+  it('never overwrites data already under the new prefix', () => {
+    seedLegacy({ vita_current_level: '5' });
+    lsSet('skyjong_current_level', '99');
+    migrateLegacyStorage();
+    expect(lsGet('skyjong_current_level'), 'newer progress wins').toBe('99');
+  });
+
+  it('runs once — a later legacy write cannot resurrect stale progress', () => {
+    seedLegacy({ vita_current_level: '10' });
+    migrateLegacyStorage();
+    expect(lsGet('skyjong_current_level')).toBe('10');
+    // Player advances, then something writes the old key again.
+    lsSet('skyjong_current_level', '55');
+    lsSet('vita_current_level', '10');
+    migrateLegacyStorage();
+    expect(lsGet('skyjong_current_level'), 'must not roll back to 10').toBe('55');
+  });
+
+  it('is a no-op for a fresh install', () => {
+    migrateLegacyStorage();
+    expect(lsGet('skyjong_current_level')).toBeNull();
+  });
+
+  it('survives a throwing localStorage', () => {
+    const boom = () => { throw new DOMException('denied', 'SecurityError'); };
+    vi.stubGlobal('localStorage', { getItem: boom, setItem: boom, removeItem: boom, key: boom, length: 0, clear: boom });
+    expect(() => migrateLegacyStorage()).not.toThrow();
   });
 });

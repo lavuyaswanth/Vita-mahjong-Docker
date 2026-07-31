@@ -1,4 +1,4 @@
-# Vita Mahjong — QA Test Suite
+# Skyjong — QA Test Suite
 
 > Branch: `age-14plus` (Midnight / Gothic Legends edition). The version badge is
 > stamped from `package.json` at build time, so it reads `v<version>-legends` —
@@ -60,7 +60,7 @@ A case **passes** only if the expected result is fully met with no console error
 |----|-----|-------|----------|
 | TC-028 | P1 | Toggle High Contrast on. | UI switches to high-contrast palette immediately. |
 | TC-029 | P1 | Toggle High Contrast off. | Reverts to normal palette. |
-| TC-030 | P1 | Reload after enabling High Contrast. | Setting persists (localStorage `vita_high_contrast`). |
+| TC-030 | P1 | Reload after enabling High Contrast. | Setting persists (localStorage `skyjong_high_contrast`). |
 | TC-031 | P1 | Drag Effects (SFX) volume slider to 0. | Click/chime SFX become silent. |
 | TC-032 | P1 | Drag Effects volume to max. | SFX audible (where audio permitted). |
 | TC-033 | P1 | Toggle Ambient music on. | Ambient track starts during gameplay. |
@@ -238,12 +238,12 @@ A case **passes** only if the expected result is fully met with no console error
 | TC-168 | P1 | Streak counter displays. | Current streak value visible. |
 | TC-169 | P1 | Consecutive-day completion increments streak. | Streak +1 on the next day. |
 | TC-170 | P1 | Missing a day resets streak. | Streak resets to start per rules. |
-| TC-171 | P1 | Daily progress persists (`vita_daily`). | Stored and restored across reloads. |
+| TC-171 | P1 | Daily progress persists (`skyjong_daily`). | Stored and restored across reloads. |
 | TC-172 | P2 | Daily does NOT affect campaign records. | Daily completion isolated from per-level bests. |
 | TC-173 | P2 | Daily has its own realm. | Daily realm rendered independently. |
 | TC-174 | P2 | Daily victory screen. | Shows daily-specific result, not "next level". |
 | TC-175 | P2 | Daily board is solvable. | Bot-completable to victory. |
-| TC-176 | P2 | Corrupt `vita_daily` JSON. | App falls back to defaults without crashing. |
+| TC-176 | P2 | Corrupt `skyjong_daily` JSON. | App falls back to defaults without crashing. |
 | TC-177 | P3 | Streak display at large values (e.g. 99). | Renders without layout break. |
 
 ## 11. Win / loss states (TC-178 … TC-189)
@@ -289,7 +289,7 @@ A case **passes** only if the expected result is fully met with no console error
 | TC-200 | P1 | Settings survive reload. | High contrast + volumes restored. |
 | TC-201 | P1 | Booster counts survive reload. | Counts restored (non-bot). |
 | TC-202 | P1 | Records survive reload. | Per-level bests restored. |
-| TC-203 | P1 | Daily state survives reload. | `vita_daily` restored. |
+| TC-203 | P1 | Daily state survives reload. | `skyjong_daily` restored. |
 | TC-204 | P1 | Bot mode does NOT write real saves. | `?bot=1` leaves localStorage records untouched. |
 | TC-205 | P2 | Corrupt records JSON. | App tolerates and resets that key. |
 | TC-206 | P2 | localStorage disabled/blocked. | App still runs (in-memory fallback, no crash). |
