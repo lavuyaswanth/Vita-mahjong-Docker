@@ -5,7 +5,7 @@
    - Everything else (hashed JS/CSS/art) is cache-first with background
      refresh — those filenames are content-hashed, so cached copies never go
      stale. */
-const CACHE = 'vita-mahjong-legends-v2';
+const CACHE = 'vita-mahjong-legends-v3';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

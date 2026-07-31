@@ -1,6 +1,6 @@
 # Vita Mahjong — QA Run Results
 
-**Branch:** `age-14plus` (Midnight / Gothic Legends, `v0.1.0-legends`)
+**Branch:** `age-14plus` (Midnight / Gothic Legends, `v0.2.0-legends`)
 **Date:** 2026-06-14
 **Suite:** `qa/TEST_CASES.md` (270 cases)
 **How run:** headless `chrome-headless-shell` (mac_arm-148) driving the dev server at `http://localhost:5173` via `qa/harness.mjs` (puppeteer-core), plus direct probes and a visual sweep. Screenshots in `/tmp/qa_shots/`.
@@ -16,7 +16,7 @@
 |----|--------|----------|
 | TC-001 Menu renders | PASS | `.main-menu-container` present |
 | TC-002 Clean console on load | PASS | 0 console errors |
-| TC-003 / TC-254 Version badge | PASS | `v0.1.0-legends` |
+| TC-003 / TC-254 Version badge | PASS | matches `package.json` (`v0.2.0-legends`) |
 | TC-004 / TC-011 Assets + manifest load | PASS | no failed image/manifest requests |
 | TC-018 Realm badge | PASS | "🗺️ Realm: Gothic Legends" |
 | TC-249 Edition branding | PASS | subtitle "Match the Creatures of Legend — Ages 14+" |
