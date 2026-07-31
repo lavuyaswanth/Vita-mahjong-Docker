@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatTime } from '../mahjong/formatTime';
+import { formatTime } from '../skyjong/formatTime';
 
 interface GameClockProps {
   // False when the run is over or the menu is up — the clock holds its value.

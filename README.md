@@ -1,4 +1,4 @@
-# 🀄 Vita Mahjong — Midnight Edition
+# 🀄 Skyjong — Midnight Edition
 
 A gothic, holder-tray take on Mahjong Solitaire built with React and TypeScript — a 240-level campaign across seven themed realms, containerized with Docker for easy local deployment. _(Ages 14+ "Creatures of Legend" edition.)_
 
@@ -35,7 +35,7 @@ A gothic, holder-tray take on Mahjong Solitaire built with React and TypeScript 
 
 ## Overview
 
-**Vita Mahjong** is a browser-based tile-matching game built around a **holder-tray** twist on Mahjong Solitaire. Tap free tiles to collect them into a small tray; matching pairs auto-clear. It ships a **240-level campaign** that journeys through seven themed visual realms, with deterministic seeded boards that are always solvable, an IQ-based scoring model, a Daily Challenge with streaks, and full Docker containerization for portable deployment.
+**Skyjong** is a browser-based tile-matching game built around a **holder-tray** twist on Mahjong Solitaire. Tap free tiles to collect them into a small tray; matching pairs auto-clear. It ships a **240-level campaign** that journeys through seven themed visual realms, with deterministic seeded boards that are always solvable, an IQ-based scoring model, a Daily Challenge with streaks, and full Docker containerization for portable deployment.
 
 This is the **Midnight (Ages 14+) edition** — a gothic "Creatures of Legend" tile set (Dracula, Werewolf, and friends) on a dark Mystic palette. All sound effects are synthesized in real time with the Web Audio API, and the game runs fully offline once loaded.
 
@@ -118,7 +118,7 @@ The realm advances with campaign progress and also colors the **particle bursts*
 
 ## Audio System
 
-Vita Mahjong features a fully synthesized audio engine built on the **Web Audio API** — no audio files are loaded.
+Skyjong features a fully synthesized audio engine built on the **Web Audio API** — no audio files are loaded.
 
 ### Sound Effects
 | Sound | Trigger | Character |
@@ -140,7 +140,7 @@ Both SFX volume and ambient volume are independently adjustable via sliders in S
 
 ## Accessibility
 
-Vita Mahjong is designed with senior accessibility as a core priority:
+Skyjong is designed with senior accessibility as a core priority:
 
 - **👁️ High-Contrast Mode** — adds a short name label on top of every tile for effortless identification at a glance
 - **Press-and-hold peek** — hold any tile to reveal its face and the tile beneath it
@@ -170,7 +170,7 @@ Vita Mahjong is designed with senior accessibility as a core priority:
 ## Project Structure
 
 ```
-vita-mahjong-game/
+skyjong/
 ├── public/
 │   ├── favicon.svg            # App favicon (SVG)
 │   └── icons.svg              # Shared icon sprite
@@ -185,7 +185,7 @@ vita-mahjong-game/
 │   │   ├── haptics.ts         # Touch-device vibration feedback
 │   │   └── soundSynth.ts      # Web Audio API synthesizer: SFX + ambient ocean/chimes
 │   ├── components/
-│   │   ├── MahjongBoard.tsx   # Board renderer with zoom/pan, particle canvas, tray
+│   │   ├── SkyjongBoard.tsx   # Board renderer with zoom/pan, particle canvas, tray
 │   │   ├── MainMenu.tsx       # Landing screen: play, daily challenge, realm badge, how-to-play
 │   │   ├── SettingsModal.tsx  # Level selector, high-contrast toggle, SFX/ambient audio controls
 │   │   ├── SvgIcons.tsx       # Shared gold-gradient UI icon set
@@ -311,16 +311,16 @@ Preferences and progress are persisted to `localStorage` and restored on reload:
 
 | Data | Key | Notes |
 |------|-----|-------|
-| High Contrast Mode | `vita_high_contrast` | `false` by default |
-| SFX Volume | `vita_sfx_vol` | `0.5` by default |
-| Ambient Volume | `vita_ambient_vol` | `0.3` by default |
-| Ambient Enabled | `vita_ambient_enabled` | `false` by default |
-| Per-level best records | `vita_records` | best IQ / time / stars per level |
-| Highest unlocked level | `vita_max_unlocked_level` | campaign progress |
-| Current level | `vita_current_level` | resume point |
-| Daily Challenge + streak | `vita_daily` | last completed date + streak |
-| Unlocked achievements | `vita_achievements` | earned badge ids |
-| Tutorial seen | `vita_tutorial_seen` | first-run flag |
+| High Contrast Mode | `skyjong_high_contrast` | `false` by default |
+| SFX Volume | `skyjong_sfx_vol` | `0.5` by default |
+| Ambient Volume | `skyjong_ambient_vol` | `0.3` by default |
+| Ambient Enabled | `skyjong_ambient_enabled` | `false` by default |
+| Per-level best records | `skyjong_records` | best IQ / time / stars per level |
+| Highest unlocked level | `skyjong_max_unlocked_level` | campaign progress |
+| Current level | `skyjong_current_level` | resume point |
+| Daily Challenge + streak | `skyjong_daily` | last completed date + streak |
+| Unlocked achievements | `skyjong_achievements` | earned badge ids |
+| Tutorial seen | `skyjong_tutorial_seen` | first-run flag |
 
 ---
 
@@ -339,7 +339,7 @@ Preferences and progress are persisted to `localStorage` and restored on reload:
 │  └──────────────┘  └─────┬──────┘  └─────────────────┘ │
 │                          │                               │
 │              ┌───────────┴───────────┐                  │
-│              │    MahjongBoard.tsx   │                  │
+│              │    SkyjongBoard.tsx   │                  │
 │              │  • Zoom/pan controls  │                  │
 │              │  • Canvas particles   │                  │
 │              │  • Tile grid renderer │                  │

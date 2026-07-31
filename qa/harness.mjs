@@ -1,4 +1,4 @@
-// Headless QA harness for Vita Mahjong (age-14plus / Midnight edition).
+// Headless QA harness for Skyjong (age-14plus / Midnight edition).
 // Drives the running dev server with puppeteer-core + the local chrome-headless-shell.
 // Executes the automatable P0/P1 cases from qa/TEST_CASES.md and writes results.
 import puppeteer from 'puppeteer-core';
@@ -77,12 +77,12 @@ async function main() {
   {
     const page = await browser.newPage();
     await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
-    await page.evaluate(() => localStorage.setItem('vita_high_contrast', 'true'));
+    await page.evaluate(() => localStorage.setItem('skyjong_high_contrast', 'true'));
     await page.reload({ waitUntil: 'domcontentloaded' });
-    const val = await page.evaluate(() => localStorage.getItem('vita_high_contrast'));
-    rec('TC-030', val === 'true' ? 'PASS' : 'FAIL', `persisted vita_high_contrast=${val}`);
+    const val = await page.evaluate(() => localStorage.getItem('skyjong_high_contrast'));
+    rec('TC-030', val === 'true' ? 'PASS' : 'FAIL', `persisted skyjong_high_contrast=${val}`);
     rec('TC-200', val === 'true' ? 'PASS' : 'FAIL', 'settings survive reload');
-    await page.evaluate(() => localStorage.removeItem('vita_high_contrast'));
+    await page.evaluate(() => localStorage.removeItem('skyjong_high_contrast'));
     await page.close();
   }
 

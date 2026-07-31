@@ -6,29 +6,29 @@ import {
   shuffleActiveTiles,
   tilesMatch,
   getDailyChallengeSeed
-} from './mahjong/gameEngine';
-import type { TileState } from './mahjong/gameEngine';
-import { layouts, LAYOUT_CYCLE, layoutForLevel, levelForLayout, MAX_LEVEL } from './mahjong/layouts';
+} from './skyjong/gameEngine';
+import type { TileState } from './skyjong/gameEngine';
+import { layouts, LAYOUT_CYCLE, layoutForLevel, levelForLayout, MAX_LEVEL } from './skyjong/layouts';
 import {
   lsGet, lsSet, lsInt, lsNumber, lsSetJson, lsNumberMap
-} from './mahjong/storage';
-import type { LayoutName } from './mahjong/layouts';
-import { soundSynth } from './mahjong/soundSynth';
-import { haptics } from './mahjong/haptics';
+} from './skyjong/storage';
+import type { LayoutName } from './skyjong/layouts';
+import { soundSynth } from './skyjong/soundSynth';
+import { haptics } from './skyjong/haptics';
 import { useAchievements } from './hooks/useAchievements';
 import { useBoosters } from './hooks/useBoosters';
 import type { PowerKey } from './hooks/useBoosters';
 import { useDailyChallenge, todayKey } from './hooks/useDailyChallenge';
 import { useSaveGame } from './hooks/useSaveGame';
 import type { SavedGame } from './hooks/useSaveGame';
-import { realmForLevel, realms } from './mahjong/realms';
-import { recordFor, mergeRecord } from './mahjong/records';
-import type { LevelRecord } from './mahjong/records';
-import type { RealmId } from './mahjong/realms';
-import MahjongBoard from './components/MahjongBoard';
+import { realmForLevel, realms } from './skyjong/realms';
+import { recordFor, mergeRecord } from './skyjong/records';
+import type { LevelRecord } from './skyjong/records';
+import type { RealmId } from './skyjong/realms';
+import SkyjongBoard from './components/SkyjongBoard';
 import GameClock from './components/GameClock';
 import { TileGlyph } from './components/Tile';
-import { tileDisplayName } from './mahjong/tileNames';
+import { tileDisplayName } from './skyjong/tileNames';
 import MainMenu from './components/MainMenu';
 import SettingsModal from './components/SettingsModal';
 import VictoryModal from './components/VictoryModal';
@@ -93,12 +93,12 @@ export const App: React.FC = () => {
   // and the auto-play bot so the board is visible immediately.
   const [showTutorial, setShowTutorial] = useState<boolean>(() => {
     if (autoStart) return false;
-    return lsGet('vita_tutorial_seen') !== 'true';
+    return lsGet('skyjong_tutorial_seen') !== 'true';
   });
   const dismissTutorial = () => {
     soundSynth.playClick();
     setShowTutorial(false);
-    lsSet('vita_tutorial_seen', 'true');
+    lsSet('skyjong_tutorial_seen', 'true');
   };
 
   // Game Helpers
@@ -128,7 +128,7 @@ export const App: React.FC = () => {
   // Star Rating (#2)
   const [earnedStars, setEarnedStars] = useState(0);
 
-  // Per-level best records live in mahjong/records.ts.
+  // Per-level best records live in skyjong/records.ts.
   const [bestRecord, setBestRecord] = useState<LevelRecord | null>(null); // for the active level
   const [isNewBest, setIsNewBest] = useState(false);
 
@@ -156,10 +156,10 @@ export const App: React.FC = () => {
 
   // Campaign level progression (see MAX_LEVEL)
   const [currentLevel, setCurrentLevel] = useState<number>(
-    () => levelParam ?? lsInt('vita_current_level', 1, 1, MAX_LEVEL)
+    () => levelParam ?? lsInt('skyjong_current_level', 1, 1, MAX_LEVEL)
   );
   const [maxUnlockedLevel, setMaxUnlockedLevel] = useState<number>(
-    () => lsInt('vita_max_unlocked_level', 1, 1, MAX_LEVEL)
+    () => lsInt('skyjong_max_unlocked_level', 1, 1, MAX_LEVEL)
   );
 
   // Derived unlocked levels (1 to 5) for settings board options
@@ -174,23 +174,23 @@ export const App: React.FC = () => {
   // Settings preferences (synced to LocalStorage). The visual theme is driven by
   // the campaign realm (see realms.ts), so there is no manual theme setting.
   const [highContrast, setHighContrast] = useState<boolean>(
-    () => lsGet('vita_high_contrast') === 'true'
+    () => lsGet('skyjong_high_contrast') === 'true'
   );
   // Volumes are clamped to 0–1: a corrupt value reaching soundSynth.configure
   // would hit setValueAtTime(NaN), which throws and kills all audio.
   const [sfxVolume, setSfxVolume] = useState<number>(
-    () => lsNumber('vita_sfx_vol', 0.5, 0, 1)
+    () => lsNumber('skyjong_sfx_vol', 0.5, 0, 1)
   );
   const [ambientVolume, setAmbientVolume] = useState<number>(
-    () => lsNumber('vita_ambient_vol', 0.3, 0, 1)
+    () => lsNumber('skyjong_ambient_vol', 0.3, 0, 1)
   );
   const [isAmbientEnabled, setIsAmbientEnabled] = useState<boolean>(
-    () => lsGet('vita_ambient_enabled') === 'true'
+    () => lsGet('skyjong_ambient_enabled') === 'true'
   );
 
   // One identity for "a new board was dealt", bumped by initGame and resumeGame.
   // It remounts <GameClock> (so it starts from the resumed elapsed time) and
-  // tells MahjongBoard when to re-fit the board to the screen.
+  // tells SkyjongBoard when to re-fit the board to the screen.
   const [run, setRun] = useState<{ id: number; startAt: number }>({ id: 0, startAt: 0 });
   // <GameClock> owns the per-second state so a tick doesn't re-render the board;
   // `elapsedRef` is the elapsed value everything else reads.
@@ -221,10 +221,10 @@ export const App: React.FC = () => {
       settingsHydrated.current = true;
       return;
     }
-    lsSet('vita_high_contrast', String(highContrast));
-    lsSet('vita_sfx_vol', String(sfxVolume));
-    lsSet('vita_ambient_vol', String(ambientVolume));
-    lsSet('vita_ambient_enabled', String(isAmbientEnabled));
+    lsSet('skyjong_high_contrast', String(highContrast));
+    lsSet('skyjong_sfx_vol', String(sfxVolume));
+    lsSet('skyjong_ambient_vol', String(ambientVolume));
+    lsSet('skyjong_ambient_enabled', String(isAmbientEnabled));
   }, [highContrast, sfxVolume, ambientVolume, isAmbientEnabled]);
 
   // ---- Save & resume ----  (types + validation live in useSaveGame)
@@ -343,7 +343,7 @@ export const App: React.FC = () => {
 
     // Save level state (campaign only)
     if (!daily) {
-      lsSet('vita_current_level', String(levelNum));
+      lsSet('skyjong_current_level', String(levelNum));
     }
 
     setShowWinScreen(false);
@@ -474,10 +474,10 @@ export const App: React.FC = () => {
   // Campaign-only bookkeeping: best stars per layout, the per-level record, and
   // the next-level unlock. Dailies deliberately skip all of this.
   const recordCampaignResult = (stars: number, finalIQ: number, elapsed: number) => {
-    const bestStars = lsNumberMap('vita_best_stars');
+    const bestStars = lsNumberMap('skyjong_best_stars');
     if (stars > (bestStars[activeLayout] ?? 0)) {
       bestStars[activeLayout] = stars;
-      lsSetJson('vita_best_stars', bestStars);
+      lsSetJson('skyjong_best_stars', bestStars);
     }
 
     // Per-level best record (IQ ↑, time ↓, stars ↑) — drives the "beat your
@@ -492,7 +492,7 @@ export const App: React.FC = () => {
     const nextLevel = currentLevel + 1;
     if (nextLevel <= MAX_LEVEL && nextLevel > maxUnlockedLevel) {
       setMaxUnlockedLevel(nextLevel);
-      lsSet('vita_max_unlocked_level', String(nextLevel));
+      lsSet('skyjong_max_unlocked_level', String(nextLevel));
     }
   };
 
@@ -558,7 +558,7 @@ export const App: React.FC = () => {
       hintsUsedRef.current === 0 && shufflesUsedRef.current === 0
         ? unlockAchievement('mindful_path') : null,
       (() => {
-        const bestStars = lsNumberMap('vita_best_stars');
+        const bestStars = lsNumberMap('skyjong_best_stars');
         const solved = Object.keys(bestStars).filter(l => (bestStars[l] ?? 0) > 0);
         if (!solved.includes(activeLayout)) solved.push(activeLayout);
         return solved.length >= 5 ? unlockAchievement('trophy_collector') : null;
@@ -855,7 +855,7 @@ export const App: React.FC = () => {
         <MainMenu
           // PLAY resumes the campaign where the player left off. (Passing a
           // LayoutName here instead would restart at that layout's level 1–5 AND
-          // overwrite vita_current_level, wiping campaign progress.)
+          // overwrite skyjong_current_level, wiping campaign progress.)
           onStartGame={() => initGame(currentLevel)}
           currentLevel={currentLevel}
           onStartDaily={() => initGame(0, true)}
@@ -977,7 +977,7 @@ export const App: React.FC = () => {
           {/* Gameplay Canvas Container */}
           <main className={`game-board-area ${shaking ? 'combo-shake' : ''}`}>
             {tiles.length > 0 && (
-              <MahjongBoard
+              <SkyjongBoard
                 tiles={tiles}
                 boardId={run.id}
                 realm={artRealmId}

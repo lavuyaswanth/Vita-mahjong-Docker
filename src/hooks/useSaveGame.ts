@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { layouts, MAX_LEVEL } from '../mahjong/layouts';
-import type { LayoutName } from '../mahjong/layouts';
-import { lsParse, lsRemove, lsSetJson, isFiniteNumber } from '../mahjong/storage';
+import { layouts, MAX_LEVEL } from '../skyjong/layouts';
+import type { LayoutName } from '../skyjong/layouts';
+import { lsParse, lsRemove, lsSetJson, isFiniteNumber } from '../skyjong/storage';
 import { todayKey } from './useDailyChallenge';
 
-const SAVE_KEY = 'vita_saved_game';
+const SAVE_KEY = 'skyjong_saved_game';
 
 export type SavedTile = {
   x: number; y: number; z: number;
@@ -59,7 +59,7 @@ const narrowSavedGame = (value: unknown): SavedGame | null => {
       !isFiniteNumber(s.comboBonus) || !isFiniteNumber(s.moveCount) ||
       !isFiniteNumber(s.hintsUsed) || !isFiniteNumber(s.shufflesUsed)) return null;
   // `level` is RANGE-checked, not merely finite: every other path clamps it
-  // (lsInt('vita_current_level', 1, 1, MAX_LEVEL)), so a hand-edited save was
+  // (lsInt('skyjong_current_level', 1, 1, MAX_LEVEL)), so a hand-edited save was
   // the one way an out-of-range level could reach setCurrentLevel — and from
   // there "Next Level", and back into storage via lsSet. Reject rather than
   // clamp: a level outside the campaign means the save is not one we wrote.

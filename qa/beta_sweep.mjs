@@ -1,4 +1,4 @@
-// Beta-test sweep for Vita Mahjong (age-14plus / Legends edition).
+// Beta-test sweep for Skyjong (age-14plus / Legends edition).
 // Plays the game like an end user across menus, modals, gameplay, boosters,
 // timer-pause, reduced motion, the daily challenge, and every filter realm.
 // Screenshots land in /tmp/qa_shots. Run: node qa/beta_sweep.mjs
@@ -68,7 +68,7 @@ const newPage = async (w = 1280, h = 900) => {
 {
   const { page, errors } = await newPage();
   await page.goto(BASE + '/?level=1', { waitUntil: 'networkidle2', timeout: 30000 });
-  await page.waitForSelector('.mahjong-tile.free', { timeout: 10000 });
+  await page.waitForSelector('.skyjong-tile.free', { timeout: 10000 });
   await sleep(2500);
   const t1 = await page.$eval('.header-timer', e => e.textContent.trim());
   // Simulate the tab being hidden (handler reads document.hidden)
@@ -94,7 +94,7 @@ const newPage = async (w = 1280, h = 900) => {
 for (const [level, realmName] of [[75, 'Blood Moon'], [85, 'Sunken Abyss'], [95, 'Aurora Veil']]) {
   const { page, errors } = await newPage(420, 900);
   await page.goto(`${BASE}/?level=${level}`, { waitUntil: 'networkidle2', timeout: 30000 });
-  await page.waitForSelector('.mahjong-tile', { timeout: 10000 });
+  await page.waitForSelector('.skyjong-tile', { timeout: 10000 });
   await sleep(1200);
   const progress = await page.$eval('.progress-bar-text', e => e.textContent).catch(() => '');
   check(`level ${level} realm is ${realmName}`, progress.includes(realmName), progress.trim());
@@ -110,10 +110,10 @@ for (const [level, realmName] of [[75, 'Blood Moon'], [85, 'Sunken Abyss'], [95,
   const { page, errors } = await newPage();
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
   await page.goto(BASE + '/?bot=1&level=1', { waitUntil: 'networkidle2', timeout: 30000 });
-  await page.waitForSelector('.mahjong-tile', { timeout: 10000 });
+  await page.waitForSelector('.skyjong-tile', { timeout: 10000 });
   await sleep(6000);
   const cleared = await page.evaluate(() =>
-    document.querySelectorAll('.mahjong-tile.matched').length);
+    document.querySelectorAll('.skyjong-tile.matched').length);
   check('reduced-motion: matches work', cleared > 0, `${cleared} tiles cleared`);
   const shaking = await page.evaluate(() => !!document.querySelector('.combo-shake'));
   check('reduced-motion: no board shake class', !shaking);
@@ -125,7 +125,7 @@ for (const [level, realmName] of [[75, 'Blood Moon'], [85, 'Sunken Abyss'], [95,
 {
   const { page, errors } = await newPage();
   await page.goto(BASE + '/?bot=1&level=75', { waitUntil: 'networkidle2', timeout: 30000 });
-  await page.waitForSelector('.mahjong-tile', { timeout: 10000 });
+  await page.waitForSelector('.skyjong-tile', { timeout: 10000 });
   const won = await page.waitForSelector('.victory-modal', { timeout: 300000, visible: true })
     .then(() => true).catch(() => false);
   check('bot clears bloodmoon level 75', won);
@@ -151,12 +151,12 @@ for (const [level, realmName] of [[75, 'Blood Moon'], [85, 'Sunken Abyss'], [95,
 {
   const { page, errors } = await newPage();
   await page.goto(BASE + '/?bot=1&daily=1', { waitUntil: 'networkidle2', timeout: 30000 });
-  await page.waitForSelector('.mahjong-tile', { timeout: 10000 });
+  await page.waitForSelector('.skyjong-tile', { timeout: 10000 });
   const won = await page.waitForSelector('.victory-modal', { timeout: 300000, visible: true })
     .then(() => true).catch(() => false);
   check('bot clears the daily', won);
   if (won) {
-    const daily = JSON.parse(await page.evaluate(() => localStorage.getItem('vita_daily')) || '{}');
+    const daily = JSON.parse(await page.evaluate(() => localStorage.getItem('skyjong_daily')) || '{}');
     const localDate = await page.evaluate(() => {
       const d = new Date();
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

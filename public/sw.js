@@ -1,11 +1,11 @@
-/* Vita Mahjong service worker — offline play (R11).
+/* Skyjong service worker — offline play (R11).
    Strategy:
    - Navigations (the app shell) are NETWORK-FIRST so a new deploy is picked up
      on the very next load, falling back to the cached shell when offline.
    - Everything else (hashed JS/CSS/art) is cache-first with background
      refresh — those filenames are content-hashed, so cached copies never go
      stale. */
-const CACHE = 'vita-mahjong-legends-v3';
+const CACHE = 'skyjong-legends-v1';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

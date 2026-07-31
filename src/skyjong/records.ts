@@ -1,6 +1,6 @@
 import { lsParse, lsSetJson, isFiniteNumber } from './storage';
 
-const RECORDS_KEY = 'vita_records';
+const RECORDS_KEY = 'skyjong_records';
 
 /** A player's best result on one campaign level — the reason to replay a board. */
 export type LevelRecord = { iq: number; time: number; stars: number };

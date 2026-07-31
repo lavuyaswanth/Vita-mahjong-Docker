@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { soundSynth } from '../mahjong/soundSynth';
-import { achievementsList } from '../mahjong/achievements';
-import { MAX_LEVEL } from '../mahjong/layouts';
-import { lsStringArray, lsSetJson } from '../mahjong/storage';
+import { soundSynth } from '../skyjong/soundSynth';
+import { achievementsList } from '../skyjong/achievements';
+import { MAX_LEVEL } from '../skyjong/layouts';
+import { lsStringArray, lsSetJson } from '../skyjong/storage';
 import ModalShell from './ModalShell';
 import logoImg from '../assets/logo.webp';
 import {
@@ -52,10 +52,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 }) => {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
-  const [unlockedAchievements] = useState<string[]>(() => lsStringArray('vita_achievements'));
+  const [unlockedAchievements] = useState<string[]>(() => lsStringArray('skyjong_achievements'));
   const [hasNewAchievements, setHasNewAchievements] = useState(() => {
-    const unlocked = lsStringArray('vita_achievements');
-    const viewed = lsStringArray('vita_viewed_achievements');
+    const unlocked = lsStringArray('skyjong_achievements');
+    const viewed = lsStringArray('skyjong_viewed_achievements');
     return unlocked.some(id => !viewed.includes(id));
   });
 
@@ -63,7 +63,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     soundSynth.playClick();
     setShowAchievements(true);
     // Mark everything currently unlocked as seen, so the "new" dot clears.
-    lsSetJson('vita_viewed_achievements', lsStringArray('vita_achievements'));
+    lsSetJson('skyjong_viewed_achievements', lsStringArray('skyjong_achievements'));
     setHasNewAchievements(false);
   };
 
@@ -137,7 +137,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       {/* Brand Hero Header */}
       <div className="menu-hero-header">
         <div className="logo-glow-behind"></div>
-        <img src={logoImg} className="menu-logo-img" alt="Vita Mahjong Logo" />
+        <img src={logoImg} className="menu-logo-img" alt="Skyjong Logo" />
         <p className="menu-subtitle">Match the Creatures of Legend — Ages 14+</p>
         {realmName && (
           <p className="menu-realm-badge">🗺️ Realm: {realmName}</p>
@@ -155,11 +155,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           <div className="medallion-plate-outer"></div>
           <div className="medallion-plate-inner"></div>
 
-          {/* Main glossy Pill play action — starts the Mahjong Solitaire game with the tray */}
+          {/* Main glossy Pill play action — starts the Skyjong Solitaire game with the tray */}
           <button
             className="medallion-play-btn"
             onClick={handlePlayClick}
-            aria-label={`Start Mahjong Solitaire at level ${currentLevel}`}
+            aria-label={`Start Skyjong Solitaire at level ${currentLevel}`}
           >
             <span className="play-btn-glow"></span>
             <div className="play-btn-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -168,7 +168,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <div className="play-btn-text-group">
               <span className="play-btn-primary">PLAY</span>
               <span className="play-btn-secondary">
-                {currentLevel > 1 ? `Level ${currentLevel} of ${MAX_LEVEL}` : 'Mahjong Solitaire'}
+                {currentLevel > 1 ? `Level ${currentLevel} of ${MAX_LEVEL}` : 'Skyjong Solitaire'}
               </span>
             </div>
           </button>
@@ -217,7 +217,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         >
             <div className="modal-header">
               <h2 id="howto-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <HelpIcon size={24} inline /> How to Play Mahjong Solitaire
+                <HelpIcon size={24} inline /> How to Play Skyjong Solitaire
               </h2>
               <button className="modal-close-btn" onClick={() => setShowHowToPlay(false)} aria-label="Close modal">
                 <CloseIcon size={18} />

@@ -1,11 +1,11 @@
 import React from 'react';
-import { layouts, MAX_LEVEL } from '../mahjong/layouts';
-import type { LayoutName } from '../mahjong/layouts';
-import { nextRealmChange } from '../mahjong/realms';
+import { layouts, MAX_LEVEL } from '../skyjong/layouts';
+import type { LayoutName } from '../skyjong/layouts';
+import { nextRealmChange } from '../skyjong/realms';
 import { POWER_LABELS } from '../hooks/useBoosters';
 import type { PowerKey } from '../hooks/useBoosters';
-import { formatTime } from '../mahjong/formatTime';
-import type { LevelRecord } from '../mahjong/records';
+import { formatTime } from '../skyjong/formatTime';
+import type { LevelRecord } from '../skyjong/records';
 import ModalShell from './ModalShell';
 import { EarnedStampIcon, BackIcon } from './SvgIcons';
 
