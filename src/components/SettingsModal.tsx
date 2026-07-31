@@ -65,14 +65,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
   const handleSfxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const vol = parseFloat(e.target.value);
     setSfxVolume(vol);
-    soundSynth.configure(true, vol, ambientVolume);
+    soundSynth.configure(vol, ambientVolume);
     soundSynth.playClick();
   };
 
   const handleAmbientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const vol = parseFloat(e.target.value);
     setAmbientVolume(vol);
-    soundSynth.configure(true, sfxVolume, vol);
+    soundSynth.configure(sfxVolume, vol);
   };
 
   const toggleAmbientEnabled = () => {
