@@ -193,7 +193,7 @@ export const App: React.FC = () => {
   // this effect flushing.
   const settingsHydrated = useRef(false);
   useEffect(() => {
-    soundSynth.configure(true, sfxVolume, ambientVolume);
+    soundSynth.configure(sfxVolume, ambientVolume);
     if (!settingsHydrated.current) {
       settingsHydrated.current = true;
       return;

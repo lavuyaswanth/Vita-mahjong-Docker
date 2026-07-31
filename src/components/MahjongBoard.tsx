@@ -83,17 +83,44 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     if (!ctx) return;
 
     // Resize canvas to cover container
+    // Size the backing store to DEVICE pixels while the CSS box stays in CSS
+    // pixels (the stylesheet gives it width/height: 100%). Without the dpr
+    // factor a 2x or 3x phone renders every burst at half or a third of native
+    // resolution and the sparks come out soft — most of this app's players are
+    // on exactly those screens. The transform below then lets all the drawing
+    // code keep working in CSS pixels, which matters because tileCenter() feeds
+    // it getBoundingClientRect() values.
+    const cssSize = { w: 0, h: 0 };
     const resizeCanvas = () => {
-      if (canvas && containerRef.current) {
-        canvas.width = containerRef.current.clientWidth;
-        canvas.height = containerRef.current.clientHeight;
-      }
+      const host = containerRef.current;
+      if (!canvas || !host) return;
+      const dpr = window.devicePixelRatio || 1;
+      const w = host.clientWidth;
+      const h = host.clientHeight;
+      if (w === 0 || h === 0) return;
+      cssSize.w = w;
+      cssSize.h = h;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      // Setting width/height resets the context, so the transform has to be
+      // reapplied after every resize, not just once.
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+
+    // A ResizeObserver, not window.resize: the board area is `flex-grow: 1`
+    // inside a flex column, so it changes height whenever a sibling mounts or
+    // the layout reflows, with no window resize to react to. A stale backing
+    // store then gets stretched by CSS, and because burst coordinates come from
+    // getBoundingClientRect() in CSS pixels the sparks land off the tiles they
+    // came from. This covers orientation changes for free too.
+    const ro = new ResizeObserver(resizeCanvas);
+    ro.observe(containerRef.current!);
 
     const updateAndDraw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // CSS pixels: the context is scaled by dpr, so canvas.width would clear a
+      // region dpr times too large.
+      ctx.clearRect(0, 0, cssSize.w, cssSize.h);
       const pool = particlesPoolRef.current;
       let activeCount = 0;
 
@@ -199,7 +226,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
         // Nothing left to animate: wipe the final frame and idle the loop so a
         // static board doesn't pay a full-canvas redraw every frame. The next
         // match burst restarts it via kickBurstRef.
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, cssSize.w, cssSize.h);
         burstRunningRef.current = false;
       }
     };
@@ -211,7 +238,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
     };
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      ro.disconnect();
       burstRunningRef.current = false;
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -223,7 +250,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
       // theme switches mid-burst and bursts would silently stop appearing.
       const pool = particlesPoolRef.current;
       for (let i = 0; i < pool.length; i++) pool[i].active = false;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, cssSize.w, cssSize.h);
     };
   }, [bgTheme]);
 
@@ -278,8 +305,12 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
             pool[i].color = colors[Math.floor(Math.random() * colors.length)];
             pool[i].size = 2.5 + Math.random() * 4.5;
             pool[i].alpha = 1.0;
-            pool[i].life = 30 + Math.floor(Math.random() * 20);
-            pool[i].maxLife = 50;
+            // maxLife tracks life, so alpha (= life / maxLife) starts at 1 and
+            // fades to 0. Pinning maxLife at 50 meant a spark that rolled 30
+            // frames was born at 60% opacity and only got dimmer.
+            const life = 30 + Math.floor(Math.random() * 20);
+            pool[i].life = life;
+            pool[i].maxLife = life;
             pool[i].rotation = Math.random() * Math.PI * 2;
             pool[i].rotationSpeed = (Math.random() - 0.5) * 0.15;
 

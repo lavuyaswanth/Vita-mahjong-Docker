@@ -11,7 +11,12 @@ class SoundSynthesizer {
   private waveInterval: number | null = null;
   private chimeInterval: number | null = null;
   private isAmbientPlaying = false;
-  private enabled = true;
+  // Every ambient voice currently scheduled. stopAmbient has to reach these:
+  // playWave schedules an 8-second noise source and playChime a 4-second
+  // oscillator, and clearing the timers does nothing to a note already handed
+  // to the audio clock — unchecking the setting used to leave the ocean rolling
+  // for up to 8 more seconds, including over the main menu after Back.
+  private ambientVoices: { src: AudioScheduledSourceNode; gain: GainNode }[] = [];
   private sfxVolume = 0.5;
   private ambientVolume = 0.3;
 
@@ -28,7 +33,7 @@ class SoundSynthesizer {
 
       // Setup gain node routing
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(this.enabled ? 1.0 : 0.0, this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(1.0, this.ctx.currentTime);
       this.masterGain.connect(this.ctx.destination);
 
       this.sfxGain = this.ctx.createGain();
@@ -46,21 +51,21 @@ class SoundSynthesizer {
   // Set general configuration.
   // Gains are clamped here as well as at the call site: a NaN reaching a
   // WebAudio gain node throws and takes down every later sound with it.
-  public configure(enabled: boolean, sfxVol: number, ambVol: number) {
+  //
+  // There used to be an `enabled` flag here, but all three call sites passed
+  // `true` and nothing exposed a mute — so masterGain never left 1.0 and the
+  // `if (!this.enabled) return` guards never fired. Volume 0 is the mute.
+  public configure(sfxVol: number, ambVol: number) {
     const clamp = (v: number, fallback: number) =>
       Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : fallback;
     sfxVol = clamp(sfxVol, 0.5);
     ambVol = clamp(ambVol, 0.3);
 
-    this.enabled = enabled;
     this.sfxVolume = sfxVol;
     this.ambientVolume = ambVol;
 
     if (!this.ctx) return;
 
-    if (this.masterGain) {
-      this.masterGain.gain.setTargetAtTime(enabled ? 1.0 : 0.0, this.ctx.currentTime, 0.1);
-    }
     if (this.sfxGain) {
       this.sfxGain.gain.setTargetAtTime(sfxVol, this.ctx.currentTime, 0.1);
     }
@@ -69,10 +74,21 @@ class SoundSynthesizer {
     }
   }
 
+  /** Remember a scheduled ambient voice, and forget it once it ends on its own. */
+  private trackAmbientVoice(src: AudioScheduledSourceNode, gain: GainNode) {
+    const voice = { src, gain };
+    this.ambientVoices.push(voice);
+    src.onended = () => {
+      const i = this.ambientVoices.indexOf(voice);
+      if (i !== -1) this.ambientVoices.splice(i, 1);
+      try { gain.disconnect(); } catch { /* already torn down */ }
+    };
+  }
+
   // Create an organic click sound (wood-block tick)
   public playClick() {
     this.init();
-    if (!this.ctx || !this.sfxGain || !this.enabled) return;
+    if (!this.ctx || !this.sfxGain) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
 
     const t = this.ctx.currentTime;
@@ -96,7 +112,7 @@ class SoundSynthesizer {
   // Woodblock selection click (spec Part VII): 880 Hz sine, decaying over 0.05s.
   public playSelect() {
     this.init();
-    if (!this.ctx || !this.sfxGain || !this.enabled) return;
+    if (!this.ctx || !this.sfxGain) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
 
     const t = this.ctx.currentTime;
@@ -120,7 +136,7 @@ class SoundSynthesizer {
   // decaying over 0.15s.
   public playMatch() {
     this.init();
-    if (!this.ctx || !this.sfxGain || !this.enabled) return;
+    if (!this.ctx || !this.sfxGain) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
 
     const t = this.ctx.currentTime;
@@ -148,7 +164,7 @@ class SoundSynthesizer {
   // Play shuffle sliding wooden blocks sound effect
   public playShuffle() {
     this.init();
-    if (!this.ctx || !this.sfxGain || !this.enabled) return;
+    if (!this.ctx || !this.sfxGain) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
 
     const t = this.ctx.currentTime;
@@ -180,7 +196,7 @@ class SoundSynthesizer {
   // Soothing pentatonic win fanfare
   public playVictory() {
     this.init();
-    if (!this.ctx || !this.sfxGain || !this.enabled) return;
+    if (!this.ctx || !this.sfxGain) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
 
     const t = this.ctx.currentTime;
@@ -263,6 +279,7 @@ class SoundSynthesizer {
 
       noiseSource.start(t);
       noiseSource.stop(t + 8.0);
+      this.trackAmbientVoice(noiseSource, waveGain);
     };
 
     // Trigger ocean waves every 8 seconds
@@ -293,6 +310,7 @@ class SoundSynthesizer {
 
       osc.start(t);
       osc.stop(t + 4.0);
+      this.trackAmbientVoice(osc, gain);
 
       // Reschedule next chime in 6-18 seconds
       const nextDelay = 6000 + Math.random() * 12000;
@@ -312,6 +330,25 @@ class SoundSynthesizer {
       clearTimeout(this.chimeInterval);
       this.chimeInterval = null;
     }
+
+    // Silence what is already scheduled. Clearing the timers only prevents the
+    // NEXT voice; a wave handed to the audio clock runs its full 8 seconds
+    // regardless, which is why turning the setting off (or returning to the
+    // menu, which stops ambient via an effect cleanup) used to leave the ocean
+    // playing. Fade over 120ms rather than cutting, or stopping mid-swell
+    // clicks.
+    if (!this.ctx) { this.ambientVoices = []; return; }
+    const now = this.ctx.currentTime;
+    for (const { src, gain } of this.ambientVoices) {
+      try {
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(gain.gain.value, now);
+        gain.gain.linearRampToValueAtTime(0.0001, now + 0.12);
+        src.stop(now + 0.15);
+      } catch { /* already stopped or ended */ }
+    }
+    // onended still fires for each, which is what disconnects them.
+    this.ambientVoices = [];
   }
 
   // Combo streak chime (spec Part VII): scales pitch up the C-Major scale from
@@ -319,7 +356,7 @@ class SoundSynthesizer {
   // layered on for high streaks.
   public playComboChime(multiplier: number) {
     this.init();
-    if (!this.ctx || !this.sfxGain || !this.enabled) return;
+    if (!this.ctx || !this.sfxGain) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
 
     const t = this.ctx.currentTime;
@@ -362,7 +399,7 @@ class SoundSynthesizer {
   // Sparkling celebratory arpeggio for achievement unlock
   public playAchievementUnlock() {
     this.init();
-    if (!this.ctx || !this.sfxGain || !this.enabled) return;
+    if (!this.ctx || !this.sfxGain) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
 
     const t = this.ctx.currentTime;
