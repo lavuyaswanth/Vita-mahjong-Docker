@@ -9,6 +9,12 @@ const CHROME = '/Users/y/.cache/puppeteer/chrome-headless-shell/mac_arm-148.0.77
 const SHOTS = '/tmp/qa_shots';
 fs.mkdirSync(SHOTS, { recursive: true });
 
+// Derived from package.json, not hardcoded: the badge is stamped from that
+// version at build time (see the __APP_VERSION__ define in vite.config.ts), so
+// pinning a literal here made every release bump fail QA for no reason.
+const PKG_VERSION = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
+const EXPECTED_BADGE = `v${PKG_VERSION}-legends`;
+
 const results = [];
 const rec = (id, status, note) => { results.push({ id, status, note }); console.log(`${status.padEnd(7)} ${id}  ${note}`); };
 
@@ -50,12 +56,12 @@ async function main() {
     await page.screenshot({ path: `${SHOTS}/TC-001_menu.png` });
 
     const badge = await page.$eval('.version-badge', e => e.textContent).catch(() => null);
-    rec('TC-003', badge === 'v0.1.0-legends' ? 'PASS' : 'FAIL', `version badge = ${JSON.stringify(badge)}`);
+    rec('TC-003', badge === EXPECTED_BADGE ? 'PASS' : 'FAIL', `version badge = ${JSON.stringify(badge)} (expected ${JSON.stringify(EXPECTED_BADGE)})`);
 
     const subtitle = await page.$eval('.menu-subtitle', e => e.textContent).catch(() => null);
     const branded = !!subtitle && /Ages 14\+|Legend/i.test(subtitle);
     rec('TC-249', branded ? 'PASS' : 'FAIL', `subtitle = ${JSON.stringify(subtitle)}`);
-    rec('TC-254', badge === 'v0.1.0-legends' ? 'PASS' : 'FAIL', 'edition version string');
+    rec('TC-254', badge === EXPECTED_BADGE ? 'PASS' : 'FAIL', `edition version string (${EXPECTED_BADGE})`);
 
     const realm = await page.$eval('.menu-realm-badge', e => e.textContent).catch(() => null);
     rec('TC-018', realm ? 'PASS' : 'FAIL', `realm badge = ${JSON.stringify(realm)}`);

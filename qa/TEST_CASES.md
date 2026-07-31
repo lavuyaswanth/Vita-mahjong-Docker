@@ -1,6 +1,8 @@
 # Vita Mahjong — QA Test Suite
 
-> Branch: `age-14plus` (Midnight / Gothic Legends edition, `APP_VERSION = v0.1.0-legends`)
+> Branch: `age-14plus` (Midnight / Gothic Legends edition). The version badge is
+> stamped from `package.json` at build time, so it reads `v<version>-legends` —
+> the harness derives the expected string rather than pinning it.
 > Target: the running game (dev: `npm run dev`, or the built `dist/`).
 > Harness deep-links: `?bot=1` (auto-play), `?level=N` (1–240), `?daily=1` (Daily Challenge).
 > Engine guarantees every campaign board is **solvable**; the bot has deep booster stock (999) and never pollutes real saves.
@@ -21,7 +23,7 @@ A case **passes** only if the expected result is fully met with no console error
 |----|-----|-------|----------|
 | TC-001 | P0 | Load app root `/`. | Main menu renders; no blank/white screen. |
 | TC-002 | P0 | Load app root and read console. | Zero console errors or uncaught exceptions on load. |
-| TC-003 | P1 | Inspect version badge. | Badge shows `v0.1.0-legends`. |
+| TC-003 | P1 | Inspect version badge. | Badge shows `v<package.json version>-legends`. |
 | TC-004 | P1 | Confirm menu background image loads. | Realm menu background renders (no broken-image icon). |
 | TC-005 | P1 | Check logo / title renders. | Game title/logo visible and not clipped. |
 | TC-006 | P1 | Load with a cold (cleared) localStorage. | App initialises defaults without throwing. |
@@ -363,7 +365,7 @@ A case **passes** only if the expected result is fully met with no console error
 | TC-251 | P2 | Haunted achievement names. | Achievements use edition-specific names. |
 | TC-252 | P2 | Gothic tiles legible on dark realms. | Contrast adequate against dark backgrounds. |
 | TC-253 | P2 | Matching logic unaffected by reskin. | Gothic tiles match by type/value identically. |
-| TC-254 | P2 | Version badge `v0.1.0-legends`. | Correct edition version string. |
+| TC-254 | P2 | Version badge matches `package.json`. | Correct edition version string. |
 | TC-255 | P3 | No leftover cute-edition assets. | No kids-branch art leaks into this build. |
 
 ## 19. Edge cases & robustness (TC-256 … TC-270)
