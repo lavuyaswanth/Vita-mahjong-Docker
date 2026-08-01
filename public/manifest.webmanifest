@@ -1,7 +1,7 @@
 {
-  "name": "Vita Mahjong",
-  "short_name": "Vita Mahjong",
-  "description": "A soothing, senior-friendly Mahjong Solitaire match game.",
+  "name": "Skyjong",
+  "short_name": "Skyjong",
+  "description": "A soothing, senior-friendly Skyjong Solitaire match game.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

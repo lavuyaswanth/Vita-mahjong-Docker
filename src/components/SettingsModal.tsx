@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { layouts, layoutForLevel, MAX_LEVEL } from '../mahjong/layouts';
-import { lsNumberMap } from '../mahjong/storage';
+import { layouts, layoutForLevel, MAX_LEVEL } from '../skyjong/layouts';
+import { lsNumberMap } from '../skyjong/storage';
 import ModalShell from './ModalShell';
-import type { LayoutName } from '../mahjong/layouts';
-import { soundSynth } from '../mahjong/soundSynth';
+import type { LayoutName } from '../skyjong/layouts';
+import { soundSynth } from '../skyjong/soundSynth';
 import {
   SettingsIcon,
   LayoutIcon,
@@ -70,7 +70,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
   // hooks can't run conditionally; `isOpen` is the cache key, so reopening the
   // dialog picks up stars earned since it was last closed.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const bestStars = useMemo(() => lsNumberMap('vita_best_stars'), [isOpen]);
+  const bestStars = useMemo(() => lsNumberMap('skyjong_best_stars'), [isOpen]);
 
   if (!isOpen) return null;
 

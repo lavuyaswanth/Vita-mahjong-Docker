@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
-import type { TileState } from '../mahjong/gameEngine';
+import type { TileState } from '../skyjong/gameEngine';
 import Tile from './Tile';
 import { ZoomInIcon, ZoomOutIcon, ResetZoomIcon } from './SvgIcons';
 
-interface MahjongBoardProps {
+interface SkyjongBoardProps {
   tiles: TileState[];
   // Identifies the current run. Changes only when a new board is dealt (new
   // level, restart, resume) — the signal for re-fitting the board to screen.
@@ -29,7 +29,7 @@ interface Particle {
   rotationSpeed: number;
 }
 
-export const MahjongBoard: React.FC<MahjongBoardProps> = ({
+export const SkyjongBoard: React.FC<SkyjongBoardProps> = ({
   tiles,
   boardId,
   highContrast,
@@ -531,7 +531,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
   };
 
   return (
-    <div className="mahjong-board-outer">
+    <div className="skyjong-board-outer">
       {/* Zoom and Pan Floating Toolbar */}
       <div className="board-toolbar glassmorphism">
         <button onClick={zoomIn} aria-label="Zoom in" className="toolbar-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -546,7 +546,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
       </div>
 
       <div
-        className="mahjong-board-container"
+        className="skyjong-board-container"
         ref={containerRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -576,7 +576,7 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
         {/* 3D stacked Board Grid */}
         <div
           ref={gridRef}
-          className={`mahjong-grid ${isPortrait ? 'portrait-grid' : ''}`}
+          className={`skyjong-grid ${isPortrait ? 'portrait-grid' : ''}`}
           style={{
             transform: `translate(calc(-50% + ${pan.x}px), calc(-50% + ${pan.y}px)) scale(${zoom})`,
             transformOrigin: 'center center',
@@ -602,4 +602,4 @@ export const MahjongBoard: React.FC<MahjongBoardProps> = ({
   );
 };
 
-export default MahjongBoard;
+export default SkyjongBoard;

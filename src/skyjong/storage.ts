@@ -13,6 +13,51 @@ export const lsGet = (key: string): string | null => {
   try { return localStorage.getItem(key); } catch { return null; }
 };
 
+// ---- Legacy key migration (vita_* -> skyjong_*) ---------------------------
+// The app was called Vita Mahjong, and every stored value was prefixed `vita_`:
+// campaign level, unlocked levels, achievements, best records, the saved game,
+// the daily streak and all settings. Renaming the prefix without moving the
+// data would silently reset every existing player to level 1.
+//
+// So on first load after the rename, copy anything under the old prefix across.
+// Deliberately:
+//  - COPIES rather than moves, so rolling the release back finds its data intact
+//  - never overwrites a key that already exists under the new prefix
+//  - enumerates the prefix instead of listing key names, so a key added since
+//    (or one only some editions have, like vita_daily) can't be forgotten
+//  - runs once, guarded by a marker, so a later legacy write can't resurrect
+//    stale values over real progress
+const LEGACY_PREFIX = 'vita_';
+const PREFIX = 'skyjong_';
+const MIGRATION_MARKER = `${PREFIX}storage_migrated`;
+
+export const migrateLegacyStorage = (): void => {
+  try {
+    if (localStorage.getItem(MIGRATION_MARKER) === 'true') return;
+    // Snapshot the key names first: writing while walking by index reshuffles
+    // the very list being walked.
+    const legacyKeys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(LEGACY_PREFIX)) legacyKeys.push(key);
+    }
+    for (const key of legacyKeys) {
+      const renamed = PREFIX + key.slice(LEGACY_PREFIX.length);
+      if (localStorage.getItem(renamed) !== null) continue; // new data wins
+      const value = localStorage.getItem(key);
+      if (value !== null) localStorage.setItem(renamed, value);
+    }
+    localStorage.setItem(MIGRATION_MARKER, 'true');
+  } catch {
+    // Storage unavailable (Safari private mode). Nothing to migrate, and the
+    // marker stays unset so a later load with working storage still tries.
+  }
+};
+
+// Run at module load: this file is the single entry point for storage, so
+// importing it anywhere guarantees the migration happens before the first read.
+migrateLegacyStorage();
+
 export const lsSet = (key: string, value: string): void => {
   try { localStorage.setItem(key, value); } catch { /* storage unavailable */ }
 };

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { lsNumberMap, lsSetJson } from '../mahjong/storage';
+import { lsNumberMap, lsSetJson } from '../skyjong/storage';
 
 export type PowerKey = 'shuffle' | 'magnet' | 'hint' | 'undo';
 type PowerCounts = Record<PowerKey, number>;
@@ -25,7 +25,7 @@ export function useBoosters(botMode: boolean) {
     // Merge per KEY, not by spreading the parsed object: spreading would let a
     // corrupt entry (a string, or an unknown key) through, and `p.hint - 1` on a
     // non-number yields NaN — which reads as "no boosters left" forever.
-    const stored = lsNumberMap('vita_power_counts_v2');
+    const stored = lsNumberMap('skyjong_power_counts_v2');
     const counts = { ...defaults };
     for (const key of Object.keys(defaults) as PowerKey[]) {
       const v = stored[key];
@@ -44,7 +44,7 @@ export function useBoosters(botMode: boolean) {
       hydrated.current = true;
       return;
     }
-    lsSetJson('vita_power_counts_v2', powerCounts);
+    lsSetJson('skyjong_power_counts_v2', powerCounts);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [powerCounts]);
 

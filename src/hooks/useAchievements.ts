@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
-import { achievementsList } from '../mahjong/achievements';
-import { soundSynth } from '../mahjong/soundSynth';
-import { lsStringArray, lsSetJson } from '../mahjong/storage';
+import { achievementsList } from '../skyjong/achievements';
+import { soundSynth } from '../skyjong/soundSynth';
+import { lsStringArray, lsSetJson } from '../skyjong/storage';
 
 interface AchievementToast {
   name: string;
@@ -28,9 +28,9 @@ export function useAchievements() {
     try {
       // lsStringArray guarantees an array of strings: a stored `{}` here would
       // make `list.includes` throw and lose the unlock.
-      const list = lsStringArray('vita_achievements');
+      const list = lsStringArray('skyjong_achievements');
       if (list.includes(id)) return null;
-      lsSetJson('vita_achievements', [...list, id]);
+      lsSetJson('skyjong_achievements', [...list, id]);
 
       const badgeInfo = achievementsList.find(a => a.id === id);
       if (!badgeInfo) return null;

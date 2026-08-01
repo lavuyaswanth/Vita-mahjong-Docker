@@ -189,7 +189,7 @@ vita-mahjong-game/
 │   │   ├── layouts.ts         # Five hand-crafted board layouts with coordinate generators
 │   │   └── soundSynth.ts      # Web Audio API synthesizer: SFX + ambient ocean/chimes
 │   ├── components/
-│   │   ├── MahjongBoard.tsx   # Board renderer with zoom/pan, particle canvas, zen decorations
+│   │   ├── SkyjongBoard.tsx   # Board renderer with zoom/pan, particle canvas, zen decorations
 │   │   ├── MainMenu.tsx       # Landing screen with mode cards, daily stamp tracker, how-to-play
 │   │   ├── SettingsModal.tsx   # Layout selector, visual style, theme, audio controls
 │   │   └── Tile.tsx           # Individual tile with 4 style renderers (Classic, LargePrint,
@@ -311,13 +311,13 @@ All preferences are persisted to `localStorage` and restored on reload:
 
 | Setting | Key | Default |
 |---------|-----|---------|
-| Background Theme | `vita_theme` | `zen` |
-| Tile Style Set | `vita_style_set` | `classic` |
-| High Contrast Mode | `vita_high_contrast` | `false` |
-| SFX Volume | `vita_sfx_vol` | `0.5` |
-| Ambient Volume | `vita_ambient_vol` | `0.3` |
-| Ambient Enabled | `vita_ambient_enabled` | `false` |
-| Daily Challenge Stamps | `vita_mahjong_dailies` | `[]` |
+| Background Theme | `skyjong_theme` | `zen` |
+| Tile Style Set | `skyjong_style_set` | `classic` |
+| High Contrast Mode | `skyjong_high_contrast` | `false` |
+| SFX Volume | `skyjong_sfx_vol` | `0.5` |
+| Ambient Volume | `skyjong_ambient_vol` | `0.3` |
+| Ambient Enabled | `skyjong_ambient_enabled` | `false` |
+| Daily Challenge Stamps | `skyjong_mahjong_dailies` | `[]` |
 
 ---
 
@@ -336,7 +336,7 @@ All preferences are persisted to `localStorage` and restored on reload:
 │  └──────────────┘  └─────┬──────┘  └─────────────────┘ │
 │                          │                               │
 │              ┌───────────┴───────────┐                  │
-│              │    MahjongBoard.tsx   │                  │
+│              │    SkyjongBoard.tsx   │                  │
 │              │  • Zoom/pan controls  │                  │
 │              │  • Canvas particles   │                  │
 │              │  • Tile grid renderer │                  │

@@ -1,9 +1,9 @@
 import React from 'react';
-import { layouts, MAX_LEVEL } from '../mahjong/layouts';
-import type { LayoutName } from '../mahjong/layouts';
+import { layouts, MAX_LEVEL } from '../skyjong/layouts';
+import type { LayoutName } from '../skyjong/layouts';
 import { POWER_LABELS } from '../hooks/useBoosters';
 import type { PowerKey } from '../hooks/useBoosters';
-import { formatTime } from '../mahjong/formatTime';
+import { formatTime } from '../skyjong/formatTime';
 import { EarnedStampIcon, BackIcon } from './SvgIcons';
 import ModalShell from './ModalShell';
 

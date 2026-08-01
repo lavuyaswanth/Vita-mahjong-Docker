@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Vita Mahjong Game Design System & Responsive Layouts
+   Skyjong Game Design System & Responsive Layouts
    Designed with premium dark wood, green felt tables, tactile ivory tiles,
    and senior-friendly high-contrast components.
    ========================================================================== */
@@ -139,10 +139,10 @@ body {
 
 /* Tiles are custom-drawn 3D blocks; a rectangular outline sits awkwardly over
    the stack, so they get a glow that follows the tile face instead. */
-.mahjong-tile:focus-visible {
+.skyjong-tile:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px #ffd700, 0 0 14px 4px rgba(255, 215, 0, 0.55);
-  /* !important to beat `.mahjong-tile.free:hover`, which is itself !important —
+  /* !important to beat `.skyjong-tile.free:hover`, which is itself !important —
    * otherwise pointing at the focused tile would drop it back down mid-glow. */
   z-index: 320 !important;
 }
@@ -887,7 +887,7 @@ body {
 
 
 /* ==========================================================================
-   MAHJONG BOARD COMPONENT (PAN & ZOOM CANVAS)
+   SKYJONG BOARD COMPONENT (PAN & ZOOM CANVAS)
    ========================================================================== */
 
 .game-board-area {
@@ -919,7 +919,7 @@ body {
     radial-gradient(ellipse at center, #14141d 0%, #050507 100%);
 }
 
-.mahjong-board-outer {
+.skyjong-board-outer {
   width: 100%;
   height: 100%;
   position: relative;
@@ -960,7 +960,7 @@ body {
 }
 
 
-.mahjong-board-container {
+.skyjong-board-container {
   width: 100%;
   height: 100%;
   position: relative;
@@ -985,7 +985,7 @@ body {
 }
 
 /* Soft inner glow ring for depth */
-.mahjong-board-container::before {
+.skyjong-board-container::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -997,7 +997,7 @@ body {
 }
 
 /* Theme adjustments on board container with matching felt and frame */
-.app-theme-ocean .mahjong-board-container {
+.app-theme-ocean .skyjong-board-container {
   background:
     radial-gradient(ellipse at center, rgba(180, 230, 255, 0.06) 0%, rgba(0, 0, 0, 0) 60%),
     radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%),
@@ -1005,7 +1005,7 @@ body {
     url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
   border-image: linear-gradient(135deg, #2b1f1a 0%, #1a120e 30%, #3b2c25 50%, #1a120e 70%, #2b1f1a 100%) 1;
 }
-.app-theme-sunset .mahjong-board-container {
+.app-theme-sunset .skyjong-board-container {
   background:
     radial-gradient(ellipse at center, rgba(255, 200, 150, 0.07) 0%, rgba(0, 0, 0, 0) 60%),
     radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%),
@@ -1013,7 +1013,7 @@ body {
     url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.055'/%3E%3C/svg%3E");
   border-image: linear-gradient(135deg, #6b3a1b 0%, #3e2213 30%, #5a3520 50%, #3e2213 70%, #6b3a1b 100%) 1;
 }
-.app-theme-dark .mahjong-board-container {
+.app-theme-dark .skyjong-board-container {
   background:
     radial-gradient(ellipse at center, rgba(157, 78, 221, 0.07) 0%, rgba(0, 0, 0, 0) 60%),
     radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.6) 100%),
@@ -1035,10 +1035,10 @@ body {
 
 /* Dynamic grid spacing for exact stacking coordinates.
    --cell-w / --cell-h are the single source of truth for cell geometry: the
-   grid-template below uses them, and computeFitTransform in MahjongBoard.tsx
+   grid-template below uses them, and computeFitTransform in SkyjongBoard.tsx
    reads them back off this element via getComputedStyle. Change them here only
    — no matching constant to update in the TypeScript. */
-.mahjong-grid {
+.skyjong-grid {
   display: grid;
   /* Cells are half-tile units (a tile spans 2x2). Rows are taller than columns
      so each tile renders TALLER THAN WIDE, like a real mahjong tile (~4:5). */
@@ -1059,17 +1059,17 @@ body {
 }
 
 @media (max-width: 1024px) {
-  .mahjong-grid {
+  .skyjong-grid {
     --cell-w: 24px;
     --cell-h: 30px;
   }
 }
 
 /* ==========================================================================
-   TACTILE 3D MAHJONG TILE RENDERING
+   TACTILE 3D SKYJONG TILE RENDERING
    ========================================================================== */
 
-.mahjong-tile {
+.skyjong-tile {
   position: relative;
   /* Stack elevation comes from --tile-z, set inline per tile (see Tile.tsx).
      Keeping the z-index in the stylesheet is what lets :focus-visible below
@@ -1090,12 +1090,12 @@ body {
 }
 
 /* Playable free tile hover lift and tactile outer glow */
-.mahjong-tile.free:hover {
+.skyjong-tile.free:hover {
   transform: translate(calc(var(--shift-x) - 3px), calc(var(--shift-y) - 3px)) scale(1.04) !important;
   z-index: 160 !important; /* Ensure hovered tile paints over surrounding stack layers */
 }
 
-.mahjong-tile.free:hover .tile-face {
+.skyjong-tile.free:hover .tile-face {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 255, 255, 0.35);
   border-color: rgba(255, 255, 255, 0.85);
 }
@@ -1168,10 +1168,10 @@ body {
 /* Elevation-scaled cast shadow: the higher the layer, the larger/darker the
    shadow it drops onto the tiles beneath — this is what makes the stack read 3D.
    Applied as drop-shadow (follows the skewed silhouette), not a box rectangle. */
-.mahjong-tile.layer-1 { filter: drop-shadow(4px 4px 5px rgba(0, 0, 0, 0.35)); }
-.mahjong-tile.layer-2 { filter: drop-shadow(6px 6px 8px rgba(0, 0, 0, 0.4)); }
-.mahjong-tile.layer-3 { filter: drop-shadow(8px 8px 11px rgba(0, 0, 0, 0.45)); }
-.mahjong-tile.layer-4 { filter: drop-shadow(10px 10px 14px rgba(0, 0, 0, 0.5)); }
+.skyjong-tile.layer-1 { filter: drop-shadow(4px 4px 5px rgba(0, 0, 0, 0.35)); }
+.skyjong-tile.layer-2 { filter: drop-shadow(6px 6px 8px rgba(0, 0, 0, 0.4)); }
+.skyjong-tile.layer-3 { filter: drop-shadow(8px 8px 11px rgba(0, 0, 0, 0.45)); }
+.skyjong-tile.layer-4 { filter: drop-shadow(10px 10px 14px rgba(0, 0, 0, 0.5)); }
 
 /* Elevation-based illumination shading for stacking depth clues */
 .layer-0 .tile-face { filter: none; }
@@ -1181,22 +1181,22 @@ body {
 .layer-4 .tile-face { filter: none; }
 
 /* Tile States (Hinted, Blocked) */
-.mahjong-tile.hinted .tile-face {
+.skyjong-tile.hinted .tile-face {
   animation: pulseHint 1.2s infinite;
   border: 2px solid var(--accent-cyan);
 }
 
 /* Dim blocked (non-playable) tiles so free tiles visually pop — key gameplay clarity */
-.mahjong-tile.blocked {
+.skyjong-tile.blocked {
   cursor: not-allowed;
 }
-.mahjong-tile.blocked .tile-face {
+.skyjong-tile.blocked .tile-face {
   filter: brightness(0.8) saturate(0.9);
   transition: filter 0.3s ease;
 }
 
 /* Free (playable) tiles stay bright, warm and crisp */
-.mahjong-tile.free .tile-face {
+.skyjong-tile.free .tile-face {
   filter: brightness(1.06) saturate(1.08);
   transition: filter 0.3s ease;
 }
@@ -1211,12 +1211,12 @@ body {
 
 
 /* Matched tiles: satisfying lift + shrink + fade clear-out */
-.mahjong-tile.matched {
+.skyjong-tile.matched {
   pointer-events: none;
   animation: tileClear 0.46s cubic-bezier(0.34, 1.2, 0.45, 1) forwards;
 }
 
-.mahjong-tile.matched .tile-face {
+.skyjong-tile.matched .tile-face {
   box-shadow: 0 0 18px rgba(255, 236, 170, 0.6), inset 0 0 8px rgba(255, 215, 130, 0.4);
   border-color: rgba(255, 226, 130, 0.9);
 }
@@ -2275,15 +2275,15 @@ body {
 }
 
 /* Theme adjustments on selected tiles */
-.app-theme-ocean .mahjong-tile.selected .tile-face {
+.app-theme-ocean .skyjong-tile.selected .tile-face {
   border-color: #00f2fe !important;
   box-shadow: 0 0 18px rgba(0, 242, 254, 0.95), inset 0 0 6px rgba(0, 242, 254, 0.2) !important;
 }
-.app-theme-sunset .mahjong-tile.selected .tile-face {
+.app-theme-sunset .skyjong-tile.selected .tile-face {
   border-color: #ff6d00 !important;
   box-shadow: 0 0 18px rgba(255, 109, 0, 0.95), inset 0 0 6px rgba(255, 109, 0, 0.2) !important;
 }
-.app-theme-dark .mahjong-tile.selected .tile-face {
+.app-theme-dark .skyjong-tile.selected .tile-face {
   border-color: #9d4edd !important;
   box-shadow: 0 0 18px rgba(157, 78, 221, 0.95), inset 0 0 6px rgba(157, 78, 221, 0.2) !important;
 }
@@ -2299,7 +2299,7 @@ body {
   90% { transform: translate(calc(var(--shift-x) + 1px), var(--shift-y)) rotate(0.5deg); }
 }
 
-.mahjong-tile.wobble {
+.skyjong-tile.wobble {
   animation: tile-wobble 0.4s ease-in-out !important;
   z-index: 200 !important; /* Paint over others when shaking */
 }
@@ -2527,7 +2527,7 @@ body {
    ========================================================================== */
 
 /* 3D Container settings for preservation */
-.mahjong-tile {
+.skyjong-tile {
   perspective: 1000px;
   transform-style: preserve-3d;
 }
@@ -2549,12 +2549,12 @@ body {
 }
 
 /* Flip animation trigger class */
-.mahjong-tile.revealed {
+.skyjong-tile.revealed {
   animation: tile3DFlipReveal 0.65s cubic-bezier(0.25, 0.8, 0.25, 1.25) forwards;
 }
 
 /* Portrait grid layout: transposes columns and rows dynamically */
-.mahjong-grid.portrait-grid {
+.skyjong-grid.portrait-grid {
   /* Portrait transposes the grid: 18 wide x 30 tall. */
   --cell-w: 32px;
   --cell-h: 40px;
@@ -2565,7 +2565,7 @@ body {
 }
 
 @media (max-width: 1024px) {
-  .mahjong-grid.portrait-grid {
+  .skyjong-grid.portrait-grid {
     --cell-w: 27px;
     --cell-h: 34px;
   }
@@ -2586,6 +2586,6 @@ body {
   .medallion-glow {
     animation: none !important;
   }
-  .mahjong-tile.revealed { animation: none !important; opacity: 1; transform: translate(var(--shift-x), var(--shift-y)); }
+  .skyjong-tile.revealed { animation: none !important; opacity: 1; transform: translate(var(--shift-x), var(--shift-y)); }
   .combo-popup { animation-duration: 0.01s !important; }
 }

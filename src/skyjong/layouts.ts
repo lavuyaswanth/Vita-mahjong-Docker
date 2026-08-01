@@ -1,4 +1,4 @@
-// Predefined Symmetrical Layouts for Vita Mahjong Solitaire
+// Predefined Symmetrical Layouts for Skyjong Solitaire
 // Coordinate system:
 //   x, y are in HALF-TILE grid units (a tile spans 2 units on each axis).
 //   z is the layer / elevation (0 = table, up to 4 = top).

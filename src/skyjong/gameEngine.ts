@@ -1,4 +1,4 @@
-// Vita Mahjong Core Solitaire Engine
+// Skyjong Core Solitaire Engine
 // Handles board state, shuffle generation, blockage logic, solver hints, and seeds.
 
 import { layouts, overlaps } from './layouts';
