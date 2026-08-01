@@ -6,12 +6,13 @@ import { POWER_LABELS } from '../hooks/useBoosters';
 import type { PowerKey } from '../hooks/useBoosters';
 import { formatTime } from '../skyjong/formatTime';
 import type { LevelRecord } from '../skyjong/records';
+import { IQ_MAX } from '../skyjong/records';
 import ModalShell from './ModalShell';
 import { EarnedStampIcon, BackIcon } from './SvgIcons';
 
-// Brain-tier label for the final IQ (genius ceiling = 200)
+// Brain-tier label for the final IQ (see IQ_MAX)
 const iqTier = (iq: number): string => {
-  if (iq >= 200) return '🧠 Genius';
+  if (iq >= IQ_MAX) return '🧠 Genius';
   if (iq >= 180) return '🧠 Brilliant';
   if (iq >= 160) return '✨ Sharp';
   if (iq >= 130) return '👍 Clever';
@@ -76,7 +77,7 @@ const VictoryModal: React.FC<VictoryModalProps> = ({
       labelledBy="victory-title"
       describedBy="victory-summary"
       overlayClassName="victory-overlay animate-fade-in"
-      className={`victory-modal text-center animate-scale-up ${score >= 200 ? 'genius-win' : ''}`.trim()}
+      className={`victory-modal text-center animate-scale-up ${score >= IQ_MAX ? 'genius-win' : ''}`.trim()}
     >
       <div className="victory-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto' }}>
         <EarnedStampIcon size={64} />

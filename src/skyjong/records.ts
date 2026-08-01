@@ -2,6 +2,15 @@ import { lsParse, lsSetJson, isFiniteNumber } from './storage';
 
 const RECORDS_KEY = 'skyjong_records';
 
+/**
+ * Genius ceiling for the IQ score. The single home for it: scoreMatch caps the
+ * running score here, and the victory modal uses it for both the tier label and
+ * the `genius-win` styling. It was a local const in App plus two bare 200s in
+ * VictoryModal, so tuning the cap would have left the tier and the styling
+ * disagreeing with the score a player can actually reach.
+ */
+export const IQ_MAX = 200;
+
 /** A player's best result on one campaign level — the reason to replay a board. */
 export type LevelRecord = { iq: number; time: number; stars: number };
 

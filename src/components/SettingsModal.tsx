@@ -243,15 +243,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
 
               <div className="form-group slider-group">
                 <div className="slider-header">
-                  <label>Effects Volume (Chimes & Clicks):</label>
+                  <label htmlFor="sfx-volume">Effects Volume (Chimes &amp; Clicks):</label>
                   <span>{Math.round(sfxVolume * 100)}%</span>
                 </div>
+                {/* htmlFor/id, not a bare <label>: an unassociated label is
+                    visible but invisible to assistive tech, so this announced
+                    as "slider, 50%" with no hint of what it controls.
+                    aria-valuetext because the raw 0–1 value reads as "0.5". */}
                 <input
+                  id="sfx-volume"
                   type="range"
                   min="0"
                   max="1.0"
                   step="0.05"
                   value={sfxVolume}
+                  aria-valuetext={`${Math.round(sfxVolume * 100)} percent`}
                   onChange={handleSfxChange}
                 />
               </div>
@@ -271,16 +277,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = (props) => {
 
               <div className="form-group slider-group" style={{ opacity: isAmbientEnabled ? 1 : 0.4 }}>
                 <div className="slider-header">
-                  <label>Ambient Volume (Waves & Breeze):</label>
+                  <label htmlFor="ambient-volume">Ambient Volume (Waves &amp; Breeze):</label>
                   <span>{Math.round(ambientVolume * 100)}%</span>
                 </div>
                 <input
+                  id="ambient-volume"
                   type="range"
                   min="0"
                   max="1.0"
                   step="0.05"
                   value={ambientVolume}
                   disabled={!isAmbientEnabled}
+                  aria-valuetext={`${Math.round(ambientVolume * 100)} percent`}
                   onChange={handleAmbientChange}
                 />
               </div>
