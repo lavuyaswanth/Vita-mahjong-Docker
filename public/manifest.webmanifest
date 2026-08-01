@@ -1,7 +1,7 @@
 {
   "name": "Skyjong",
   "short_name": "Skyjong",
-  "description": "A soothing, senior-friendly Skyjong Solitaire match game.",
+  "description": "A cute and cozy Skyjong Solitaire tile-matching adventure for ages 3 and up.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

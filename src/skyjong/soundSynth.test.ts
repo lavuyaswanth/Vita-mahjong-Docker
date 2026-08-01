@@ -3,23 +3,43 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // A minimal Web Audio stand-in. Enough surface for the synth to build its
 // graph, and it records what was scheduled so we can assert that stopping the
 // ambient bed actually reaches the notes already handed to the audio clock.
+type FakeParam = {
+  value: number;
+  setValueAtTime: ReturnType<typeof vi.fn>;
+  setTargetAtTime: ReturnType<typeof vi.fn>;
+  linearRampToValueAtTime: ReturnType<typeof vi.fn>;
+  exponentialRampToValueAtTime: ReturnType<typeof vi.fn>;
+  cancelScheduledValues: ReturnType<typeof vi.fn>;
+};
+
 type FakeNode = {
   kind: string;
   started: boolean;
   stoppedAt: number | null;
   disconnected: boolean;
   onended: (() => void) | null;
+  gain: FakeParam;
 };
 
 const installAudio = () => {
   const nodes: FakeNode[] = [];
   let now = 0;
-  const param = () => ({
+  // Real AudioParam methods throw on a non-finite value, and that throw is what
+  // kills every later sound in the app. A fake that quietly accepts NaN makes
+  // "does it clamp?" untestable: the assertion passes whether or not the clamp
+  // exists. So model the throw.
+  const assertFinite = (v: number) => {
+    if (!Number.isFinite(v)) {
+      throw new TypeError(`non-finite AudioParam value: ${v}`);
+    }
+    return v;
+  };
+  const param = (): FakeParam => ({
     value: 1,
-    setValueAtTime: vi.fn(),
-    setTargetAtTime: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-    exponentialRampToValueAtTime: vi.fn(),
+    setValueAtTime: vi.fn(assertFinite),
+    setTargetAtTime: vi.fn(assertFinite),
+    linearRampToValueAtTime: vi.fn(assertFinite),
+    exponentialRampToValueAtTime: vi.fn(assertFinite),
     cancelScheduledValues: vi.fn()
   });
   const mkNode = (kind: string): FakeNode & Record<string, unknown> => {
@@ -48,7 +68,20 @@ const installAudio = () => {
   }
   vi.stubGlobal('AudioContext', FakeCtx);
   vi.stubGlobal('window', { AudioContext: FakeCtx, devicePixelRatio: 1 });
-  return { nodes, advance: (s: number) => { now += s; } };
+  return {
+    nodes,
+    advance: (s: number) => { now += s; },
+    /**
+     * The synth's routing gain PARAMS, by the order init() builds them:
+     * master -> sfx -> ambient. They are the first three gain nodes to exist,
+     * created before any sound node, so creation order identifies them without
+     * the fake having to reconstruct the graph.
+     */
+    routing: () => {
+      const [master, sfx, ambient] = nodes.filter(n => n.kind === 'gain');
+      return { master: master!.gain, sfx: sfx!.gain, ambient: ambient!.gain };
+    }
+  };
 };
 
 let audio: ReturnType<typeof installAudio>;
@@ -106,16 +139,60 @@ describe('stopAmbient', () => {
 });
 
 describe('configure', () => {
-  it('takes volumes only — the dead `enabled` flag is gone', async () => {
+  // configure() is a no-op until the context exists, so every case here opens
+  // with a sound to force init() and build the routing gains.
+  const started = async () => {
     const synth = await freshSynth();
-    expect(synth.configure.length).toBe(2);
+    synth.playClick();
+    return synth;
+  };
+
+  // Pins the signature by BEHAVIOUR rather than by `configure.length`. An arity
+  // assertion fails open — re-adding a leading `enabled` flag with a default
+  // keeps .length at 2 — whereas distinct volumes landing on their own gains
+  // can only pass if the two parameters still mean what they say.
+  it('routes the first argument to sfx and the second to ambient', async () => {
+    const synth = await started();
+    const { sfx, ambient } = audio.routing();
+
+    synth.configure(0.25, 0.75);
+
+    expect(sfx.setTargetAtTime).toHaveBeenCalledWith(0.25, expect.any(Number), expect.any(Number));
+    expect(ambient.setTargetAtTime).toHaveBeenCalledWith(0.75, expect.any(Number), expect.any(Number));
   });
 
-  it('clamps out-of-range and non-finite volumes', async () => {
-    const synth = await freshSynth();
-    // A NaN reaching a gain node throws and kills every later sound.
-    expect(() => synth.configure(NaN, NaN)).not.toThrow();
-    expect(() => synth.configure(5, -3)).not.toThrow();
-    expect(() => synth.configure(0, 0)).not.toThrow();
+  it('clamps a non-finite volume instead of passing it to the gain node', async () => {
+    const synth = await started();
+    const { sfx, ambient } = audio.routing();
+
+    // The fake throws on a non-finite value, exactly as a real AudioParam does.
+    // Without the clamp in configure() this call propagates that throw — which
+    // is the bug the clamp exists to prevent, since it kills every later sound.
+    expect(() => synth.configure(NaN, Infinity)).not.toThrow();
+
+    // ...and the value that DID reach the node is the documented fallback,
+    // not some other number that merely happens to be finite.
+    expect(sfx.setTargetAtTime).toHaveBeenLastCalledWith(0.5, expect.any(Number), expect.any(Number));
+    expect(ambient.setTargetAtTime).toHaveBeenLastCalledWith(0.3, expect.any(Number), expect.any(Number));
+  });
+
+  it('clamps out-of-range volumes into 0..1', async () => {
+    const synth = await started();
+    const { sfx, ambient } = audio.routing();
+
+    synth.configure(5, -3);
+
+    expect(sfx.setTargetAtTime).toHaveBeenLastCalledWith(1, expect.any(Number), expect.any(Number));
+    expect(ambient.setTargetAtTime).toHaveBeenLastCalledWith(0, expect.any(Number), expect.any(Number));
+  });
+
+  it('treats volume 0 as the mute — there is no separate enabled flag', async () => {
+    const synth = await started();
+    const { sfx, ambient } = audio.routing();
+
+    synth.configure(0, 0);
+
+    expect(sfx.setTargetAtTime).toHaveBeenLastCalledWith(0, expect.any(Number), expect.any(Number));
+    expect(ambient.setTargetAtTime).toHaveBeenLastCalledWith(0, expect.any(Number), expect.any(Number));
   });
 });
