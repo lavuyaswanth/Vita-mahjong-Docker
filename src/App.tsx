@@ -22,7 +22,7 @@ import { useDailyChallenge, todayKey } from './hooks/useDailyChallenge';
 import { useSaveGame } from './hooks/useSaveGame';
 import type { SavedGame } from './hooks/useSaveGame';
 import { realmForLevel, realms } from './skyjong/realms';
-import { recordFor, mergeRecord } from './skyjong/records';
+import { recordFor, mergeRecord, IQ_MAX } from './skyjong/records';
 import type { LevelRecord } from './skyjong/records';
 import type { RealmId } from './skyjong/realms';
 import SkyjongBoard from './components/SkyjongBoard';
@@ -413,7 +413,6 @@ export const App: React.FC = () => {
   // streaks. So a careful clear ≈160, a fast combo-heavy run approaches 200 —
   // the final IQ reflects skill, giving players a score worth beating on replay.
   const IQ_BASE = 100;
-  const IQ_MAX = 200;
   const CLEAR_IQ = 60;
   const scoreMatch = (t1: TileState, t2: TileState) => {
     const now = Date.now();
